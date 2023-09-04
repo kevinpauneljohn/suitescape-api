@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Helpers;
+
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+
+class RegistrationService
+{
+    public array $userData;
+
+    public function __construct($userData)
+    {
+        $this->userData = $userData;
+    }
+
+    public function register(): JsonResponse
+    {
+        $user = User::create($this->userData);
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'User created successfully',
+            'token' => $token
+        ]);
+    }
+
+    public function login(): JsonResponse
+    {
+        $user = $this->getUserByEmail();
+
+        if (!$user || $this->checkIfPasswordIsCorrect($user->password)) {
+            return response()->json([
+                'message' => 'The provided credentials are incorrect.',
+                'errors' => [
+                    'email' => ['The provided credentials are incorrect.'],
+                ]
+            ]);
+        }
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'token' => $token
+        ]);
+    }
+
+    public function getUserByEmail(): User|null
+    {
+        return User::where("email", $this->userData["email"])->first();
+    }
+
+    public function checkIfPasswordIsCorrect($password): bool
+    {
+        return Hash::check($this->userData["password"], $password);
+    }
+}
