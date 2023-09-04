@@ -23,5 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    Route::get('/logout', [RegistrationController::class, "logout"])->name("logout");
+    Route::post('/logout', [RegistrationController::class, "logout"])->name("logout");
 });
