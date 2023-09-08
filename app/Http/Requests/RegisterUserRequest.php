@@ -27,7 +27,7 @@ class RegisterUserRequest extends FormRequest
             "lastname" => ["required", "string"],
             "email" => ["required", "email", "unique:users,email"],
             "mobile_number" => ["nullable", "string"],
-            "password" => ["required", "string", "min:8"],
+            "password" => ["required", "string", "min:8", "confirmed"],
             "date_of_birth" => ["required", "date"],
         ];
     }
