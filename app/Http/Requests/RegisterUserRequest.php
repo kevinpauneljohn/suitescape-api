@@ -29,7 +29,7 @@ class RegisterUserRequest extends FormRequest
             "email" => ["required", "email", "unique:users,email"],
             "mobile_number" => ["nullable", "string"],
             'password' => ['required', 'confirmed',
-                Password::min(8)->letters()->mixedCase()->numbers(),
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
             ],
             "date_of_birth" => ["required", "date"],
         ];
