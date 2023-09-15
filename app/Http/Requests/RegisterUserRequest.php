@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class RegisterUserRequest extends FormRequest
 {
@@ -12,6 +13,18 @@ class RegisterUserRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'date_of_birth.before' => 'You must be 18 years old or above to register.',
+        ];
     }
 
     /**
@@ -27,8 +40,10 @@ class RegisterUserRequest extends FormRequest
             "lastname" => ["required", "string"],
             "email" => ["required", "email", "unique:users,email"],
             "mobile_number" => ["nullable", "string"],
-            "password" => ["required", "string", "min:8", "confirmed"],
-            "date_of_birth" => ["required", "date"],
+            'password' => ['required', 'confirmed',
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
+            ],
+            "date_of_birth" => ["required", "date", "before:18 years ago"],
         ];
     }
 }

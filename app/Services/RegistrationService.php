@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Helpers;
+namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -30,7 +30,7 @@ class RegistrationService
     {
         $user = $this->getUserByEmail();
 
-        if (!$user || $this->checkIfPasswordIsCorrect($user->password)) {
+        if (!$user || !$this->checkIfPasswordIsCorrect($user->password)) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
                 'errors' => [
