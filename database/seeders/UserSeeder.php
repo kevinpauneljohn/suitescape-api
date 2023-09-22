@@ -19,8 +19,15 @@ class UserSeeder extends Seeder
             'lastname' => 'Palana',
             'email' => 'melpalana13@gmail.com',
             'mobile_number' => '09275393573',
-            'password' => bcrypt('12'),
             'date_of_birth' => '2003-06-29',
-        ]);
+            'password' => bcrypt('12'),
+        ])->assignRole('super-admin');
+
+        User::factory()->create([
+            'email' => 'host@gmail.com',
+            'password' => bcrypt('12'),
+        ])->assignRole('host');
+
+        User::factory()->count(10)->create();
     }
 }
