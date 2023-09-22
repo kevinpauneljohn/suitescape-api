@@ -69,8 +69,13 @@ class User extends Authenticatable
         return ['id'];
     }
 
+    public function listings()
+    {
+        return $this->hasMany(Listing::class);
+    }
+
     public function videos()
     {
-        return $this->hasMany(Video::class);
+        return $this->hasManyThrough(Video::class, Listing::class);
     }
 }
