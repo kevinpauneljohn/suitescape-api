@@ -11,15 +11,18 @@ class Video extends Model
     use HasFactory, HasUuids;
 
     public $fillable = [
-        'user_id',
+        'listing_id',
         'filename',
-        'title',
-        'description',
         'privacy',
     ];
 
+    public function listing()
+    {
+        return $this->belongsTo(Listing::class);
+    }
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->listing->user();
     }
 }
