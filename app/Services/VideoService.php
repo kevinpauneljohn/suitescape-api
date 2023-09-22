@@ -23,7 +23,8 @@ class VideoService
 
     public function streamVideo(Video $video)
     {
-        $localUrl = storage_path('app/videos/' . $video['filename']);
+//        $localUrl = storage_path('app/public/videos/' . $video['filename']);
+        $localUrl = public_path('storage/videos/' . $video['filename']);
         $options = [
             'is_localPath' => true
         ];
