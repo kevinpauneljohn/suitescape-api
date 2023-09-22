@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            RolesAndPermissionsSeeder::class,
             UserSeeder::class,
             VideoSeeder::class,
         ]);
