@@ -13,12 +13,9 @@ return new class extends Migration
     {
         Schema::create('videos', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id');
+            $table->foreignUuid('listing_id');
             $table->string('filename');
-            $table->string('title');
-            $table->string('description')->nullable();
-            $table->integer('likes')->default(0);
-            $table->enum('privacy', ['public', 'private'])->default('private');
+            $table->enum('privacy', ['public', 'private']);
             $table->timestamps();
         });
     }
