@@ -2,7 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Listing;
+use App\Models\RoomCategory;
 use App\Models\Video;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -33,10 +34,18 @@ class VideoSeeder extends Seeder
         ];
 
         foreach ($videos as $video) {
-            Video::factory()->create([
-                'user_id' => User::first()->id,
-                'filename' => $video
-            ]);
+            $listing = Listing::factory()->create();
+
+            // Temporary solution for now so that listing has a price
+            $listing->roomCategories()->save(
+                RoomCategory::factory()->make()
+            );
+
+            $listing->videos()->save(
+                Video::factory()->make([
+                    'filename' => $video,
+                ])
+            );
         }
     }
 }
