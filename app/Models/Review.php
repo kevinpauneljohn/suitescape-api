@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
 
     public $fillable = [
         'listing_id',
