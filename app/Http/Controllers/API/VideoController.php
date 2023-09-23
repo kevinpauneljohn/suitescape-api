@@ -4,19 +4,28 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadVideoRequest;
-use App\Models\Listing;
-use App\Models\RoomCategory;
 use App\Models\Video;
-use App\Services\VideoService;
+use App\Services\ListingService;
+use App\Services\VideoRetrievalService;
+use App\Services\VideoStreamService;
+use App\Services\VideoUploadService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class VideoController extends Controller
 {
-    private VideoService $videoService;
+    private VideoUploadService $videoUploadService;
+    private VideoStreamService $videoStreamService;
+    private VideoRetrievalService $videoRetrievalService;
+    private ListingService $listingService;
 
-    public function __construct(VideoService $videoService)
+    public function __construct(VideoUploadService $videoUploadService, VideoStreamService $videoStreamService, VideoRetrievalService $videoRetrievalService, ListingService $listingService)
     {
-        $this->videoService = $videoService;
+        $this->videoUploadService = $videoUploadService;
+        $this->videoStreamService = $videoStreamService;
+        $this->videoRetrievalService = $videoRetrievalService;
+        $this->listingService = $listingService;
+
         $this->middleware('auth:sanctum')->only('uploadVideo');
     }
 
@@ -24,16 +33,10 @@ class VideoController extends Controller
     {
         $validated = $request->validated();
 
-        $validated['filename'] = $this->videoService->uploadVideo($validated['file']);
+        $filename = $this->videoUploadService->upload($validated['file']);
+        $validated['filename'] = $filename;
 
-        // Temporary solution for now so that video can be uploaded
-        $listing = auth()->user()->listings()->save(
-            Listing::factory()->make()
-        );
-        $listing->roomCategories()->save(
-            RoomCategory::factory()->make()
-        );
-
+        $listing = $this->listingService->createListingAndRoomCategory(auth()->user());
         $video = $listing->videos()->create($validated);
 
         return response()->json([
@@ -44,24 +47,27 @@ class VideoController extends Controller
 
     public function getVideo(string $id)
     {
-        $video = Video::findOrFail($id);
+        try {
+            $video = Video::findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                "message" => "Video not found."
+            ], 404);
+        }
+
         $user = auth('sanctum')->user();
 
-        if ($video->privacy === 'private' && $user?->id !== $video['user_id']) {
+        if ($video->privacy === 'private' && !$video->isOwner($user)) {
             return response()->json([
                 "message" => "You are not authorized to view this video."
             ], 403);
         }
 
-        return $this->videoService->streamVideo($video);
+        return $this->videoStreamService->stream($video);
     }
 
     public function getAllVideos()
     {
-        return Video::where('privacy', 'public')
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->with('listing')
-            ->cursorPaginate(5);
+        return $this->videoRetrievalService->getAllPublicVideos();
     }
 }
