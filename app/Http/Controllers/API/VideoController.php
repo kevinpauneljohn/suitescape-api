@@ -12,8 +12,11 @@ use Illuminate\Http\Request;
 
 class VideoController extends Controller
 {
-    public function __construct()
+    private VideoService $videoService;
+
+    public function __construct(VideoService $videoService)
     {
+        $this->videoService = $videoService;
         $this->middleware('auth:sanctum')->only('uploadVideo');
     }
 
@@ -21,7 +24,7 @@ class VideoController extends Controller
     {
         $validated = $request->validated();
 
-        $validated['filename'] = (new VideoService())->uploadVideo($validated['file']);
+        $validated['filename'] = $this->videoService->uploadVideo($validated['file']);
 
         // Temporary solution for now so that video can be uploaded
         $listing = auth()->user()->listings()->save(
@@ -44,13 +47,13 @@ class VideoController extends Controller
         $video = Video::findOrFail($id);
         $user = auth('sanctum')->user();
 
-        if ($video->privacy === 'private' && $user?->id !== $video->user_id) {
+        if ($video->privacy === 'private' && $user?->id !== $video['user_id']) {
             return response()->json([
                 "message" => "You are not authorized to view this video."
             ], 403);
         }
 
-        return (new VideoService())->streamVideo($video);
+        return $this->videoService->streamVideo($video);
     }
 
     public function getAllVideos()
