@@ -58,7 +58,7 @@ class VideoController extends Controller
         return Video::where('privacy', 'public')
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
-            ->with('listing', 'listing.roomCategories')
+            ->with('listing')
             ->cursorPaginate(5);
     }
 }
