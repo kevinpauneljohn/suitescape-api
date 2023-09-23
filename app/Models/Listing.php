@@ -18,12 +18,18 @@ class Listing extends Model
     ];
 
     protected $appends = [
-        'average_rating'
+        'average_rating',
+        'lowest_room_price',
     ];
 
     public function getAverageRatingAttribute()
     {
         return $this->reviews()->avg('rating');
+    }
+
+    public function getLowestRoomPriceAttribute()
+    {
+        return $this->roomCategories()->min('price');
     }
 
     public function user()
