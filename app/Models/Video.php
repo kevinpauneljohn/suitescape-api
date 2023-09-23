@@ -25,4 +25,9 @@ class Video extends Model
     {
         return $this->listing->user();
     }
+
+    public function isOwner($user)
+    {
+        return $this->user->id === $user?->id;
+    }
 }
