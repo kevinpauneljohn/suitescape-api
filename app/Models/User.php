@@ -69,13 +69,28 @@ class User extends Authenticatable
         return ['id'];
     }
 
+    public function videos()
+    {
+        return $this->hasManyThrough(Video::class, Listing::class);
+    }
+
     public function listings()
     {
         return $this->hasMany(Listing::class);
     }
 
-    public function videos()
+    public function likedListings()
     {
-        return $this->hasManyThrough(Video::class, Listing::class);
+        return $this->hasMany(ListingLike::class);
+    }
+
+    public function savedListings()
+    {
+        return $this->hasMany(ListingSave::class);
+    }
+
+    public function viewedListings()
+    {
+        return $this->hasMany(ListingView::class);
     }
 }
