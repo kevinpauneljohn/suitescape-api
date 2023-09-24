@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('location');
             $table->integer('likes')->default(0);
+            $table->integer('saves')->default(0);
+            $table->integer('views')->default(0);
             $table->timestamps();
         });
     }
