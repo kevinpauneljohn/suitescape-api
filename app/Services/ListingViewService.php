@@ -20,7 +20,6 @@ class ListingViewService
     public function addView(): void
     {
         $lastListingView = $this->getLastListingView();
-
         if (!$this->shouldRecordView($lastListingView)) {
             return;
         }
