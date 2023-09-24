@@ -75,7 +75,6 @@ class VideoController extends Controller
         if ($listing->isLikedBy($user)) {
             $listingLikeService->removeLike();
             $video->listing()->decrement('likes');
-
             return response()->json([
                 "liked" => false,
                 "message" => "Listing unliked."
@@ -84,7 +83,6 @@ class VideoController extends Controller
 
         $listingLikeService->addLike();
         $video->listing()->increment('likes');
-
         return response()->json([
             "liked" => true,
             "message" => "Listing liked."
