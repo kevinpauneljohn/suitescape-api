@@ -36,9 +36,8 @@ class VideoSeeder extends Seeder
         foreach ($videos as $video) {
             $listing = Listing::factory()->create();
 
-            // Temporary solution for now so that listing has a price
-            $listing->roomCategories()->save(
-                RoomCategory::factory()->make()
+            $listing->roomCategories()->saveMany(
+                RoomCategory::factory()->count(rand(1, 3))->make()
             );
 
             $listing->videos()->save(
