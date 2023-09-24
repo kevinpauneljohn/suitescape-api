@@ -29,7 +29,7 @@ class VideoController extends Controller
         $this->middleware('auth:sanctum')->only(['uploadVideo', 'likeVideo', 'saveVideo']);
     }
 
-    public function getAllVideos()
+    public function getVideoFeed()
     {
         return $this->videoRetrievalService->getAllPublicVideos();
     }
