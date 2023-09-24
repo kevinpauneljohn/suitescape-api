@@ -17,7 +17,7 @@ class RoomCategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            "name" => fake()->word(),
+            "name" => ['Standard', 'Deluxe', 'Superior', 'Suite'][rand(0, 3)],
             "size" => rand(1, 50),
             "type_of_beds" => $this->generateTypeOfBeds(),
             "pax" => rand(1, 10),
