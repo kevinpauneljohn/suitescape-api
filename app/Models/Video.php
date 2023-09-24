@@ -16,18 +16,36 @@ class Video extends Model
         'privacy',
     ];
 
+    protected $appends = [
+        'url',
+    ];
+
+    protected $hidden = [
+        'filename',
+    ];
+
+    public function getUrlAttribute()
+    {
+        return route('api.videos.stream', $this->id);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function listing()
     {
         return $this->belongsTo(Listing::class);
     }
 
-    public function user()
+    public function isOwnedBy($user)
     {
-        return $this->listing->user();
+        return $user->id === $this->listing()->user_id;
     }
 
-    public function isOwner($user)
+    public function scopePublic($query)
     {
-        return $this->user->id === $user?->id;
+        return $query->where('privacy', 'public');
     }
 }
