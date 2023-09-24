@@ -68,6 +68,7 @@ class VideoController extends Controller
     {
         $video = Video::findOrFail($id);
         $listing = $video->listing;
+
         $listingLikeService = new ListingLikeService($listing);
 
         $user = auth()->user();
@@ -93,6 +94,7 @@ class VideoController extends Controller
     {
         $video = Video::findOrFail($id);
         $listing = $video->listing;
+
         $listingSaveService = new ListingSaveService($listing);
 
         $user = auth()->user();
