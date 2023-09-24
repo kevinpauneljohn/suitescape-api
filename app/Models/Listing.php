@@ -15,11 +15,16 @@ class Listing extends Model
         'name',
         'location',
         'likes',
+        'saves',
+        'views',
     ];
 
     protected $appends = [
         'average_rating',
         'lowest_room_price',
+        'is_liked',
+        'is_saved',
+        'is_viewed',
     ];
 
     public function getAverageRatingAttribute()
@@ -32,9 +37,52 @@ class Listing extends Model
         return $this->roomCategories()->min('price');
     }
 
+    public function getIsLikedAttribute()
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return $this->isLikedBy($user);
+    }
+
+    public function getIsSavedAttribute()
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return $this->isSavedBy($user);
+    }
+
+    public function getIsViewedAttribute()
+    {
+        $user = auth('sanctum')->user();
+
+        if (!$user) {
+            return false;
+        }
+
+        return $this->isViewedBy($user);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function rooms()
+    {
+        return $this->hasMany(Room::class);
+    }
+
+    public function roomCategories()
+    {
+        return $this->hasMany(RoomCategory::class);
     }
 
     public function videos()
@@ -47,13 +95,38 @@ class Listing extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function rooms()
+    public function likes()
     {
-        return $this->hasMany(Room::class);
+        return $this->hasMany(ListingLike::class);
     }
 
-    public function roomCategories()
+    public function saves()
     {
-        return $this->hasMany(RoomCategory::class);
+        return $this->hasMany(ListingSave::class);
+    }
+
+    public function views()
+    {
+        return $this->hasMany(ListingView::class);
+    }
+
+    public function anonymousViews()
+    {
+        return $this->hasMany(ListingView::class)->where('user_id', null);
+    }
+
+    public function isLikedBy($user)
+    {
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
+
+    public function isSavedBy($user)
+    {
+        return $this->saves()->where('user_id', $user->id)->exists();
+    }
+
+    public function isViewedBy($user)
+    {
+        return $this->views()->where('user_id', $user->id)->exists();
     }
 }
