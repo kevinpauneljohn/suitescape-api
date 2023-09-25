@@ -27,6 +27,7 @@ class ListingViewService
         $this->recordView([
             'user_id' => $this->user?->id
         ]);
+        $this->listing->increment('views');
     }
 
     public function getLastListingView(): ?ListingView
@@ -35,7 +36,7 @@ class ListingViewService
             ? $this->listing->anonymousViews()
             : $this->listing->views()->where('user_id', $this->user->id);
 
-        return $query->orderBy('created_at', 'desc')->get()->first();
+        return $query->orderBy('created_at', 'desc')->first();
     }
 
     private function shouldRecordView(?ListingView $lastListingView = null): bool
