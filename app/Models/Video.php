@@ -16,18 +16,18 @@ class Video extends Model
         'privacy',
     ];
 
-    protected $appends = [
-        'url',
-    ];
-
     protected $hidden = [
         'filename',
     ];
 
-    public function getUrlAttribute()
-    {
-        return route('api.videos.stream', $this->id);
-    }
+//    protected $appends = [
+//        'url',
+//    ];
+
+//    public function getUrlAttribute()
+//    {
+//        return route('api.videos.stream', $this->id);
+//    }
 
     public function user()
     {
