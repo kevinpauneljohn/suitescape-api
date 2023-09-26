@@ -18,11 +18,10 @@ class RegistrationService
     public function register(): JsonResponse
     {
         $user = User::create($this->userData);
-        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'User created successfully',
-            'token' => $token
+            'user' => $user
         ]);
     }
 
