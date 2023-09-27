@@ -19,7 +19,7 @@ class ListingFactory extends Factory
     {
         return [
             "user_id" => User::all()->random()->id,
-            "name" => fake()->words(3, true),
+            "name" => ucwords(fake()->words(3, true)),
             "location" => fake()->streetAddress() . ', ' . fake()->city() . ', ' . fake()->stateAbbr() . ' ' . fake()->postcode(),
         ];
     }
