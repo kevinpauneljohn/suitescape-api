@@ -39,14 +39,24 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (NotFoundHttpException $e, Request $request) {
-            if ($request->is('api/videos/*')) {
+            if ($request->is('api/listings/*/videos/*')) {
                 return response()->json([
                     'message' => 'Video not found.'
                 ], 404);
             }
+            if ($request->is('api/listings/*/images/*')) {
+                return response()->json([
+                    'message' => 'Image not found.'
+                ], 404);
+            }
+            if ($request->is('api/listings/*')) {
+                return response()->json([
+                    'message' => 'Listing not found.'
+                ], 404);
+            }
             if ($request->is('api/*')) {
                 return response()->json([
-                    'message' => 'Resource not found.'
+                    'message' => 'Error finding this resource.'
                 ], 404);
             }
         });
