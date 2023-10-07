@@ -48,4 +48,10 @@ class Video extends Model
     {
         return $query->where('privacy', 'public');
     }
+
+    public function scopeDesc($query)
+    {
+        return $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
+    }
 }
