@@ -50,15 +50,6 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-
-    /**
-     * Generate a new UUID for the model.
-     */
-    public function newUniqueId(): string
-    {
-        return (string) Uuid::uuid4();
-    }
-
     /**
      * Get the columns that should receive a unique identifier.
      *
@@ -72,6 +63,11 @@ class User extends Authenticatable
     public function videos()
     {
         return $this->hasManyThrough(Video::class, Listing::class);
+    }
+
+    public function images()
+    {
+        return $this->hasManyThrough(Image::class, Listing::class);
     }
 
     public function listings()
