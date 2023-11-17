@@ -18,8 +18,8 @@ return new class extends Migration
             $table->integer('size');
             $table->json('type_of_beds');
             $table->integer('pax');
-            $table->float('price');
-            $table->float('tax');
+            $table->decimal('price');
+            $table->decimal('tax');
             $table->timestamps();
         });
     }
