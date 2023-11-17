@@ -15,10 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
             $table->string('name');
-            $table->string('location');
-            $table->integer('likes')->default(0);
-            $table->integer('saves')->default(0);
-            $table->integer('views')->default(0);
+            $table->text('location');
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
