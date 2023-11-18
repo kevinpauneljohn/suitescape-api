@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Listing;
 use App\Models\RoomCategory;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RoomCategorySeeder extends Seeder
@@ -14,12 +13,22 @@ class RoomCategorySeeder extends Seeder
      */
     public function run(): void
     {
+        $categories = ['Single', 'Double', 'Triple', 'Queen', 'King', 'Twin', 'Hollywood Twin Room', 'Double-double', 'Studio', 'Suite', 'Mini Suite', 'President Suite', 'Apartments', 'Connecting Rooms', 'Murphy Room', 'Accessible Room', 'Cabana', 'Adjoining Rooms', 'Adjacent Rooms', 'Villa', 'Executive Floor', 'Smoking Room'];
+
         $listings = Listing::all();
 
         foreach ($listings as $listing) {
-            $listing->roomCategories()->saveMany(
-                RoomCategory::factory()->count(rand(1, 3))->make()
-            );
+            foreach ($categories as $category) {
+                if (rand(0, 1)) {
+                    continue;
+                }
+
+                $roomCategory = RoomCategory::factory()->make([
+                    'name' => $category,
+                ]);
+
+                $listing->roomCategories()->save($roomCategory);
+            }
         }
     }
 }
