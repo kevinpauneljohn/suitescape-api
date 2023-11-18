@@ -10,29 +10,11 @@ class Video extends Model
 {
     use HasFactory, HasUuids;
 
-    public $fillable = [
+    protected $fillable = [
         'listing_id',
         'filename',
         'privacy',
     ];
-
-    protected $hidden = [
-        'filename',
-    ];
-
-//    protected $appends = [
-//        'url',
-//    ];
-
-//    public function getUrlAttribute()
-//    {
-//        return route('api.videos.stream', $this->id);
-//    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function listing()
     {
