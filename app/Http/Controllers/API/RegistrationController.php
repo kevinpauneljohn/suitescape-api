@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Services\RegistrationService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Requests\RegisterUserRequest;
+use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
