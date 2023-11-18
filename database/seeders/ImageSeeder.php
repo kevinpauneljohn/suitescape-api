@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Image;
 use App\Models\Listing;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ImageSeeder extends Seeder
@@ -16,11 +15,15 @@ class ImageSeeder extends Seeder
     {
         $listings = Listing::all();
 
-        foreach ($listings as $listing) {
-            $images = Image::factory()->count(10)->make();
+        $filename = 'ListingPhotoUnsplash';
 
-            foreach ($images as $index => $image) {
-                $image['filename'] = 'ListingPhotoUnsplash' . $index + 1 . '.jpg';
+        foreach ($listings as $listing) {
+
+            for ($i = 1; $i <= 10; $i++) {
+                $image = Image::factory()->make([
+                    'filename' => "$filename$i.jpg",
+                ]);
+
                 $listing->images()->save($image);
             }
         }
