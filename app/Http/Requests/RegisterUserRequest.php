@@ -35,15 +35,15 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "firstname" => ["required", "string"],
-            "middlename" => ["nullable", "string"],
-            "lastname" => ["required", "string"],
-            "email" => ["required", "email", "unique:users,email"],
-            "mobile_number" => ["nullable", "string"],
+            'firstname' => ['required', 'string'],
+            'middlename' => ['nullable', 'string'],
+            'lastname' => ['required', 'string'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'mobile_number' => ['nullable', 'string'],
             'password' => ['required', 'confirmed',
                 Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
             ],
-            "date_of_birth" => ["required", "date", "before:18 years ago"],
+            'date_of_birth' => ['required', 'date', 'before:18 years ago'],
         ];
     }
 }

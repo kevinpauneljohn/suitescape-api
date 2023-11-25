@@ -9,9 +9,10 @@ use App\Models\User;
 class ListingViewService
 {
     private Listing $listing;
+
     private ?User $user;
 
-    public function __construct(Listing $listing, ?User $user = null)
+    public function __construct(Listing $listing, User $user = null)
     {
         $this->listing = $listing;
         $this->user = $user;
@@ -20,14 +21,13 @@ class ListingViewService
     public function addView(): void
     {
         $lastListingView = $this->getLastListingView();
-        if (!$this->shouldRecordView($lastListingView)) {
+        if (! $this->shouldRecordView($lastListingView)) {
             return;
         }
 
         $this->recordView([
-            'user_id' => $this->user?->id
+            'user_id' => $this->user?->id,
         ]);
-        $this->listing->increment('views');
     }
 
     public function getLastListingView(): ?ListingView
@@ -39,9 +39,9 @@ class ListingViewService
         return $query->orderBy('created_at', 'desc')->first();
     }
 
-    private function shouldRecordView(?ListingView $lastListingView = null): bool
+    private function shouldRecordView(ListingView $lastListingView = null): bool
     {
-        if (!$lastListingView) {
+        if (! $lastListingView) {
             return true;
         }
 

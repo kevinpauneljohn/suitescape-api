@@ -15,37 +15,42 @@ class ListingRetrievalService
 
     public function getListing(string $id)
     {
-        if ($this->currentListing && $this->currentListing->id === $id) {
-            return $this->currentListing;
+        if (! $this->currentListing || $this->currentListing->id !== $id) {
+            $this->currentListing = Listing::findOrFail($id);
         }
 
-        $this->currentListing = Listing::findOrFail($id);
-        return $this->currentListing;
+        return $this->currentListing
+            ->load([
+                'user',
+                'serviceRatings',
+                'reviews',
+                'reviews.user',
+                'images',
+                'videos',
+                'bookingPolicies',
+                'nearbyPlaces'])
+            ->loadCount(['likes', 'saves', 'views', 'reviews'])
+            ->loadAggregate('roomCategories', 'price', 'min')
+            ->loadAggregate('reviews', 'rating', 'avg');
     }
 
-    public function getListingComplete(string $id)
+    public function getListingRooms(string $id)
     {
-        return $this->getListing($id)->load([
-            'host',
-            'images',
-            'videos',
-            'reviews',
-        ]);
-    }
-
-    public function getListingHost(string $id)
-    {
-        return $this->getListing($id)->host;
-    }
-
-    public function getListingImages(string $id)
-    {
-        return $this->getListing($id)->images;
+        return $this->getListing($id)->rooms->load([
+            'roomCategory',
+            'roomAmenities',
+            'roomAmenities.amenity',
+        ])->loadAggregate('reviews', 'rating', 'avg');
     }
 
     public function getListingVideos(string $id)
     {
         return $this->getListing($id)->videos;
+    }
+
+    public function getListingImages(string $id)
+    {
+        return $this->getListing($id)->images;
     }
 
     public function getListingReviews(string $id)

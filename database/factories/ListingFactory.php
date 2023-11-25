@@ -18,9 +18,19 @@ class ListingFactory extends Factory
     public function definition(): array
     {
         return [
-            "user_id" => User::all()->random()->id,
-            "name" => ucwords(fake()->words(3, true)),
-            "location" => fake()->streetAddress() . ', ' . fake()->city() . ', ' . fake()->stateAbbr() . ' ' . fake()->postcode(),
+            'user_id' => User::all()->random()->id,
+            'name' => ucwords(fake()->words(3, true)),
+            'location' => fake()->streetAddress().', '.fake()->city().', '.fake()->stateAbbr().' '.fake()->postcode(),
+            'description' => fake()->paragraphs(3, true),
         ];
+    }
+
+    public function mine(): self
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'user_id' => User::first()->id,
+            ];
+        });
     }
 }

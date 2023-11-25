@@ -10,76 +10,16 @@ class Listing extends Model
 {
     use HasFactory, HasUuids;
 
-    public $fillable = [
+    protected $fillable = [
         'user_id',
         'name',
         'location',
-        'likes',
-        'saves',
-        'views',
+        'description',
     ];
-
-    protected $appends = [
-        'average_rating',
-        'lowest_room_price',
-        'is_liked',
-        'is_saved',
-        'is_viewed',
-    ];
-
-    public function getAverageRatingAttribute()
-    {
-        return $this->reviews()->avg('rating');
-    }
-
-    public function getLowestRoomPriceAttribute()
-    {
-        return $this->roomCategories()->min('price');
-    }
-
-    public function getIsLikedAttribute()
-    {
-        $user = auth('sanctum')->user();
-
-        if (!$user) {
-            return false;
-        }
-
-        return $this->isLikedBy($user);
-    }
-
-    public function getIsSavedAttribute()
-    {
-        $user = auth('sanctum')->user();
-
-        if (!$user) {
-            return false;
-        }
-
-        return $this->isSavedBy($user);
-    }
-
-    public function getIsViewedAttribute()
-    {
-        $user = auth('sanctum')->user();
-
-        if (!$user) {
-            return false;
-        }
-
-        return $this->isViewedBy($user);
-    }
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function host()
-    {
-        return $this->user()->withCount([
-            'listings',
-        ]);
     }
 
     public function rooms()
@@ -90,6 +30,21 @@ class Listing extends Model
     public function roomCategories()
     {
         return $this->hasMany(RoomCategory::class);
+    }
+
+    public function bookingPolicies()
+    {
+        return $this->hasMany(BookingPolicy::class);
+    }
+
+    public function nearbyPlaces()
+    {
+        return $this->hasMany(NearbyPlace::class);
+    }
+
+    public function serviceRatings()
+    {
+        return $this->hasMany(ServiceRating::class);
     }
 
     public function videos()

@@ -21,7 +21,7 @@ class RegistrationService
 
         return response()->json([
             'message' => 'User created successfully',
-            'user' => $user
+            'user' => $user,
         ]);
     }
 
@@ -29,29 +29,29 @@ class RegistrationService
     {
         $user = $this->getUserByEmail();
 
-        if (!$user || !$this->checkIfPasswordIsCorrect($user->password)) {
+        if (! $user || ! $this->checkIfPasswordIsCorrect($user->password)) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
                 'errors' => [
                     'email' => ['The provided credentials are incorrect.'],
-                ]
+                ],
             ]);
         }
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
-            'token' => $token
+            'token' => $token,
         ]);
     }
 
-    public function getUserByEmail(): User|null
+    public function getUserByEmail(): ?User
     {
-        return User::where("email", $this->userData["email"])->first();
+        return User::where('email', $this->userData['email'])->first();
     }
 
     public function checkIfPasswordIsCorrect($password): bool
     {
-        return Hash::check($this->userData["password"], $password);
+        return Hash::check($this->userData['password'], $password);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\Listing;
 class ListingSaveService
 {
     private Listing $listing;
+
     private string $userId;
 
     public function __construct(Listing $listing)

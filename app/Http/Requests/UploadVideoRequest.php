@@ -22,8 +22,8 @@ class UploadVideoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            "video" => ["required"],
-            "privacy" => ["required", "in:public,private"],
+            'video' => ['required'],
+            'privacy' => ['required', 'in:public,private'],
         ];
     }
 }

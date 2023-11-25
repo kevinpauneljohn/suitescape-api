@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,8 +9,9 @@ class Review extends Model
 {
     use HasFactory;
 
-    public $fillable = [
+    protected $fillable = [
         'listing_id',
+        'room_id',
         'user_id',
         'content',
         'rating',

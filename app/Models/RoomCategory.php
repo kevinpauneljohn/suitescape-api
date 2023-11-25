@@ -9,7 +9,7 @@ class RoomCategory extends Model
 {
     use HasFactory;
 
-    public $fillable = [
+    protected $fillable = [
         'listing_id',
         'name',
         'size',
@@ -26,11 +26,6 @@ class RoomCategory extends Model
     public function listing()
     {
         return $this->belongsTo(Listing::class);
-    }
-
-    public function videos()
-    {
-        return $this->hasMany(Video::class);
     }
 
     public function rooms()

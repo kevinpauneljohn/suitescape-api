@@ -10,14 +10,10 @@ class Image extends Model
 {
     use HasFactory, HasUuids;
 
-    public $fillable = [
+    protected $fillable = [
         'listing_id',
         'filename',
         'privacy',
-    ];
-
-    protected $hidden = [
-        'filename',
     ];
 
     public function user()
@@ -32,7 +28,7 @@ class Image extends Model
 
     public function isOwnedBy($user)
     {
-        return $user->id === $this->listing()->user_id;
+        return $user->id === $this->listing->user_id;
     }
 
     public function scopePublic($query)
