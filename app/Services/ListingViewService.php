@@ -41,7 +41,7 @@ class ListingViewService
 
     private function shouldRecordView(?ListingView $lastListingView = null): bool
     {
-        if (is_null($lastListingView)) {
+        if (!$lastListingView) {
             return true;
         }
 

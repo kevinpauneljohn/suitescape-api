@@ -75,6 +75,13 @@ class Listing extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function host()
+    {
+        return $this->user()->withCount([
+            'listings',
+        ]);
+    }
+
     public function rooms()
     {
         return $this->hasMany(Room::class);
@@ -88,6 +95,11 @@ class Listing extends Model
     public function videos()
     {
         return $this->hasMany(Video::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(Image::class);
     }
 
     public function reviews()
