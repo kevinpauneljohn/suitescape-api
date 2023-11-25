@@ -8,7 +8,7 @@ class VideoUploadService
 {
     public function generateFileName(): string
     {
-        return date('d-m-Y-H-i-s').'_'.auth()->user()->email.'_'.uniqid();
+        return date('d-m-Y-H-i-s').'_'.auth('sanctum')->user()->email.'_'.uniqid();
     }
 
     public function upload(UploadedFile $video): string
