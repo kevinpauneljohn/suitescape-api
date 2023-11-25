@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('room_amenities', function (Blueprint $table) {
             $table->id();
-            $table->uuid('room_id');
-            $table->uuid('amenity_id');
+            $table->foreignUuid('room_id');
+            $table->foreignUuid('amenity_id');
             $table->timestamps();
         });
     }

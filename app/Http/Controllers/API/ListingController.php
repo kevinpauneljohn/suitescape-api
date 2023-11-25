@@ -5,98 +5,67 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
-use App\Models\Image;
+use App\Http\Resources\ImageResource;
+use App\Http\Resources\ListingResource;
+use App\Http\Resources\ReviewResource;
+use App\Http\Resources\RoomResource;
+use App\Http\Resources\VideoResource;
 use App\Models\Listing;
-use App\Models\Video;
-use App\Services\ImageRetrievalService;
 use App\Services\ImageUploadService;
 use App\Services\ListingCreateService;
 use App\Services\ListingLikeService;
 use App\Services\ListingRetrievalService;
 use App\Services\ListingSaveService;
-use App\Services\ListingViewService;
-use App\Services\VideoRetrievalService;
+use App\Services\SettingsService;
 use App\Services\VideoUploadService;
 
 class ListingController extends Controller
 {
     private ListingRetrievalService $listingRetrievalService;
-    private ImageRetrievalService $imageRetrievalService;
-    private VideoRetrievalService $videoRetrievalService;
     private ImageUploadService $imageUploadService;
     private VideoUploadService $videoUploadService;
+    private SettingsService $settingsService;
 
-    public function __construct(ListingRetrievalService $listingRetrievalService, ImageRetrievalService $imageRetrievalService, VideoRetrievalService $videoRetrievalService, ImageUploadService $imageUploadService, VideoUploadService $videoUploadService)
+    public function __construct(ListingRetrievalService $listingRetrievalService, ImageUploadService $imageUploadService, VideoUploadService $videoUploadService, SettingsService $settingsService)
     {
+        $this->middleware('auth:sanctum')->only(['uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
+
         $this->listingRetrievalService = $listingRetrievalService;
-        $this->imageRetrievalService = $imageRetrievalService;
-        $this->videoRetrievalService = $videoRetrievalService;
         $this->imageUploadService = $imageUploadService;
         $this->videoUploadService = $videoUploadService;
-
-        $this->middleware('auth:sanctum')->only(['uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
+        $this->settingsService = $settingsService;
     }
 
     public function getAllListings()
     {
-        return $this->listingRetrievalService->getAllListings();
+        return ListingResource::collection($this->listingRetrievalService->getAllListings());
     }
 
     public function getListing(string $id)
     {
-        return $this->listingRetrievalService->getListingComplete($id);
+        $cancellationPolicy = $this->settingsService->getSetting('cancellation_policy')->value;
+
+        return new ListingResource($this->listingRetrievalService->getListing($id), $cancellationPolicy);
     }
 
-    public function getListingHost(string $id)
+    public function getListingRooms(string $id)
     {
-        return $this->listingRetrievalService->getListingHost($id);
+        return RoomResource::collection($this->listingRetrievalService->getListingRooms($id));
     }
 
     public function getListingImages(string $id)
     {
-        return $this->listingRetrievalService->getListingImages($id);
+        return ImageResource::collection($this->listingRetrievalService->getListingImages($id));
     }
 
     public function getListingVideos(string $id)
     {
-        return $this->listingRetrievalService->getListingVideos($id);
+        return VideoResource::collection($this->listingRetrievalService->getListingVideos($id));
     }
 
     public function getListingReviews(string $id)
     {
-        return $this->listingRetrievalService->getListingReviews($id);
-    }
-
-    public function getListingImage(string $id, string $imageId)
-    {
-        $image = Image::findOrFail($imageId);
-
-        $user = auth('sanctum')->user();
-        if ($image->privacy === 'private' && (!$user || !$image->isOwnedBy($user))) {
-            return response()->json([
-                "message" => "You are not authorized to view this image."
-            ], 403);
-        }
-
-        $imageUrl = $this->imageRetrievalService->getImageUrl($image);
-        return response()->file($imageUrl);
-    }
-
-    public function getListingVideo(string $id, string $videoId)
-    {
-        $video = Video::findOrFail($videoId);
-        $listing = $video->listing;
-
-        $user = auth('sanctum')->user();
-        if ($video->privacy === 'private' && (!$user || !$video->isOwnedBy($user))) {
-            return response()->json([
-                "message" => "You are not authorized to view this video."
-            ], 403);
-        }
-
-        (new ListingViewService($listing, $user))->addView();
-
-        return $this->videoRetrievalService->streamVideo($video);
+        return ReviewResource::collection($this->listingRetrievalService->getListingReviews($id));
     }
 
     public function uploadListingImage(UploadImageRequest $request, string $id)
@@ -108,8 +77,8 @@ class ListingController extends Controller
         $image = (new ListingCreateService($id, $filename, $validated))->createListingImage();
 
         return response()->json([
-            "message" => "Image uploaded successfully.",
-            "image" => $image,
+            'message' => 'Image uploaded successfully.',
+            'image' => $image,
         ]);
     }
 
@@ -122,8 +91,8 @@ class ListingController extends Controller
         $video = (new ListingCreateService($id, $filename, $validated))->createListingVideo();
 
         return response()->json([
-            "message" => "Video uploaded successfully.",
-            "video" => $video,
+            'message' => 'Video uploaded successfully.',
+            'video' => $video,
         ]);
     }
 
@@ -136,16 +105,18 @@ class ListingController extends Controller
 
         if ($listing->isLikedBy($user)) {
             $listingLikeService->removeLike();
+
             return response()->json([
-                "liked" => false,
-                "message" => "Listing unliked."
+                'liked' => false,
+                'message' => 'Listing unliked.',
             ]);
         }
 
         $listingLikeService->addLike();
+
         return response()->json([
-            "liked" => true,
-            "message" => "Listing liked."
+            'liked' => true,
+            'message' => 'Listing liked.',
         ]);
     }
 
@@ -158,16 +129,18 @@ class ListingController extends Controller
 
         if ($listing->isSavedBy($user)) {
             $listingSaveService->removeSave();
+
             return response()->json([
-                "saved" => false,
-                "message" => "Listing unsaved."
+                'saved' => false,
+                'message' => 'Listing unsaved.',
             ]);
         }
 
         $listingSaveService->addSave();
+
         return response()->json([
-            "saved" => true,
-            "message" => "Listing saved."
+            'saved' => true,
+            'message' => 'Listing saved.',
         ]);
     }
 }

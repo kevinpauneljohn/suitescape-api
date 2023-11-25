@@ -10,9 +10,10 @@ class Room extends Model
 {
     use HasFactory, HasUuids;
 
-    public $fillable = [
+    protected $fillable = [
         'listing_id',
         'room_category_id',
+        'description',
     ];
 
     public function listing()
@@ -23,6 +24,16 @@ class Room extends Model
     public function roomCategory()
     {
         return $this->belongsTo(RoomCategory::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function roomRule()
+    {
+        return $this->hasOne(RoomRule::class);
     }
 
     public function roomAmenities()

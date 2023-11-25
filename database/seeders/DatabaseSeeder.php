@@ -20,10 +20,19 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
+            SettingSeeder::class,
             RolesAndPermissionsSeeder::class,
             UserSeeder::class,
             ListingSeeder::class,
+            BookingPolicySeeder::class,
+            NearbyPlaceSeeder::class,
+            ServiceRatingSeeder::class,
             RoomCategorySeeder::class,
+            RoomSeeder::class,
+            RoomRuleSeeder::class,
+            ReviewSeeder::class,
+            AmenitySeeder::class,
+            RoomAmenitySeeder::class,
             VideoSeeder::class,
             ImageSeeder::class,
         ]);

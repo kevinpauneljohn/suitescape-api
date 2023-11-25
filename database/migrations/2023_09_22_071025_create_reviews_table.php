@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('listing_id');
+            $table->foreignUuid('room_id');
             $table->foreignUuid('user_id');
             $table->text('content');
             $table->integer('rating')->default(0);
