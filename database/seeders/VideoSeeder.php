@@ -33,16 +33,12 @@ class VideoSeeder extends Seeder
             "2023-09-11_@recaresortofficial_7277516338825022725.mp4"
         ];
 
-        foreach ($videos as $video) {
-            $listing = Listing::factory()->create();
+        $listings = Listing::all();
 
-            $listing->roomCategories()->saveMany(
-                RoomCategory::factory()->count(rand(1, 3))->make()
-            );
-
+        foreach ($listings as $index => $listing) {
             $listing->videos()->save(
                 Video::factory()->make([
-                    'filename' => $video,
+                    'filename' => $videos[$index],
                 ])
             );
         }

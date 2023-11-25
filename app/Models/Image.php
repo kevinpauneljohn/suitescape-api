@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Video extends Model
+class Image extends Model
 {
     use HasFactory, HasUuids;
 
@@ -19,15 +19,6 @@ class Video extends Model
     protected $hidden = [
         'filename',
     ];
-
-//    protected $appends = [
-//        'url',
-//    ];
-
-//    public function getUrlAttribute()
-//    {
-//        return route('api.videos.stream', $this->id);
-//    }
 
     public function user()
     {
