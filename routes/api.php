@@ -81,5 +81,6 @@ Route::prefix('listings')->group(function () {
 });
 
 Route::prefix('bookings')->group(function () {
+    Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
 });
