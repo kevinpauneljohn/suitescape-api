@@ -13,6 +13,7 @@ class ImageRetrievalService
 
     public function getImageUrl(Image $image)
     {
-        return public_path('storage/images/'.$image['filename']);
+        //        return public_path('storage/images/'.$image['filename']);
+        return storage_path('app/public/images/'.$image['filename']);
     }
 }
