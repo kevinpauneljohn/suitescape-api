@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\BookingController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
+use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\RoomController;
 use App\Http\Controllers\API\SettingController;
@@ -30,6 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/register', [RegistrationController::class, 'register'])->name('register');
 Route::post('/login', [RegistrationController::class, 'login'])->name('login');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
+
+Route::prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'getProfile'])->name('profile.get');
+    Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
+});
 
 Route::prefix('settings')->group(function () {
     Route::get('/', [SettingController::class, 'getAllSettings'])->name('settings.all');
@@ -76,5 +82,4 @@ Route::prefix('listings')->group(function () {
 
 Route::prefix('bookings')->group(function () {
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
-    Route::post('/validate-info', [BookingController::class, 'validateInfo'])->name('bookings.validate');
 });
