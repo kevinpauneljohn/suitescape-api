@@ -13,7 +13,7 @@ class ImageUploadService
 
     public function upload(UploadedFile $video): string
     {
-        $filename = $this->generateFileName().$video->getClientOriginalExtension();
+        $filename = $this->generateFileName().'.'.$video->getClientOriginalExtension();
         $video->storeAs('images', $filename, 'public');
 
         return $filename;
