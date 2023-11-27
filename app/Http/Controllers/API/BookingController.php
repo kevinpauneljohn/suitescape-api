@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateBookingRequest;
 use App\Http\Resources\BookingResource;
+use App\Models\BookingRoom;
 
 class BookingController extends Controller
 {
@@ -17,7 +18,10 @@ class BookingController extends Controller
     {
         $user = auth()->user();
 
-        $bookings = $user->bookings()->with('coupon')->get();
+        $bookings = $user->bookings()->with([
+            'coupon',
+            'bookingRooms.room.listing',
+        ])->get();
 
         return BookingResource::collection($bookings);
     }
@@ -30,6 +34,13 @@ class BookingController extends Controller
             'coupon_id' => $request->coupon_id,
             'amount' => $request->amount,
             'message' => $request->message,
+        ]);
+
+        BookingRoom::create([
+            'booking_id' => $booking->id,
+            'room_id' => $request->room_id,
+            'date_start' => $request->start_date,
+            'date_end' => $request->end_date,
         ]);
 
         return response()->json([
