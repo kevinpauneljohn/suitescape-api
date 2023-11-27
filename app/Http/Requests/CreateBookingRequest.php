@@ -31,6 +31,7 @@ class CreateBookingRequest extends FormRequest
         //        ], $guestInfoRequest->rules());
 
         return [
+            'room_id' => ['required', 'string'],
             'coupon_id' => ['nullable', 'string'],
             'amount' => ['required', 'numeric'],
             'start_date' => ['required', 'date'],
