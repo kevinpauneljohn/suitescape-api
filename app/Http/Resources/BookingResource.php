@@ -16,11 +16,12 @@ class BookingResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'coupon' => $this->whenLoaded('coupon'),
+            'coupon' => new CouponResource($this->whenLoaded('coupon')),
+            'booking_rooms' => BookingRoomResource::collection($this->whenLoaded('bookingRooms')),
             'amount' => $this->amount,
             'message' => $this->message,
             'status' => $this->status,
-            'created_at' => $this->created_at,
+            //            'created_at' => $this->created_at,
         ];
     }
 }
