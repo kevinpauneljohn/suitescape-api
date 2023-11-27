@@ -7,9 +7,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ListingResource extends JsonResource
 {
-    protected string $cancellationPolicy;
+    protected ?string $cancellationPolicy;
 
-    public function __construct($resource, $cancellationPolicy = '')
+    public function __construct($resource, string $cancellationPolicy = null)
     {
         parent::__construct($resource);
         $this->cancellationPolicy = $cancellationPolicy;

@@ -23,7 +23,6 @@ class ListingRetrievalService
             ->load([
                 'user',
                 'serviceRatings',
-                'reviews',
                 'reviews.user',
                 'images',
                 'videos',

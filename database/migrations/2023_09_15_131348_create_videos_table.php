@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('listing_id');
             $table->string('filename');
-            $table->enum('privacy', ['public', 'private']);
+            $table->enum('privacy', ['public', 'private'])->default('public');
             $table->timestamps();
         });
     }

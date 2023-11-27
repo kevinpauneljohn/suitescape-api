@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Image;
 use App\Models\Listing;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class ImageSeeder extends Seeder
 {
@@ -13,15 +14,21 @@ class ImageSeeder extends Seeder
      */
     public function run(): void
     {
+        $images = glob(database_path('seeders/images').'/*');
+
+        foreach ($images as $image) {
+            Storage::disk('public')->putFileAs(
+                'images',
+                $image,
+                basename($image)
+            );
+        }
+
         $listings = Listing::all();
-
-        $filename = 'ListingPhotoUnsplash';
-
         foreach ($listings as $listing) {
-
-            for ($i = 1; $i <= 10; $i++) {
+            foreach ($images as $index => $image) {
                 $image = Image::factory()->make([
-                    'filename' => "$filename$i.jpg",
+                    'filename' => basename($images[$index]),
                 ]);
 
                 $listing->images()->save($image);

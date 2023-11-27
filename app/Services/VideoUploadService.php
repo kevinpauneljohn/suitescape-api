@@ -8,12 +8,12 @@ class VideoUploadService
 {
     public function generateFileName(): string
     {
-        return date('d-m-Y-H-i-s').'_'.auth()->user()->email.'_'.uniqid();
+        return date('d-m-Y-H-i-s').'_'.auth('sanctum')->user()->email.'_'.uniqid();
     }
 
     public function upload(UploadedFile $video): string
     {
-        $filename = $this->generateFileName().$video->getClientOriginalExtension();
+        $filename = $this->generateFileName().'.'.$video->getClientOriginalExtension();
         $video->storeAs('videos', $filename, 'public');
 
         return $filename;

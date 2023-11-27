@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SettingUpdateRequest;
+use App\Http\Requests\UpdateSettingRequest;
 use App\Http\Resources\SettingResource;
-use App\Models\Setting;
 use App\Services\SettingsService;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
@@ -30,7 +29,7 @@ class SettingController extends Controller
         return new SettingResource($this->settingService->getSetting($key));
     }
 
-    public function updateSetting(string $key, SettingUpdateRequest $request)
+    public function updateSetting(string $key, UpdateSettingRequest $request)
     {
         $validated = $request->validated();
 
