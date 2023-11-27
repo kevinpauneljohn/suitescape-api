@@ -20,6 +20,7 @@ class BookingController extends Controller
 
         $bookings = $user->bookings()->with([
             'coupon',
+            'bookingRooms.room' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'bookingRooms.room.listing',
         ])->get();
 
