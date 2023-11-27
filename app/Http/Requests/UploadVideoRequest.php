@@ -23,7 +23,7 @@ class UploadVideoRequest extends FormRequest
     {
         return [
             'video' => ['required'],
-            'privacy' => ['required', 'in:public,private'],
+            'privacy' => ['sometimes', 'in:public,private'],
         ];
     }
 }

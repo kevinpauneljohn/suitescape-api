@@ -3,19 +3,25 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
 use App\Services\ListingViewService;
 use App\Services\VideoRetrievalService;
+use App\Services\VideoUploadService;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
 class VideoController extends Controller
 {
     private VideoRetrievalService $videoRetrievalService;
+    private VideoUploadService $videoUploadService;
 
-    public function __construct(VideoRetrievalService $videoRetrievalService)
+    public function __construct(VideoRetrievalService $videoRetrievalService, VideoUploadService $videoUploadService)
     {
+        $this->middleware('auth:sanctum')->only(['uploadVideo']);
+
         $this->videoRetrievalService = $videoRetrievalService;
+        $this->videoUploadService = $videoUploadService;
     }
 
     public function getAllVideos()
@@ -41,5 +47,10 @@ class VideoController extends Controller
         (new ListingViewService($listing, $user))->addView();
 
         return $this->videoRetrievalService->streamVideo($video);
+    }
+
+    public function uploadVideo(UploadVideoRequest $request)
+    {
+        return $this->videoUploadService->upload($request->file('video'));
     }
 }

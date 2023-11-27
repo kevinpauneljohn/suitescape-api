@@ -27,12 +27,12 @@ class VideoRetrievalService
 
     public function getVideoUrl(Video $video)
     {
-        return public_path('storage/videos/'.$video['filename']);
+        //        return public_path('storage/videos/'.$video['filename']);
+        return storage_path('app/public/videos/'.$video['filename']);
     }
 
     public function streamVideo(Video $video)
     {
-        //        $videoUrl = storage_path('app/public/videos/' . $video['filename']);
         $videoUrl = $this->getVideoUrl($video);
         $options = [
             'is_localPath' => true,

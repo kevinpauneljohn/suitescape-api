@@ -23,9 +23,7 @@ class RoomRetrievalService
             ->load([
                 'roomRule',
                 'roomCategory',
-                'roomAmenities',
                 'roomAmenities.amenity',
-                'reviews',
                 'reviews.user'])
             ->loadCount('reviews')
             ->loadAggregate('reviews', 'rating', 'avg');

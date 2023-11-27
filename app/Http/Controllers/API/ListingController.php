@@ -71,13 +71,12 @@ class ListingController extends Controller
     public function uploadListingImage(UploadImageRequest $request, string $id)
     {
         $validated = $request->validated();
-
-        $filename = $this->imageUploadService->upload($validated['image']);
+        $filename = $this->imageUploadService->upload($validated->image);
 
         $image = (new ListingCreateService($id, $filename, $validated))->createListingImage();
 
         return response()->json([
-            'message' => 'Image uploaded successfully.',
+            'message' => 'Listing image uploaded successfully.',
             'image' => $image,
         ]);
     }
@@ -85,13 +84,12 @@ class ListingController extends Controller
     public function uploadListingVideo(UploadVideoRequest $request, string $id)
     {
         $validated = $request->validated();
-
-        $filename = $this->videoUploadService->upload($validated['video']);
+        $filename = $this->videoUploadService->upload($validated->video);
 
         $video = (new ListingCreateService($id, $filename, $validated))->createListingVideo();
 
         return response()->json([
-            'message' => 'Video uploaded successfully.',
+            'message' => 'Listing video uploaded successfully.',
             'video' => $video,
         ]);
     }

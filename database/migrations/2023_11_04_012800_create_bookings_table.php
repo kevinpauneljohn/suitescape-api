@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('bookings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
-            $table->foreignUuid('coupon_id');
+            $table->foreignUuid('coupon_id')->nullable();
             $table->decimal('amount');
-            $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed']);
+            $table->text('message')->nullable();
+            $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed'])->default('upcoming');
             $table->timestamps();
         });
     }

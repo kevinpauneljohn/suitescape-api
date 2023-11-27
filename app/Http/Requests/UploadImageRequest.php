@@ -23,7 +23,7 @@ class UploadImageRequest extends FormRequest
     {
         return [
             'image' => ['required'],
-            'privacy' => ['required', 'in:public,private'],
+            'privacy' => ['sometimes', 'in:public,private'],
         ];
     }
 }

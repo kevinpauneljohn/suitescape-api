@@ -20,7 +20,8 @@ class VideoResource extends JsonResource
             'privacy' => $this->privacy,
             'listing_id' => $this->whenNotNull($this->whenLoaded('listing', null, $this->listing_id)),
             'listing' => new ListingResource($this->whenLoaded('listing')),
-            'url' => route('api.videos.get', $this->id, false),
+            //            'url' => route('api.videos.get', $this->id, false),
+            'url' => '/videos/'.$this->id,
         ];
     }
 }
