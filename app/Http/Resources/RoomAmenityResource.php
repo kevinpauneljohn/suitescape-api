@@ -14,10 +14,13 @@ class RoomAmenityResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        $amenity = $this->whenLoaded('amenity', fn () => (new AmenityResource($this->amenity))->resolve(), []);
+
+        $roomAmenity = [
             'id' => $this->id,
-            'amenity_id' => $this->whenLoaded('amenity', fn () => $this->amenity->id),
-            'name' => $this->whenLoaded('amenity', fn () => $this->amenity->name),
+            $this->mergeUnless($this->relationLoaded('amenity'), ["amenity_id" => $this->amenity_id]),
         ];
+
+        return array_merge($amenity, $roomAmenity);
     }
 }
