@@ -67,6 +67,7 @@ Route::prefix('listings')->group(function () {
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {
+        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
         Route::get('/images', [ListingController::class, 'getListingImages'])->name('listings.images');
         Route::get('/videos', [ListingController::class, 'getListingVideos'])->name('listings.videos');
         Route::get('/reviews', [ListingController::class, 'getListingReviews'])->name('listings.reviews');
