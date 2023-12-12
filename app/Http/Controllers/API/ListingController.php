@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
+use App\Http\Resources\HostResource;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\ListingResource;
 use App\Http\Resources\ReviewResource;
@@ -53,6 +54,11 @@ class ListingController extends Controller
         return RoomResource::collection($this->listingRetrievalService->getListingRooms($id));
     }
 
+    public function getListingHost(string $id)
+    {
+        return new HostResource($this->listingRetrievalService->getListingHost($id));
+    }
+
     public function getListingImages(string $id)
     {
         return ImageResource::collection($this->listingRetrievalService->getListingImages($id));
@@ -71,8 +77,8 @@ class ListingController extends Controller
     public function uploadListingImage(UploadImageRequest $request, string $id)
     {
         $validated = $request->validated();
-        $filename = $this->imageUploadService->upload($validated->image);
 
+        $filename = $this->imageUploadService->upload($request->file('image'));
         $image = (new ListingCreateService($id, $filename, $validated))->createListingImage();
 
         return response()->json([
@@ -84,8 +90,8 @@ class ListingController extends Controller
     public function uploadListingVideo(UploadVideoRequest $request, string $id)
     {
         $validated = $request->validated();
-        $filename = $this->videoUploadService->upload($validated->video);
 
+        $filename = $this->videoUploadService->upload($request->file('video'));
         $video = (new ListingCreateService($id, $filename, $validated))->createListingVideo();
 
         return response()->json([
