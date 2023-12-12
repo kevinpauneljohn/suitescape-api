@@ -17,6 +17,7 @@ class BookingResource extends JsonResource
         return [
             'id' => $this->id,
             'coupon' => new CouponResource($this->whenLoaded('coupon')),
+            $this->mergeUnless($this->relationLoaded('coupon'), ['coupon_id' => $this->coupon_id]),
             'booking_rooms' => BookingRoomResource::collection($this->whenLoaded('bookingRooms')),
             'amount' => $this->amount,
             'message' => $this->message,
