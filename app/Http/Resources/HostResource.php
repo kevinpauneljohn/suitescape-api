@@ -26,12 +26,14 @@ class HostResource extends JsonResource
             return $listing->likes_count !== null;
         });
 
-        return array_merge((new UserResource($this))->resolve(), [
+        $hostMetrics = [
             'total_likes_count' => $this->whenLoaded('listings', fn () => $this->when($areAllLikesCounted(), $this->listings->sum->likes_count)),
             'total_reviews_count' => $this->whenLoaded('listings', fn () => $this->when($areAllReviewsCounted(), $this->listings->sum->reviews_count)),
             'listings_count' => $this->whenCounted('listings'),
             'listings' => ListingResource::collection($this->whenLoaded('listings')),
             'all_reviews' => $this->whenLoaded('listings', fn () => $this->when($areAllReviewsLoaded(), ReviewResource::collection($this->listings->flatMap->reviews))),
-        ]);
+        ];
+
+        return array_merge((new UserResource($this))->resolve(), $hostMetrics);
     }
 }
