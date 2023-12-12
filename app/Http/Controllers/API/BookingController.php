@@ -5,47 +5,31 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateBookingRequest;
 use App\Http\Resources\BookingResource;
-use App\Models\BookingRoom;
+use App\Services\BookingCreateService;
+use App\Services\BookingRetrievalService;
 
 class BookingController extends Controller
 {
-    public function __construct()
+    private BookingRetrievalService $bookingRetrievalService;
+    private BookingCreateService $bookingCreateService;
+
+    public function __construct(BookingRetrievalService $bookingRetrievalService, BookingCreateService $bookingCreateService)
     {
         $this->middleware('auth:sanctum');
+
+        $this->bookingRetrievalService = $bookingRetrievalService;
+        $this->bookingCreateService = $bookingCreateService;
     }
 
     public function getAllBookings()
     {
-        $user = auth()->user();
-
-        $bookings = $user->bookings()->with([
-            'coupon',
-            'bookingRooms.room' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
-            'bookingRooms.room.listing',
-        ])->get();
-
-        return BookingResource::collection($bookings);
+        return BookingResource::collection($this->bookingRetrievalService->getAllBookings());
     }
 
     public function createBooking(CreateBookingRequest $request)
     {
-        $user = auth()->user();
-
-        $booking = $user->bookings()->create([
-            'coupon_id' => $request->coupon_id,
-            'amount' => $request->amount,
-            'message' => $request->message,
-        ]);
-
-        BookingRoom::create([
-            'booking_id' => $booking->id,
-            'room_id' => $request->room_id,
-            'date_start' => $request->start_date,
-            'date_end' => $request->end_date,
-        ]);
-
         return response()->json([
-            'booking' => new BookingResource($booking),
+            'booking' => new BookingResource($this->bookingCreateService->createBooking($request->validated())),
             'message' => 'Booking created successfully',
         ]);
     }
