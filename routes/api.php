@@ -28,8 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('user');
 });
 
-Route::post('/register', [RegistrationController::class, 'register'])->name('register');
-Route::post('/login', [RegistrationController::class, 'login'])->name('login');
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/register', [RegistrationController::class, 'register'])->name('register');
+    Route::post('/login', [RegistrationController::class, 'login'])->name('login');
+});
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
 Route::prefix('profile')->group(function () {
