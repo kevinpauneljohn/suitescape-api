@@ -29,7 +29,7 @@ class RegistrationService
     {
         $user = $this->getUserByEmail();
 
-        if (! $user || ! $this->checkIfPasswordIsCorrect($user->password)) {
+        if (! $user) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
                 'errors' => [
@@ -37,6 +37,16 @@ class RegistrationService
                 ],
             ]);
         }
+
+        if (! $this->checkIfPasswordIsCorrect($user->password)) {
+            return response()->json([
+                'message' => 'The provided password is incorrect.',
+                'errors' => [
+                    'password' => ['The provided password is incorrect.'],
+                ],
+            ]);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
