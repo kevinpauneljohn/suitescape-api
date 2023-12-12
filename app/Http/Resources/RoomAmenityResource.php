@@ -18,7 +18,7 @@ class RoomAmenityResource extends JsonResource
 
         $roomAmenity = [
             'id' => $this->id,
-            $this->mergeUnless($this->relationLoaded('amenity'), ["amenity_id" => $this->amenity_id]),
+            $this->mergeUnless($this->relationLoaded('amenity'), ['amenity_id' => $this->amenity_id]),
         ];
 
         return array_merge($amenity, $roomAmenity);
