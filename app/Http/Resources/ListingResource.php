@@ -29,7 +29,7 @@ class ListingResource extends JsonResource
             'name' => $this->name,
             'location' => $this->location,
             'description' => $this->description,
-            'host' => new UserResource($this->whenLoaded('user')),
+            'host' => new HostResource($this->whenLoaded('host')),
             //            'service_rating' => $this->whenLoaded('serviceRatings', fn () => [
             //                'cleanliness' => $this->serviceRatings->avg('cleanliness'),
             //                'price_affordability' => $this->serviceRatings->avg('price_affordability'),
