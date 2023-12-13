@@ -53,6 +53,7 @@ class ListingResource extends JsonResource
             'nearby_places' => NearbyPlaceResource::collection($this->whenLoaded('nearbyPlaces')),
             'booking_policies' => BookingPolicyResource::collection($this->whenLoaded('bookingPolicies')),
             'cancellation_policy' => $this->whenLoaded('bookingPolicies', $this->cancellationPolicy),
+            'cover_image' => new ImageResource($this->whenLoaded('images', fn () => $this->images->first())),
 
             $this->mergeWhen($user, $user ? [
                 'is_liked' => $this->isLikedBy($user),

@@ -11,7 +11,7 @@ class BookingRetrievalService
         return $user->bookings->load([
             'coupon',
             'bookingRooms.room' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
-            'bookingRooms.room.listing',
+            'bookingRooms.room.listing.images',
         ]);
     }
 }
