@@ -45,9 +45,13 @@ class ListingRetrievalService
     public function getListingHost(string $id)
     {
         return $this->getListing($id)->host->load([
-            'listings.reviews',
-            'listings' => fn ($query) => $query->withCount(['reviews', 'likes'])
-                ->withAggregate('reviews', 'rating', 'avg'),
+            'listings' => function ($query) {
+                $query->with(['reviews' => function ($query) {
+                    $query->with('listing.images');
+                }])
+                    ->withCount(['reviews', 'likes'])
+                    ->withAggregate('reviews', 'rating', 'avg');
+            }
         ])->loadCount('listings');
     }
 

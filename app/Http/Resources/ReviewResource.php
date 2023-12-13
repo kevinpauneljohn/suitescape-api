@@ -20,6 +20,7 @@ class ReviewResource extends JsonResource
             'user' => new UserResource($this->whenLoaded('user')),
             'content' => $this->content,
             'rating' => $this->rating,
+            'listing' => new ListingResource($this->whenLoaded('listing')),
         ];
     }
 }
