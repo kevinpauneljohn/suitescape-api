@@ -51,7 +51,7 @@ class ListingRetrievalService
                 }])
                     ->withCount(['reviews', 'likes'])
                     ->withAggregate('reviews', 'rating', 'avg');
-            }
+            },
         ])->loadCount('listings');
     }
 
