@@ -19,11 +19,11 @@ class RoomResource extends JsonResource
             'listing' => new ListingResource($this->whenLoaded('listing')),
             'description' => $this->description,
             'rules' => $this->whenLoaded('roomRule'),
+            'average_rating' => $this->whenNotNull($this->whenAggregated('reviews', 'rating', 'avg', fn ($value) => round($value, 1))),
             'category' => new RoomCategoryResource($this->whenLoaded('roomCategory')),
             'amenities' => RoomAmenityResource::collection($this->whenLoaded('roomAmenities')),
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'reviews_count' => $this->whenCounted('reviews'),
-            'average_rating' => $this->whenNotNull($this->whenAggregated('reviews', 'rating', 'avg', fn ($value) => round($value, 1))),
         ];
     }
 }

@@ -57,31 +57,16 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (NotFoundHttpException $e, Request $request) {
-            if (str_contains($e->getMessage(), 'No query results for model [App\Models\Video]')) {
-                return response()->json([
-                    'message' => 'Video not found.',
-                ], 404);
+            $models = ['Video', 'Image', 'Listing', 'Room', 'Setting'];
+
+            foreach ($models as $model) {
+                if (str_contains($e->getMessage(), 'No query results for model [App\Models\\' . $model . ']')) {
+                    return response()->json([
+                        'message' => $model . ' not found.',
+                    ], 404);
+                }
             }
-            if (str_contains($e->getMessage(), 'No query results for model [App\Models\Image]')) {
-                return response()->json([
-                    'message' => 'Image not found.',
-                ], 404);
-            }
-            if (str_contains($e->getMessage(), 'No query results for model [App\Models\Listing]')) {
-                return response()->json([
-                    'message' => 'Listing not found.',
-                ], 404);
-            }
-            if (str_contains($e->getMessage(), 'No query results for model [App\Models\Room]')) {
-                return response()->json([
-                    'message' => 'Room not found.',
-                ], 404);
-            }
-            if (str_contains($e->getMessage(), 'No query results for model [App\Models\Setting]')) {
-                return response()->json([
-                    'message' => 'Setting not found.',
-                ], 404);
-            }
+
             if ($request->is('api/*')) {
                 return response()->json([
                     'message' => 'Error finding this resource.',

@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ImageResource extends JsonResource
+class AmenityResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,9 +16,7 @@ class ImageResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'privacy' => $this->privacy,
-            'url' => '/images/'.$this->id,
-            //            'url' => route('api.images.get', $this->id, false),
+            'name' => $this->name,
         ];
     }
 }

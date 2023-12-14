@@ -21,6 +21,11 @@ class InvoiceDetail extends Model
         'amount',
     ];
 
+    protected $casts = [
+        'date_start' => 'date',
+        'date_end' => 'date',
+    ];
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

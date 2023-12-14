@@ -21,7 +21,7 @@ class ListingRetrievalService
 
         return $this->currentListing
             ->load([
-                'user',
+                'host',
                 'serviceRatings',
                 'reviews.user',
                 'images',
@@ -42,14 +42,27 @@ class ListingRetrievalService
         ])->loadAggregate('reviews', 'rating', 'avg');
     }
 
-    public function getListingVideos(string $id)
+    public function getListingHost(string $id)
     {
-        return $this->getListing($id)->videos;
+        return $this->getListing($id)->host->load([
+            'listings' => function ($query) {
+                $query->with(['reviews' => function ($query) {
+                    $query->with(['user', 'room.roomCategory', 'listing.images']);
+                }])
+                    ->withCount(['reviews', 'likes'])
+                    ->withAggregate('reviews', 'rating', 'avg');
+            },
+        ])->loadCount('listings');
     }
 
     public function getListingImages(string $id)
     {
         return $this->getListing($id)->images;
+    }
+
+    public function getListingVideos(string $id)
+    {
+        return $this->getListing($id)->videos;
     }
 
     public function getListingReviews(string $id)
