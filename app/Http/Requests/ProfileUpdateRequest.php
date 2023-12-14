@@ -32,7 +32,7 @@ class ProfileUpdateRequest extends FormRequest
             'city' => ['required', 'string'],
             'region' => ['required', 'string'],
             'mobile_number' => ['nullable', 'string', 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'], // Matches domestic and internation format
-            'date_of_birth' => ['sometimes', 'date', 'before:today'],
+            'date_of_birth' => ['sometimes', 'date', 'before:18 years ago'],
         ];
     }
 }
