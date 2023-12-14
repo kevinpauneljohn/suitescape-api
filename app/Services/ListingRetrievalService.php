@@ -47,7 +47,7 @@ class ListingRetrievalService
         return $this->getListing($id)->host->load([
             'listings' => function ($query) {
                 $query->with(['reviews' => function ($query) {
-                    $query->with(['user', 'listing.images']);
+                    $query->with(['user', 'room.roomCategory', 'listing.images']);
                 }])
                     ->withCount(['reviews', 'likes'])
                     ->withAggregate('reviews', 'rating', 'avg');
