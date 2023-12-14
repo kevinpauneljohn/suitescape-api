@@ -22,7 +22,7 @@ class UploadVideoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'video' => ['required'],
+            'video' => ['required', 'file', 'mimetypes:video/mp4,video/quicktime'],
             'privacy' => ['sometimes', 'in:public,private'],
         ];
     }

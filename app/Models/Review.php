@@ -22,6 +22,11 @@ class Review extends Model
         return $this->belongsTo(Listing::class);
     }
 
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

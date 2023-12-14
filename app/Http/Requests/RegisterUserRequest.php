@@ -23,6 +23,9 @@ class RegisterUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'firstname.regex' => 'First name must only contain letters and spaces.',
+            'middlename.regex' => 'Middle name must only contain letters and spaces.',
+            'lastname.regex' => 'Last name must only contain letters and spaces.',
             'date_of_birth.before' => 'You must be 18 years old or above to register.',
         ];
     }
@@ -35,11 +38,11 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firstname' => ['required', 'string'],
-            'middlename' => ['nullable', 'string'],
-            'lastname' => ['required', 'string'],
+            'firstname' => ['required', 'string', 'regex:/^[a-zA-Z\s]*$/'],
+            'middlename' => ['nullable', 'string', 'regex:/^[a-zA-Z\s]*$/'],
+            'lastname' => ['required', 'string', 'regex:/^[a-zA-Z\s]*$/'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'mobile_number' => ['nullable', 'string'],
+            'mobile_number' => ['nullable', 'string', 'unique:users,mobile_number'],
             'password' => ['required', 'confirmed',
                 Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
             ],

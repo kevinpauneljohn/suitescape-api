@@ -17,6 +17,11 @@ class BookingRoom extends Model
         'date_end',
     ];
 
+    protected $casts = [
+        'date_start' => 'date',
+        'date_end' => 'date',
+    ];
+
     public function booking()
     {
         return $this->belongsTo(Booking::class);

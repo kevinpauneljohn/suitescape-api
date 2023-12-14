@@ -22,6 +22,11 @@ class Listing extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function host()
+    {
+        return $this->user();
+    }
+
     public function rooms()
     {
         return $this->hasMany(Room::class);

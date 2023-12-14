@@ -29,7 +29,7 @@ class ListingResource extends JsonResource
             'name' => $this->name,
             'location' => $this->location,
             'description' => $this->description,
-            'host' => new UserResource($this->whenLoaded('user')),
+            'host' => new HostResource($this->whenLoaded('host')),
             //            'service_rating' => $this->whenLoaded('serviceRatings', fn () => [
             //                'cleanliness' => $this->serviceRatings->avg('cleanliness'),
             //                'price_affordability' => $this->serviceRatings->avg('price_affordability'),
@@ -53,6 +53,7 @@ class ListingResource extends JsonResource
             'nearby_places' => NearbyPlaceResource::collection($this->whenLoaded('nearbyPlaces')),
             'booking_policies' => BookingPolicyResource::collection($this->whenLoaded('bookingPolicies')),
             'cancellation_policy' => $this->whenLoaded('bookingPolicies', $this->cancellationPolicy),
+            'cover_image' => new ImageResource($this->whenLoaded('images', fn () => $this->images->first())),
 
             $this->mergeWhen($user, $user ? [
                 'is_liked' => $this->isLikedBy($user),

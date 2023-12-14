@@ -21,7 +21,7 @@ class RoomCategoryResource extends JsonResource
             'type_of_beds' => $this->type_of_beds,
             'pax' => $this->pax,
             'price' => round($this->price),
-            'tax' => $this->tax,
+            'tax' => floatval($this->tax),
         ];
     }
 }

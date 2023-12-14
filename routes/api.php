@@ -28,8 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('user');
 });
 
-Route::post('/register', [RegistrationController::class, 'register'])->name('register');
-Route::post('/login', [RegistrationController::class, 'login'])->name('login');
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/register', [RegistrationController::class, 'register'])->name('register');
+    Route::post('/login', [RegistrationController::class, 'login'])->name('login');
+});
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
 Route::prefix('profile')->group(function () {
@@ -67,6 +69,7 @@ Route::prefix('listings')->group(function () {
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {
+        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
         Route::get('/images', [ListingController::class, 'getListingImages'])->name('listings.images');
         Route::get('/videos', [ListingController::class, 'getListingVideos'])->name('listings.videos');
         Route::get('/reviews', [ListingController::class, 'getListingReviews'])->name('listings.reviews');
