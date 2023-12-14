@@ -16,11 +16,15 @@ class ReviewResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'room_id' => $this->room_id,
-            'user' => new UserResource($this->whenLoaded('user')),
+            $this->mergeUnless($this->relationLoaded('room'), ['room_id' => $this->room_id]),
+            $this->mergeUnless($this->relationLoaded('user'), ['user_id' => $this->user_id]),
+            $this->mergeUnless($this->relationLoaded('listing'), ['listing_id' => $this->listing_id]),
             'content' => $this->content,
             'rating' => $this->rating,
+            'room' => new RoomResource($this->whenLoaded('room')),
+            'user' => new UserResource($this->whenLoaded('user')),
             'listing' => new ListingResource($this->whenLoaded('listing')),
+            'created_at' => $this->created_at,
         ];
     }
 }
