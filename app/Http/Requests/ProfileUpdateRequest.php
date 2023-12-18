@@ -22,9 +22,11 @@ class ProfileUpdateRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'gender' => Str::lower($this->gender),
-        ]);
+        if ($this->filled('gender')) {
+            $this->merge([
+                'gender' => Str::lower($this->gender),
+            ]);
+        }
     }
 
     /**
