@@ -3,6 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProfileUpdateRequest extends FormRequest
 {
@@ -15,24 +18,33 @@ class ProfileUpdateRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'gender' => Str::lower($this->gender),
+        ]);
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return [
-            'firstname' => ['required', 'string', 'min:2'],
-            'middlename' => ['nullable', 'string', 'min:2'],
-            'lastname' => ['required', 'string', 'min:2'],
+        $registrationRequest = RegisterUserRequest::createFrom($this);
+
+        return array_merge(Arr::except($registrationRequest->rules(), 'password'), [
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($this->user()->id)],
+            'mobile_number' => ['nullable', 'string', Rule::unique('users', 'mobile_number')->ignore($this->user()->id), 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
-            'email' => ['required', 'string', 'email'],
             'address' => ['required', 'string'],
             'zipcode' => ['required', 'string', 'regex:/^\d{4,5}$/'],
             'city' => ['required', 'string'],
             'region' => ['required', 'string'],
-            'mobile_number' => ['nullable', 'string', 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'], // Matches domestic and internation format
             'date_of_birth' => ['sometimes', 'date', 'before:18 years ago'],
-        ];
+        ]);
     }
 }
