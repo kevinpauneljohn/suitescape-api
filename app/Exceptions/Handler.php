@@ -35,7 +35,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (AuthenticationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'message' => 'You need to be logged in to do that.',
+                    'message' => 'You must be logged in first.',
                 ], 401);
             }
         });
@@ -43,7 +43,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (UnauthorizedException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([
-                    'message' => 'You do not have permission to do that.',
+                    'message' => 'You are not authorized to do this action.',
                 ], 403);
             }
         });
@@ -60,9 +60,9 @@ class Handler extends ExceptionHandler
             $models = ['Video', 'Image', 'Listing', 'Room', 'Setting'];
 
             foreach ($models as $model) {
-                if (str_contains($e->getMessage(), 'No query results for model [App\Models\\' . $model . ']')) {
+                if (str_contains($e->getMessage(), 'No query results for model [App\Models\\'.$model.']')) {
                     return response()->json([
-                        'message' => $model . ' not found.',
+                        'message' => $model.' not found.',
                     ], 404);
                 }
             }
