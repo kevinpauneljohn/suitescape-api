@@ -6,31 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginUserRequest;
 use App\Http\Requests\RegisterUserRequest;
 use App\Services\RegistrationService;
-use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
 {
-    public function __construct()
+    private RegistrationService $registrationService;
+
+    public function __construct(RegistrationService $registrationService)
     {
         $this->middleware('auth:sanctum')->only('logout');
+
+        $this->registrationService = $registrationService;
     }
 
     public function register(RegisterUserRequest $request)
     {
-        return (new RegistrationService($request->validated()))->register();
+        return $this->registrationService->register($request->validated());
     }
 
     public function login(LoginUserRequest $request)
     {
-        return (new RegistrationService($request->validated()))->login();
+        return $this->registrationService->login($request->validated());
     }
 
-    public function logout(Request $request)
+    public function logout()
     {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logout successful',
-        ]);
+        return $this->registrationService->logout();
     }
 }
