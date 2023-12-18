@@ -36,7 +36,11 @@ Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout'
 
 Route::prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'getProfile'])->name('profile.get');
+    Route::get('/saved', [ProfileController::class, 'getSavedListings'])->name('profile.saves');
+    Route::get('/liked', [ProfileController::class, 'getLikedListings'])->name('profile.likes');
+
     Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
 Route::prefix('settings')->group(function () {
