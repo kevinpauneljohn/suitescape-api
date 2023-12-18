@@ -3,45 +3,48 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PasswordUpdateRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Resources\ListingMetricResource;
 use App\Http\Resources\UserResource;
+use App\Services\ProfileRetrievalService;
+use App\Services\ProfileUpdateService;
 
 class ProfileController extends Controller
 {
-    public function __construct()
+    private ProfileRetrievalService $profileRetrievalService;
+    private ProfileUpdateService $profileUpdateService;
+
+    public function __construct(ProfileRetrievalService $profileRetrievalService, ProfileUpdateService $profileUpdateService)
     {
         $this->middleware('auth:sanctum');
+
+        $this->profileRetrievalService = $profileRetrievalService;
+        $this->profileUpdateService = $profileUpdateService;
     }
 
     public function getProfile()
     {
-        $user = auth()->user();
-
-        return new UserResource($user);
+        return new UserResource($this->profileRetrievalService->getProfile());
     }
 
     public function updateProfile(ProfileUpdateRequest $request)
     {
-        $user = auth()->user();
+        return $this->profileUpdateService->updateProfile($request->validated());
+    }
 
-        // Get a copy of the original attributes before the update
-        $originalAttributes = $user->getOriginal();
+    public function updatePassword(PasswordUpdateRequest $request)
+    {
+        return $this->profileUpdateService->updatePassword($request->validated()['new_password']);
+    }
 
-        // Update the user
-        $user->update($request->validated());
+    public function getLikedListings()
+    {
+        return ListingMetricResource::collection($this->profileRetrievalService->getLikedListings());
+    }
 
-        // Get a copy of the updated original attributes
-        $updatedOriginalAttributes = $user->getOriginal();
-
-        // Check if any fields were changed
-        $fieldsChanged = array_diff($updatedOriginalAttributes, $originalAttributes);
-
-        $message = $fieldsChanged ? 'Profile updated successfully' : 'No changes were made to the profile';
-
-        return response()->json([
-            'user' => new UserResource($user),
-            'message' => $message,
-            'updated' => boolval($fieldsChanged),
-        ]);
+    public function getSavedListings()
+    {
+        return ListingMetricResource::collection($this->profileRetrievalService->getSavedListings());
     }
 }
