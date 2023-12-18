@@ -15,6 +15,18 @@ class LoginUserRequest extends FormRequest
     }
 
     /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.email' => 'Please enter a valid email address.',
+        ];
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
