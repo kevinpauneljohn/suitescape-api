@@ -17,14 +17,18 @@ use App\Services\ListingCreateService;
 use App\Services\ListingLikeService;
 use App\Services\ListingRetrievalService;
 use App\Services\ListingSaveService;
+use App\Services\ListingViewService;
 use App\Services\SettingsService;
 use App\Services\VideoUploadService;
 
 class ListingController extends Controller
 {
     private ListingRetrievalService $listingRetrievalService;
+
     private ImageUploadService $imageUploadService;
+
     private VideoUploadService $videoUploadService;
+
     private SettingsService $settingsService;
 
     public function __construct(ListingRetrievalService $listingRetrievalService, ImageUploadService $imageUploadService, VideoUploadService $videoUploadService, SettingsService $settingsService)
@@ -46,7 +50,7 @@ class ListingController extends Controller
     {
         $cancellationPolicy = $this->settingsService->getSetting('cancellation_policy')->value;
 
-        return new ListingResource($this->listingRetrievalService->getListing($id), $cancellationPolicy);
+        return new ListingResource($this->listingRetrievalService->getListingDetails($id), $cancellationPolicy);
     }
 
     public function getListingRooms(string $id)
@@ -54,10 +58,10 @@ class ListingController extends Controller
         return RoomResource::collection($this->listingRetrievalService->getListingRooms($id));
     }
 
-    public function getListingHost(string $id)
-    {
-        return new HostResource($this->listingRetrievalService->getListingHost($id));
-    }
+    //    public function getListingHost(string $id)
+    //    {
+    //        return new HostResource($this->listingRetrievalService->getListingHost($id));
+    //    }
 
     public function getListingImages(string $id)
     {
@@ -145,6 +149,24 @@ class ListingController extends Controller
         return response()->json([
             'saved' => true,
             'message' => 'Listing saved.',
+        ]);
+    }
+
+    public function viewListing(string $id)
+    {
+        $listing = Listing::findOrFail($id);
+        $listingViewService = new ListingViewService($listing);
+
+        if (! $listingViewService->addView()) {
+            return response()->json([
+                'viewed' => false,
+                'message' => 'Error viewing listing.',
+            ]);
+        }
+
+        return response()->json([
+            'viewed' => true,
+            'message' => 'Listing viewed.',
         ]);
     }
 }
