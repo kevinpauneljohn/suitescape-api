@@ -13,6 +13,7 @@ use Spatie\Permission\Exceptions\UnauthorizedException;
 class ImageController extends Controller
 {
     private ImageRetrievalService $imageRetrievalService;
+
     private ImageUploadService $imageUploadService;
 
     public function __construct(ImageRetrievalService $imageRetrievalService, ImageUploadService $imageUploadService)
