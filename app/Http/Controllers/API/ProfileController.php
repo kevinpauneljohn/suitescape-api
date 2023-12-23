@@ -13,6 +13,7 @@ use App\Services\ProfileUpdateService;
 class ProfileController extends Controller
 {
     private ProfileRetrievalService $profileRetrievalService;
+
     private ProfileUpdateService $profileUpdateService;
 
     public function __construct(ProfileRetrievalService $profileRetrievalService, ProfileUpdateService $profileUpdateService)
@@ -46,5 +47,10 @@ class ProfileController extends Controller
     public function getSavedListings()
     {
         return ListingMetricResource::collection($this->profileRetrievalService->getSavedListings());
+    }
+
+    public function getViewedListings()
+    {
+        return ListingMetricResource::collection($this->profileRetrievalService->getViewedListings());
     }
 }
