@@ -65,6 +65,36 @@ class User extends Authenticatable
         return ['id'];
     }
 
+    public function fullName()
+    {
+        return "$this->firstname $this->lastname";
+    }
+
+    public function listings()
+    {
+        return $this->hasMany(Listing::class);
+    }
+
+    public function listingsReviews()
+    {
+        return $this->hasManyThrough(Review::class, Listing::class);
+    }
+
+    public function listingsLikes()
+    {
+        return $this->hasManyThrough(ListingLike::class, Listing::class);
+    }
+
+    public function listingsSaves()
+    {
+        return $this->hasManyThrough(ListingSave::class, Listing::class);
+    }
+
+    public function listingsViews()
+    {
+        return $this->hasManyThrough(ListingView::class, Listing::class);
+    }
+
     public function videos()
     {
         return $this->hasManyThrough(Video::class, Listing::class);
@@ -75,9 +105,14 @@ class User extends Authenticatable
         return $this->hasManyThrough(Image::class, Listing::class);
     }
 
-    public function listings()
+    public function bookings()
     {
-        return $this->hasMany(Listing::class);
+        return $this->hasMany(Booking::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     public function likedListings()
@@ -93,20 +128,5 @@ class User extends Authenticatable
     public function viewedListings()
     {
         return $this->hasMany(ListingView::class);
-    }
-
-    public function bookings()
-    {
-        return $this->hasMany(Booking::class);
-    }
-
-    public function invoices()
-    {
-        return $this->hasMany(Invoice::class);
-    }
-
-    public function fullName()
-    {
-        return "$this->firstname $this->lastname";
     }
 }
