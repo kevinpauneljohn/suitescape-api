@@ -11,20 +11,26 @@ class ProfileRetrievalService
 
     public function getLikedListings()
     {
-        $user = auth()->user();
-
-        return $user->likedListings->load([
-            'listing' => fn ($query) => $query->withCount('views'),
-            'listing.videos',
-        ]);
+        return $this->loadListings('likedListings');
     }
 
     public function getSavedListings()
     {
+        return $this->loadListings('savedListings');
+    }
+
+    public function getViewedListings()
+    {
+        return $this->loadListings('viewedListings');
+    }
+
+    private function loadListings(string $relation)
+    {
         $user = auth()->user();
 
-        return $user->savedListings->load([
+        return $user->$relation->load([
             'listing' => fn ($query) => $query->withCount('views'),
+            'listing.images',
             'listing.videos',
         ]);
     }
