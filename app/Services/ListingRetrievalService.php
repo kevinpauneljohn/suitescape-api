@@ -72,6 +72,6 @@ class ListingRetrievalService
 
     public function getListingReviews(string $id)
     {
-        return $this->getListing($id)->reviews;
+        return $this->getListing($id)->reviews->load(['user', 'room.roomCategory', 'listing.images']);
     }
 }
