@@ -18,11 +18,11 @@ class VideoResource extends JsonResource
             'id' => $this->id,
             'filename' => $this->filename,
             'privacy' => $this->privacy,
-            $this->mergeUnless($this->relationLoaded('listing'), ['listing_id' => $this->listing_id]),
             //            'listing_id' => $this->whenNotNull($this->whenLoaded('listing', null, $this->listing_id)),
+            $this->mergeUnless($this->relationLoaded('listing'), ['listing_id' => $this->listing_id]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
-            'url' => '/videos/'.$this->id,
             //            'url' => route('api.videos.get', $this->id, false),
+            'url' => '/videos/'.$this->id,
         ];
     }
 }

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
-use App\Services\ListingViewService;
 use App\Services\VideoRetrievalService;
 use App\Services\VideoUploadService;
 use Spatie\Permission\Exceptions\UnauthorizedException;
@@ -14,6 +13,7 @@ use Spatie\Permission\Exceptions\UnauthorizedException;
 class VideoController extends Controller
 {
     private VideoRetrievalService $videoRetrievalService;
+
     private VideoUploadService $videoUploadService;
 
     public function __construct(VideoRetrievalService $videoRetrievalService, VideoUploadService $videoUploadService)
@@ -37,14 +37,11 @@ class VideoController extends Controller
     public function getVideo(string $id)
     {
         $video = Video::findOrFail($id);
-        $listing = $video->listing;
 
         $user = auth('sanctum')->user();
         if ($video->privacy === 'private' && (! $user || ! $video->isOwnedBy($user))) {
             throw new UnauthorizedException(403, 'You do not have permission to view this video.');
         }
-
-        (new ListingViewService($listing, $user))->addView();
 
         return $this->videoRetrievalService->streamVideo($video);
     }

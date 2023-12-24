@@ -11,6 +11,7 @@ use App\Services\BookingRetrievalService;
 class BookingController extends Controller
 {
     private BookingRetrievalService $bookingRetrievalService;
+
     private BookingCreateService $bookingCreateService;
 
     public function __construct(BookingRetrievalService $bookingRetrievalService, BookingCreateService $bookingCreateService)

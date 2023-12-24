@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
 use App\Http\Controllers\API\ProfileController;
@@ -36,7 +37,12 @@ Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout'
 
 Route::prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'getProfile'])->name('profile.get');
+    Route::get('/saved', [ProfileController::class, 'getSavedListings'])->name('profile.saves');
+    Route::get('/liked', [ProfileController::class, 'getLikedListings'])->name('profile.likes');
+    Route::get('/viewed', [ProfileController::class, 'getViewedListings'])->name('profile.views');
+
     Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
 Route::prefix('settings')->group(function () {
@@ -69,7 +75,7 @@ Route::prefix('listings')->group(function () {
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {
-        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
+        //        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
         Route::get('/images', [ListingController::class, 'getListingImages'])->name('listings.images');
         Route::get('/videos', [ListingController::class, 'getListingVideos'])->name('listings.videos');
         Route::get('/reviews', [ListingController::class, 'getListingReviews'])->name('listings.reviews');
@@ -77,9 +83,23 @@ Route::prefix('listings')->group(function () {
 
         Route::post('/like', [ListingController::class, 'likeListing'])->name('listings.like');
         Route::post('/save', [ListingController::class, 'saveListing'])->name('listings.save');
+        Route::post('/view', [ListingController::class, 'viewListing'])->name('listings.view');
 
         Route::post('/images/upload', [ListingController::class, 'uploadListingImage'])->name('listings.images.upload');
         Route::post('/videos/upload', [ListingController::class, 'uploadListingVideo'])->name('listings.videos.upload');
+    })->whereUuid('id');
+});
+
+Route::prefix('hosts')->group(function () {
+    Route::get('/', [HostController::class, 'getAllHosts'])->name('hosts.all');
+    Route::get('/{id}', [HostController::class, 'getHost'])->name('hosts.get')->whereUuid('id');
+
+    Route::prefix('{id}')->group(function () {
+        Route::get('/listings', [HostController::class, 'getHostListings'])->name('hosts.listings');
+        Route::get('/reviews', [HostController::class, 'getHostReviews'])->name('hosts.reviews');
+        Route::get('/likes', [HostController::class, 'getHostLikes'])->name('hosts.likes');
+        Route::get('/saves', [HostController::class, 'getHostSaves'])->name('hosts.saves');
+        Route::get('/views', [HostController::class, 'getHostViews'])->name('hosts.views');
     })->whereUuid('id');
 });
 

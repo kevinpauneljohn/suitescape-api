@@ -14,24 +14,12 @@ class HostResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $areAllReviewsLoaded = fn () => $this->listings->every(function ($listing) {
-            return $listing->relationLoaded('reviews');
-        });
-
-        $areAllReviewsCounted = fn () => $this->listings->every(function ($listing) {
-            return $listing->reviews_count !== null;
-        });
-
-        $areAllLikesCounted = fn () => $this->listings->every(function ($listing) {
-            return $listing->likes_count !== null;
-        });
-
         $hostMetrics = [
-            'total_likes_count' => $this->whenLoaded('listings', fn () => $this->when($areAllLikesCounted(), $this->listings->sum->likes_count)),
-            'total_reviews_count' => $this->whenLoaded('listings', fn () => $this->when($areAllReviewsCounted(), $this->listings->sum->reviews_count)),
             'listings_count' => $this->whenCounted('listings'),
+            'listings_likes_count' => $this->whenCounted('listingsLikes'),
+            'listings_reviews_count' => $this->whenCounted('listingsReviews'),
             'listings' => ListingResource::collection($this->whenLoaded('listings')),
-            'all_reviews' => $this->whenLoaded('listings', fn () => $this->when($areAllReviewsLoaded(), ReviewResource::collection($this->listings->flatMap->reviews))),
+            'reviews' => ReviewResource::collection($this->whenLoaded('listingsReviews')),
         ];
 
         return array_merge((new UserResource($this))->resolve(), $hostMetrics);

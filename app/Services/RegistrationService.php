@@ -8,16 +8,9 @@ use Illuminate\Support\Facades\Hash;
 
 class RegistrationService
 {
-    public array $userData;
-
-    public function __construct($userData)
+    public function register($registrationData): JsonResponse
     {
-        $this->userData = $userData;
-    }
-
-    public function register(): JsonResponse
-    {
-        $user = User::create($this->userData);
+        $user = User::create($registrationData);
 
         return response()->json([
             'message' => 'User created successfully',
@@ -25,9 +18,9 @@ class RegistrationService
         ]);
     }
 
-    public function login(): JsonResponse
+    public function login($loginData): JsonResponse
     {
-        $user = $this->getUserByEmail();
+        $user = $this->getUserByEmail($loginData['email']);
 
         if (! $user) {
             return response()->json([
@@ -38,7 +31,7 @@ class RegistrationService
             ]);
         }
 
-        if (! $this->checkIfPasswordIsCorrect($user->password)) {
+        if (! $this->checkIfPasswordIsCorrect($loginData['password'], $user->password)) {
             return response()->json([
                 'message' => 'The provided password is incorrect.',
                 'errors' => [
@@ -55,13 +48,24 @@ class RegistrationService
         ]);
     }
 
-    public function getUserByEmail(): ?User
+    public function logout(): JsonResponse
     {
-        return User::where('email', $this->userData['email'])->first();
+        $user = auth()->user();
+
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful',
+        ]);
     }
 
-    public function checkIfPasswordIsCorrect($password): bool
+    public function getUserByEmail($userEmail): ?User
     {
-        return Hash::check($this->userData['password'], $password);
+        return User::where('email', $userEmail)->first();
+    }
+
+    public function checkIfPasswordIsCorrect($userPassword, $correctPassword): bool
+    {
+        return Hash::check($userPassword, $correctPassword);
     }
 }
