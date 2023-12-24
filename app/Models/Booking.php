@@ -37,4 +37,10 @@ class Booking extends Model
     {
         return $this->hasMany(BookingRoom::class);
     }
+
+    public function scopeDesc($query)
+    {
+        return $query->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc');
+    }
 }

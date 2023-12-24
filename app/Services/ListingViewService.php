@@ -10,31 +10,33 @@ class ListingViewService
 {
     private Listing $listing;
 
-    private ?User $user;
+    private ?string $userId;
 
-    public function __construct(Listing $listing, User $user = null)
+    public function __construct(Listing $listing)
     {
         $this->listing = $listing;
-        $this->user = $user;
+        $this->userId = auth('sanctum')->id();
     }
 
-    public function addView(): void
+    public function addView(): bool
     {
         $lastListingView = $this->getLastListingView();
         if (! $this->shouldRecordView($lastListingView)) {
-            return;
+            return false;
         }
 
         $this->recordView([
-            'user_id' => $this->user?->id,
+            'user_id' => $this->userId,
         ]);
+
+        return true;
     }
 
     public function getLastListingView(): ?ListingView
     {
-        $query = is_null($this->user)
+        $query = is_null($this->userId)
             ? $this->listing->anonymousViews()
-            : $this->listing->views()->where('user_id', $this->user->id);
+            : $this->listing->views()->where('user_id', $this->userId);
 
         return $query->orderBy('created_at', 'desc')->first();
     }
@@ -46,7 +48,7 @@ class ListingViewService
         }
 
         // Prevents multiple views from the same user in a short period of time
-        return now()->diffInSeconds($lastListingView['created_at']) > 1;
+        return now()->diffInMinutes($lastListingView['created_at']) > 5;
     }
 
     private function recordView(?array $attributes = []): void

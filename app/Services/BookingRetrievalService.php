@@ -8,10 +8,10 @@ class BookingRetrievalService
     {
         $user = auth()->user();
 
-        return $user->bookings->load([
+        return $user->bookings()->desc()->with([
             'coupon',
-            'bookingRooms.room' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
+            'bookingRooms.room.listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'bookingRooms.room.listing.images',
-        ]);
+        ])->get();
     }
 }

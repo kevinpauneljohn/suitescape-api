@@ -19,11 +19,16 @@ class ListingRetrievalService
             $this->currentListing = Listing::findOrFail($id);
         }
 
-        return $this->currentListing
+        return $this->currentListing;
+    }
+
+    public function getListingDetails(string $id)
+    {
+        return $this->getListing($id)
             ->load([
                 'host',
                 'serviceRatings',
-                'reviews.user',
+                'reviews' => fn ($query) => $query->with('user')->take(10),
                 'images',
                 'videos',
                 'bookingPolicies',
@@ -42,18 +47,18 @@ class ListingRetrievalService
         ])->loadAggregate('reviews', 'rating', 'avg');
     }
 
-    public function getListingHost(string $id)
-    {
-        return $this->getListing($id)->host->load([
-            'listings' => function ($query) {
-                $query->with(['reviews' => function ($query) {
-                    $query->with(['user', 'room.roomCategory', 'listing.images']);
-                }])
-                    ->withCount(['reviews', 'likes'])
-                    ->withAggregate('reviews', 'rating', 'avg');
-            },
-        ])->loadCount('listings');
-    }
+    //    public function getListingHost(string $id)
+    //    {
+    //        return $this->getListing($id)->host->load([
+    //            'listings' => function ($query) {
+    //                $query->with(['images', 'reviews' => function ($query) {
+    //                    $query->with(['user', 'room.roomCategory', 'listing.images']);
+    //                }])
+    //                    ->withCount(['reviews', 'likes'])
+    //                    ->withAggregate('reviews', 'rating', 'avg');
+    //            },
+    //        ])->loadCount('listings');
+    //    }
 
     public function getListingImages(string $id)
     {
@@ -67,6 +72,6 @@ class ListingRetrievalService
 
     public function getListingReviews(string $id)
     {
-        return $this->getListing($id)->reviews;
+        return $this->getListing($id)->reviews->load(['user', 'room.roomCategory', 'listing.images']);
     }
 }

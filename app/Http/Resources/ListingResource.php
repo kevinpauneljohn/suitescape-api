@@ -26,6 +26,7 @@ class ListingResource extends JsonResource
 
         return [
             'id' => $this->id,
+            $this->mergeUnless($this->relationLoaded('host'), ['host_id' => $this->user_id]),
             'name' => $this->name,
             'location' => $this->location,
             'description' => $this->description,
@@ -47,13 +48,12 @@ class ListingResource extends JsonResource
             'saves_count' => $this->whenCounted('saves'),
             'views_count' => $this->whenCounted('views'),
             'reviews_count' => $this->whenCounted('reviews'),
-            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'images' => ImageResource::collection($this->whenLoaded('images')),
             'videos' => VideoResource::collection($this->whenLoaded('videos')),
+            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'nearby_places' => NearbyPlaceResource::collection($this->whenLoaded('nearbyPlaces')),
             'booking_policies' => BookingPolicyResource::collection($this->whenLoaded('bookingPolicies')),
             'cancellation_policy' => $this->whenLoaded('bookingPolicies', $this->cancellationPolicy),
-            'cover_image' => new ImageResource($this->whenLoaded('images', fn () => $this->images->first())),
 
             $this->mergeWhen($user, $user ? [
                 'is_liked' => $this->isLikedBy($user),
