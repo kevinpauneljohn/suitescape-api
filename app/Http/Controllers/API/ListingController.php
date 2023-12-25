@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
-use App\Http\Resources\HostResource;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\ListingResource;
 use App\Http\Resources\ReviewResource;
