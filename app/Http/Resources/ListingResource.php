@@ -26,7 +26,9 @@ class ListingResource extends JsonResource
 
         return [
             'id' => $this->id,
-            $this->mergeUnless($this->relationLoaded('host'), ['host_id' => $this->user_id]),
+            $this->mergeUnless($this->relationLoaded('host'), [
+                'host_id' => $this->user_id,
+            ]),
             'name' => $this->name,
             'location' => $this->location,
             'description' => $this->description,
