@@ -67,7 +67,11 @@ Route::prefix('images')->group(function () {
 Route::prefix('rooms')->group(function () {
     Route::get('/', [RoomController::class, 'getAllRooms'])->name('rooms.all');
     Route::get('/{id}', [RoomController::class, 'getRoom'])->name('rooms.get')->whereUuid('id');
-    Route::get('/{id}/listing', [RoomController::class, 'getRoomListing'])->name('rooms.listing')->whereUuid('id');
+
+    Route::prefix('{id}')->group(function () {
+        Route::get('/listing', [RoomController::class, 'getRoomListing'])->name('rooms.listing');
+        Route::get('/reviews', [RoomController::class, 'getRoomReviews'])->name('rooms.reviews');
+    })->whereUuid('id');
 });
 
 Route::prefix('listings')->group(function () {
