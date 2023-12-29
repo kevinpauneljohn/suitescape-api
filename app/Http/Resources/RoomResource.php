@@ -16,6 +16,9 @@ class RoomResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            $this->mergeUnless($this->relationLoaded('listing'), [
+                'listing_id' => $this->listing_id,
+            ]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
             'description' => $this->description,
             'rules' => $this->whenLoaded('roomRule'),
