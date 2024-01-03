@@ -29,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('user');
 });
 
-Route::middleware('throttle:5,1')->group(function () {
+Route::middleware('throttle:5,5')->group(function () {
     Route::post('/register', [RegistrationController::class, 'register'])->name('register');
     Route::post('/login', [RegistrationController::class, 'login'])->name('login');
 });
