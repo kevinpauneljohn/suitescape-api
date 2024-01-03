@@ -12,9 +12,11 @@ class RegistrationService
     {
         $user = User::create($registrationData);
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'message' => 'User created successfully',
-            'user' => $user,
+            'token' => $token,
         ]);
     }
 
