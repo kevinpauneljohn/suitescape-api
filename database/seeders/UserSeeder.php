@@ -13,11 +13,9 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::factory()->create([
-            'firstname' => 'Mel Mathew',
-            'middlename' => 'Cabana',
-            'lastname' => 'Palana',
-            'email' => 'melpalana13@gmail.com',
-            'mobile_number' => '09275393573',
+            'firstname' => 'Admin',
+            'lastname' => 'Suitescape',
+            'email' => 'admin@gmail.com',
             'date_of_birth' => '2003-06-29',
             'password' => bcrypt('12'),
         ])->assignRole('super-admin');
@@ -26,6 +24,11 @@ class UserSeeder extends Seeder
             'email' => 'host@gmail.com',
             'password' => bcrypt('12'),
         ])->assignRole('host');
+
+        User::factory()->create([
+            'email' => 'guest@gmail.com',
+            'password' => bcrypt('12'),
+        ])->assignRole('guest');
 
         User::factory()->count(10)->create();
     }
