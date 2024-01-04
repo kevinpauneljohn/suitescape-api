@@ -39,8 +39,8 @@ class ProfileUpdateRequest extends FormRequest
         $registrationRequest = RegisterUserRequest::createFrom($this);
 
         return array_merge(Arr::except($registrationRequest->rules(), 'password'), [
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($this->user()->id)],
-            'mobile_number' => ['nullable', 'string', Rule::unique('users', 'mobile_number')->ignore($this->user()->id), 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($this->user()?->id)],
+            'mobile_number' => ['nullable', 'string', Rule::unique('users', 'mobile_number')->ignore($this->user()?->id), 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'],
             'gender' => ['nullable', 'string', 'in:male,female,other'],
             'address' => ['required', 'string'],
             'zipcode' => ['required', 'string', 'regex:/^\d{4,5}$/'],

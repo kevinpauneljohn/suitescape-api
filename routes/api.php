@@ -42,6 +42,7 @@ Route::prefix('profile')->group(function () {
     Route::get('/viewed', [ProfileController::class, 'getViewedListings'])->name('profile.views');
 
     Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/validate', [ProfileController::class, 'validateProfile'])->name('profile.validate');
     Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 

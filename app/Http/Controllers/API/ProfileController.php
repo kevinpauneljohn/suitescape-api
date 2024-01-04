@@ -18,7 +18,7 @@ class ProfileController extends Controller
 
     public function __construct(ProfileRetrievalService $profileRetrievalService, ProfileUpdateService $profileUpdateService)
     {
-        $this->middleware('auth:sanctum');
+        $this->middleware('auth:sanctum')->except('validateProfile');
 
         $this->profileRetrievalService = $profileRetrievalService;
         $this->profileUpdateService = $profileUpdateService;
@@ -27,6 +27,11 @@ class ProfileController extends Controller
     public function getProfile()
     {
         return new UserResource($this->profileRetrievalService->getProfile());
+    }
+
+    public function validateProfile(ProfileUpdateRequest $request)
+    {
+        return $request->validated();
     }
 
     public function updateProfile(ProfileUpdateRequest $request)
