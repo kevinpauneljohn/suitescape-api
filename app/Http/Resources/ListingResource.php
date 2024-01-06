@@ -44,7 +44,7 @@ class ListingResource extends JsonResource
             //                'accessibility' => $this->serviceRatings->avg('accessibility'),
             //            ]),
             'service_rating' => new ServiceRatingCollection($this->whenLoaded('serviceRatings')),
-            'lowest_room_price' => $this->whenNotNull($this->whenAggregated('roomCategories', 'price', 'min', fn ($value) => round($value))),
+            'lowest_room_price' => $this->whenNotNull($this->whenAggregated('roomCategories', 'price', 'min', fn ($value) => floor($value))),
             'average_rating' => $this->whenNotNull($this->whenAggregated('reviews', 'rating', 'avg', fn ($value) => round($value, 1))),
             'likes_count' => $this->whenCounted('likes'),
             'saves_count' => $this->whenCounted('saves'),
