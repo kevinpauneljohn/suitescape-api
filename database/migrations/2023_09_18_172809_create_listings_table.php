@@ -19,6 +19,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
+
+        // Add fulltext index
+        DB::statement('ALTER TABLE listings ADD FULLTEXT fulltext_index (name, location)');
     }
 
     /**
@@ -26,6 +29,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        DB::statement('ALTER TABLE listings DROP INDEX fulltext_index');
         Schema::dropIfExists('listings');
     }
 };
