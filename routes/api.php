@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
@@ -33,6 +34,10 @@ Route::middleware('throttle:5,5')->group(function () {
     Route::post('/register', [RegistrationController::class, 'register'])->name('register');
     Route::post('/login', [RegistrationController::class, 'login'])->name('login');
 });
+
+Route::post('/forgot-password', [RegistrationController::class, 'forgotPassword'])->name('password.email');
+Route::post('/validate-reset-token', [RegistrationController::class, 'validateResetToken'])->name('password.reset.validate');
+Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
 Route::prefix('profile')->group(function () {
@@ -77,6 +82,7 @@ Route::prefix('rooms')->group(function () {
 
 Route::prefix('listings')->group(function () {
     Route::get('/', [ListingController::class, 'getAllListings'])->name('listings.all');
+    Route::get('/search', [ListingController::class, 'searchListings'])->name('listings.search');
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {
@@ -111,4 +117,12 @@ Route::prefix('hosts')->group(function () {
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
+});
+
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'getCart'])->name('cart.get');
+    Route::post('/', [CartController::class, 'addToCart'])->name('cart.add');
+    Route::delete('/', [CartController::class, 'removeFromCart'])->name('cart.remove');
+
+    Route::get('/count', [CartController::class, 'getCartCount'])->name('cart.count');
 });
