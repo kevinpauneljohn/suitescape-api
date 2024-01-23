@@ -4,8 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginUserRequest;
+use App\Http\Requests\PasswordForgotRequest;
+use App\Http\Requests\PasswordResetRequest;
 use App\Http\Requests\RegisterUserRequest;
+use App\Http\Requests\TokenValidateRequest;
 use App\Services\RegistrationService;
+use Exception;
 
 class RegistrationController extends Controller
 {
@@ -25,11 +29,44 @@ class RegistrationController extends Controller
 
     public function login(LoginUserRequest $request)
     {
-        return $this->registrationService->login($request->validated());
+        return $this->registrationService->login($request->validated()['email'], $request->validated()['password']);
     }
 
     public function logout()
     {
         return $this->registrationService->logout();
+    }
+
+    public function forgotPassword(PasswordForgotRequest $request)
+    {
+        try {
+            return $this->registrationService->forgotPassword($request->validated()['email']);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode());
+        }
+    }
+
+    public function validateResetToken(TokenValidateRequest $request)
+    {
+        try {
+            return $this->registrationService->validatePasswordToken($request->validated()['email'], $request->validated()['token']);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode());
+        }
+    }
+
+    public function resetPassword(PasswordResetRequest $request)
+    {
+        try {
+            return $this->registrationService->resetPassword($request->validated()['email'], $request->validated()['token'], $request->validated()['new_password']);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode());
+        }
     }
 }
