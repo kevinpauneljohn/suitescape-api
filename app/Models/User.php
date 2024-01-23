@@ -105,6 +105,11 @@ class User extends Authenticatable
         return $this->hasManyThrough(Image::class, Listing::class);
     }
 
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);
