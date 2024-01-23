@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             SettingSeeder::class,
             RolesAndPermissionsSeeder::class,
             UserSeeder::class,
+            CartSeeder::class,
             ListingSeeder::class,
             BookingPolicySeeder::class,
             NearbyPlaceSeeder::class,
