@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use A6digital\Image\DefaultProfileImage;
 use Exception;
+use Faker\Factory as Faker;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -88,8 +89,12 @@ class User extends Authenticatable
 
         // Check if the image does not exist
         if (! Storage::exists('public/images/'.$filename)) {
+            // Generate random color using Faker
+            $faker = Faker::create();
+            $color = $faker->hexColor;
+
             // Generate the default profile image
-            $img = DefaultProfileImage::create($user->firstname[0].' '.$user->lastname[0]);
+            $img = DefaultProfileImage::create($user->firstname[0].' '.$user->lastname[0], 512, $color);
 
             // Save the image to the storage
             Storage::put('public/images/'.$filename, $img->encode());
