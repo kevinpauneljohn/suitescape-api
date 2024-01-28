@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\API\BookingController;
-use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
@@ -117,12 +116,4 @@ Route::prefix('hosts')->group(function () {
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
-});
-
-Route::prefix('cart')->group(function () {
-    Route::get('/', [CartController::class, 'getCart'])->name('cart.get');
-    Route::post('/', [CartController::class, 'addToCart'])->name('cart.add');
-    Route::delete('/', [CartController::class, 'removeFromCart'])->name('cart.remove');
-
-    Route::get('/count', [CartController::class, 'getCartCount'])->name('cart.count');
 });
