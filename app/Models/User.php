@@ -84,12 +84,12 @@ class User extends Authenticatable
      */
     private static function generateDefaultProfileImage($user): void
     {
-        $filename = 'default-'.$user->firstname[0].$user->lastname[0]. '.png';
+        $filename = 'default-'.$user->firstname[0].$user->lastname[0].'.png';
 
         // Check if the image does not exist
         if (! Storage::exists('public/images/'.$filename)) {
             // Generate the default profile image
-            $img = DefaultProfileImage::create($user->firstname.' '.$user->lastname);
+            $img = DefaultProfileImage::create($user->firstname[0].' '.$user->lastname[0]);
 
             // Save the image to the storage
             Storage::put('public/images/'.$filename, $img->encode());
