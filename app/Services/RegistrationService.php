@@ -17,9 +17,6 @@ class RegistrationService
     {
         $user = User::create($registrationData);
 
-        // Create a cart for the user
-        $user->cart()->create();
-
         // Create a token for the user
         $token = $user->createToken('auth_token')->plainTextToken;
 
