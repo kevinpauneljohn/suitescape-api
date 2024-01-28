@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Propaganistas\LaravelPhone\Casts\E164PhoneNumberCast;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -32,6 +33,7 @@ class User extends Authenticatable
         'mobile_number',
         'password',
         'date_of_birth',
+        'picture',
     ];
 
     /**
@@ -51,6 +53,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'mobile_number' => E164PhoneNumberCast::class.':PH',
         'password' => 'hashed',
         'date_of_birth' => 'date',
     ];
@@ -103,11 +106,6 @@ class User extends Authenticatable
     public function images()
     {
         return $this->hasManyThrough(Image::class, Listing::class);
-    }
-
-    public function cart()
-    {
-        return $this->hasOne(Cart::class);
     }
 
     public function bookings()
