@@ -69,6 +69,12 @@ class User extends Authenticatable
         static::created(function ($user) {
             self::generateDefaultProfileImage($user);
         });
+
+        static::updated(function ($user) {
+            if ($user->wasChanged(['firstname', 'lastname'])) {
+                self::generateDefaultProfileImage($user);
+            }
+        });
     }
 
     /**
@@ -83,9 +89,7 @@ class User extends Authenticatable
 
         Storage::put('public/images/'.$filename, $img->encode());
 
-        $user->update([
-            'picture' => $filename,
-        ]);
+        $user->fill(['picture' => $filename])->saveQuietly();
     }
 
     /**
