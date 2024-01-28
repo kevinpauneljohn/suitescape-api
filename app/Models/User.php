@@ -3,10 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use A6digital\Image\DefaultProfileImage;
+use Exception;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 use Propaganistas\LaravelPhone\Casts\E164PhoneNumberCast;
 use Spatie\Permission\Traits\HasRoles;
@@ -57,6 +60,33 @@ class User extends Authenticatable
         'password' => 'hashed',
         'date_of_birth' => 'date',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::created(function ($user) {
+            self::generateDefaultProfileImage($user);
+        });
+    }
+
+    /**
+     * Generate a default profile image for the user.
+     *
+     * @throws Exception
+     */
+    private static function generateDefaultProfileImage($user): void
+    {
+        $img = DefaultProfileImage::create($user->firstname.' '.$user->lastname);
+        $filename = 'default-'.$user->id.'.png';
+
+        Storage::put('public/images/'.$filename, $img->encode());
+
+        $user->update([
+            'picture' => $filename,
+        ]);
+    }
 
     /**
      * Get the columns that should receive a unique identifier.
