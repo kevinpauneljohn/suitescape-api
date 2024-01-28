@@ -29,7 +29,7 @@ class VideoRetrievalService
                 return $this->applyRoomsFilter($query, $filters);
             })
             ->with(['listing' => function ($query) {
-                $query->withCount('likes')
+                $query->with('host')->withCount('likes')
                     ->withAggregate('roomCategories', 'price', 'min')
                     ->withAggregate('reviews', 'rating', 'avg');
             }])
@@ -44,7 +44,7 @@ class VideoRetrievalService
     public function getVideoUrl(Video $video)
     {
         //        return public_path('storage/videos/'.$video['filename']);
-        return storage_path('app/public/videos/'.$video['filename']);
+        return storage_path('app/public/videos/' . $video['filename']);
     }
 
     public function streamVideo(Video $video)
