@@ -51,7 +51,7 @@ class ListingRetrievalService
             'roomCategory',
             'roomAmenities',
             'roomAmenities.amenity',
-        ])->loadAggregate('reviews', 'rating', 'avg');
+        ])->loadAggregate('reviews', 'rating', 'avg')->sortBy('price');
     }
 
     //    public function getListingHost(string $id)
