@@ -26,6 +26,7 @@ class VideoRetrievalService
                 $query = $this->applyPriceFilter($query, $filters);
                 $query = $this->applyRatingFilter($query, $filters);
                 $query = $this->applyAmenitiesFilter($query, $filters);
+
                 return $this->applyRoomsFilter($query, $filters);
             })
             ->with(['listing' => function ($query) {
@@ -44,7 +45,7 @@ class VideoRetrievalService
     public function getVideoUrl(Video $video)
     {
         //        return public_path('storage/videos/'.$video['filename']);
-        return storage_path('app/public/videos/' . $video['filename']);
+        return storage_path('app/public/videos/'.$video['filename']);
     }
 
     public function streamVideo(Video $video)
