@@ -50,11 +50,11 @@ class RoomCategoryFactory extends Factory
     {
         $bedTypes = [];
 
-        foreach ($this->bedTypes as $type) {
-            $count = fake()->numberBetween(0, 5);
-            if ($count > 0) {
-                $bedTypes[$type] = $count;
-            }
+        $typesCount = fake()->numberBetween(1, 3);
+
+        foreach (fake()->randomElements($this->bedTypes, $typesCount) as $type) {
+            $count = fake()->numberBetween(1, 5);
+            $bedTypes[$type] = $count;
         }
 
         return $bedTypes;
