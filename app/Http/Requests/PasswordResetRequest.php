@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
-class UpdateSettingRequest extends FormRequest
+class PasswordResetRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,8 +22,12 @@ class UpdateSettingRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'value' => ['required', 'string'],
-        ];
+        $tokenValidationRequest = TokenValidateRequest::createFrom($this);
+
+        return array_merge($tokenValidationRequest->rules(), [
+            'new_password' => ['required', 'bail', 'confirmed',
+                Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
+            ],
+        ]);
     }
 }

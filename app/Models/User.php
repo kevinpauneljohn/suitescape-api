@@ -3,11 +3,16 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use A6digital\Image\DefaultProfileImage;
+use Exception;
+use Faker\Factory as Faker;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
+use Propaganistas\LaravelPhone\Casts\E164PhoneNumberCast;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -32,6 +37,7 @@ class User extends Authenticatable
         'mobile_number',
         'password',
         'date_of_birth',
+        'picture',
     ];
 
     /**
@@ -51,9 +57,52 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'mobile_number' => E164PhoneNumberCast::class.':PH',
         'password' => 'hashed',
         'date_of_birth' => 'date',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::created(function ($user) {
+            self::generateDefaultProfileImage($user);
+        });
+
+        static::updated(function ($user) {
+            if ($user->wasChanged(['firstname', 'lastname'])) {
+                self::generateDefaultProfileImage($user);
+            }
+        });
+    }
+
+    /**
+     * Generate a default profile image for the user.
+     *
+     * @throws Exception
+     */
+    private static function generateDefaultProfileImage($user): void
+    {
+        $filename = 'default-'.$user->firstname[0].$user->lastname[0].'.png';
+
+        // Check if the image does not exist
+        if (! Storage::exists('public/images/'.$filename)) {
+            // Generate random color using Faker
+            $faker = Faker::create();
+            $color = $faker->hexColor;
+
+            // Generate the default profile image
+            $img = DefaultProfileImage::create($user->firstname[0].' '.$user->lastname[0], 512, $color);
+
+            // Save the image to the storage
+            Storage::put('public/images/'.$filename, $img->encode());
+        }
+
+        // Set the filename to the user
+        $user->fill(['picture' => $filename])->saveQuietly();
+    }
 
     /**
      * Get the columns that should receive a unique identifier.

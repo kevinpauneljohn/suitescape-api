@@ -29,10 +29,14 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('user');
 });
 
-Route::middleware('throttle:5,1')->group(function () {
+Route::middleware('throttle:5,5')->group(function () {
     Route::post('/register', [RegistrationController::class, 'register'])->name('register');
     Route::post('/login', [RegistrationController::class, 'login'])->name('login');
 });
+
+Route::post('/forgot-password', [RegistrationController::class, 'forgotPassword'])->name('password.email');
+Route::post('/validate-reset-token', [RegistrationController::class, 'validateResetToken'])->name('password.reset.validate');
+Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
 Route::prefix('profile')->group(function () {
@@ -42,6 +46,7 @@ Route::prefix('profile')->group(function () {
     Route::get('/viewed', [ProfileController::class, 'getViewedListings'])->name('profile.views');
 
     Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/validate', [ProfileController::class, 'validateProfile'])->name('profile.validate');
     Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 });
 
@@ -67,11 +72,16 @@ Route::prefix('images')->group(function () {
 Route::prefix('rooms')->group(function () {
     Route::get('/', [RoomController::class, 'getAllRooms'])->name('rooms.all');
     Route::get('/{id}', [RoomController::class, 'getRoom'])->name('rooms.get')->whereUuid('id');
-    Route::get('/{id}/listing', [RoomController::class, 'getRoomListing'])->name('rooms.listing')->whereUuid('id');
+
+    Route::prefix('{id}')->group(function () {
+        Route::get('/listing', [RoomController::class, 'getRoomListing'])->name('rooms.listing');
+        Route::get('/reviews', [RoomController::class, 'getRoomReviews'])->name('rooms.reviews');
+    })->whereUuid('id');
 });
 
 Route::prefix('listings')->group(function () {
     Route::get('/', [ListingController::class, 'getAllListings'])->name('listings.all');
+    Route::get('/search', [ListingController::class, 'searchListings'])->name('listings.search');
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {

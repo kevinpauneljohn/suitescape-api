@@ -36,7 +36,7 @@ class RoomCategoryFactory extends Factory
             'size' => fake()->numberBetween(10, 100),
             'type_of_beds' => $this->generateTypeOfBeds(),
             'pax' => fake()->numberBetween(1, 10),
-            'price' => fake()->randomFloat(2, 100, 1000),
+            'price' => fake()->randomFloat(2, 1000, 10000),
             'tax' => fake()->randomFloat(2, 0, 100),
         ];
     }
@@ -50,11 +50,11 @@ class RoomCategoryFactory extends Factory
     {
         $bedTypes = [];
 
-        foreach ($this->bedTypes as $type) {
-            $count = fake()->numberBetween(0, 5);
-            if ($count > 0) {
-                $bedTypes[$type] = $count;
-            }
+        $typesCount = fake()->numberBetween(1, 3);
+
+        foreach (fake()->randomElements($this->bedTypes, $typesCount) as $type) {
+            $count = fake()->numberBetween(1, 5);
+            $bedTypes[$type] = $count;
         }
 
         return $bedTypes;

@@ -33,4 +33,9 @@ class RoomRetrievalService
     {
         return $this->getRoom($id)->listing;
     }
+
+    public function getRoomReviews(string $id)
+    {
+        return $this->getRoom($id)->reviews->load(['user', 'room.roomCategory', 'listing.images']);
+    }
 }

@@ -31,9 +31,18 @@ class Video extends Model
         return $query->where('privacy', 'public');
     }
 
-    public function scopeDesc($query)
+    public function scopeOrderByDesc($query)
     {
         return $query->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
+    }
+
+    public function scopeOrderByLowestPrice($query)
+    {
+        return $query->addSelect(['min_price' => RoomCategory::select('price')
+            ->whereColumn('listing_id', 'videos.listing_id')
+            ->orderBy('price')
+            ->limit(1),
+        ])->orderBy('min_price', 'asc');
     }
 }

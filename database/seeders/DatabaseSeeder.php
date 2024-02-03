@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,6 +19,16 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
+
+        $publicFolders = [
+            'images',
+            'videos',
+        ];
+
+        // Clear out the public folders
+        foreach ($publicFolders as $folder) {
+            File::deleteDirectory(storage_path('app/public/'.$folder));
+        }
 
         $this->call([
             SettingSeeder::class,
