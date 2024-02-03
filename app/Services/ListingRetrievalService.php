@@ -13,6 +13,13 @@ class ListingRetrievalService
         return Listing::all();
     }
 
+    public function searchListings(?string $query, ?int $limit = 10)
+    {
+        return Listing::whereRaw('MATCH(name, location) AGAINST(? IN NATURAL LANGUAGE MODE)', [$query])
+            ->limit($limit)
+            ->get();
+    }
+
     public function getListing(string $id)
     {
         if (! $this->currentListing || $this->currentListing->id !== $id) {
@@ -44,7 +51,7 @@ class ListingRetrievalService
             'roomCategory',
             'roomAmenities',
             'roomAmenities.amenity',
-        ])->loadAggregate('reviews', 'rating', 'avg');
+        ])->loadAggregate('reviews', 'rating', 'avg')->sortBy('price');
     }
 
     //    public function getListingHost(string $id)

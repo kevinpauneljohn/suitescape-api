@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Image;
+use Illuminate\Support\Facades\Storage;
 
 class ImageRetrievalService
 {
@@ -11,9 +12,14 @@ class ImageRetrievalService
         return Image::all();
     }
 
-    public function getImageUrl(Image $image)
+    public function getStoragePath(string $filename)
     {
-        //        return public_path('storage/images/'.$image['filename']);
-        return storage_path('app/public/images/'.$image['filename']);
+        //        return public_path('storage/images/'.$filename);
+        return storage_path('app/public/images/'.$filename);
+    }
+
+    public function getStorageUrl(string $filename)
+    {
+        return Storage::url('images/'.$filename);
     }
 }

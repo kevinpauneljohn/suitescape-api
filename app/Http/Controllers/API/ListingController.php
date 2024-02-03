@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SearchRequest;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
-use App\Http\Resources\HostResource;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\ListingResource;
 use App\Http\Resources\ReviewResource;
@@ -44,6 +44,11 @@ class ListingController extends Controller
     public function getAllListings()
     {
         return ListingResource::collection($this->listingRetrievalService->getAllListings());
+    }
+
+    public function searchListings(SearchRequest $request)
+    {
+        return ListingResource::collection($this->listingRetrievalService->searchListings($request->search_query, $request->limit));
     }
 
     public function getListing(string $id)

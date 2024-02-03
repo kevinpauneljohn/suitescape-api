@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\FilterRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
@@ -29,9 +30,9 @@ class VideoController extends Controller
         return VideoResource::collection($this->videoRetrievalService->getAllVideos());
     }
 
-    public function getVideoFeed()
+    public function getVideoFeed(FilterRequest $request)
     {
-        return VideoResource::collection($this->videoRetrievalService->getVideoFeed());
+        return VideoResource::collection($this->videoRetrievalService->getVideoFeed($request->validated()));
     }
 
     public function getVideo(string $id)

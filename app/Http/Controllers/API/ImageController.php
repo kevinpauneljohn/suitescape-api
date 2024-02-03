@@ -38,9 +38,9 @@ class ImageController extends Controller
             throw new UnauthorizedException(403, 'You do not have permission to view this image.');
         }
 
-        $imageUrl = $this->imageRetrievalService->getImageUrl($image);
+        $storagePath = $this->imageRetrievalService->getStoragePath($image->filename);
 
-        return response()->file($imageUrl);
+        return response()->file($storagePath);
     }
 
     public function uploadImage(UploadImageRequest $request)

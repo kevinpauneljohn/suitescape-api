@@ -38,11 +38,11 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'firstname' => ['required', 'string', 'regex:/^[a-zA-Z\s]*$/'],
-            'middlename' => ['nullable', 'string', 'regex:/^[a-zA-Z\s]*$/'],
-            'lastname' => ['required', 'string', 'regex:/^[a-zA-Z\s]*$/'],
+            'firstname' => ['required', 'string', 'regex:/^[a-zA-Z\sñÑ]*$/'],
+            'middlename' => ['nullable', 'string', 'regex:/^[a-zA-Z\sñÑ]*$/'],
+            'lastname' => ['required', 'string', 'regex:/^[a-zA-Z\sñÑ]*$/'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'mobile_number' => ['nullable', 'string', 'unique:users,mobile_number', 'regex:/^(?:\+\d{1,3}\s?|0)\d{4,14}$/'],
+            //            'mobile_number' => ['nullable', 'string', 'phone:INTERNATIONAL,PH', 'unique:users,mobile_number'],
             'password' => ['required', 'bail', 'confirmed',
                 Password::min(8)->letters()->mixedCase()->numbers()->symbols(),
             ],
