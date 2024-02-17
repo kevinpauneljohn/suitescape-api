@@ -34,18 +34,16 @@ class RegistrationController extends Controller
 
     public function logout()
     {
-        return $this->registrationService->logout();
+        $this->registrationService->logout();
+
+        return response()->json([
+            'message' => 'Logout successful',
+        ]);
     }
 
     public function forgotPassword(PasswordForgotRequest $request)
     {
-        try {
-            return $this->registrationService->forgotPassword($request->validated()['email']);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], $e->getCode());
-        }
+        return $this->registrationService->forgotPassword($request->validated()['email']);
     }
 
     public function validateResetToken(TokenValidateRequest $request)
