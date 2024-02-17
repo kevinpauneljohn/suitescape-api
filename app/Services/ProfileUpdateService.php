@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
 
 class ProfileUpdateService
@@ -23,13 +22,7 @@ class ProfileUpdateService
         // Check if any fields were changed
         $fieldsChanged = $this->checkIfFieldsChanged($originalAttributes, $updatedOriginalAttributes);
 
-        $message = $fieldsChanged ? 'Profile updated successfully' : 'No changes were made to the profile';
-
-        return response()->json([
-            'message' => $message,
-            'updated' => boolval($fieldsChanged),
-            'user' => new UserResource($user),
-        ]);
+        return boolval($fieldsChanged);
     }
 
     public function updatePassword($newPassword)
@@ -40,10 +33,7 @@ class ProfileUpdateService
             'password' => Hash::make($newPassword),
         ]);
 
-        return response()->json([
-            'message' => 'Password updated successfully',
-            'user' => new UserResource($user),
-        ]);
+        return $user;
     }
 
     private function checkIfFieldsChanged($originalAttributes, $updatedOriginalAttributes)
