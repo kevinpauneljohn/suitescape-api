@@ -12,14 +12,10 @@ class ImageRetrievalService
         return Image::all();
     }
 
-    public function getStoragePath(string $filename)
+    public function getImagePath(string $filename)
     {
         //        return public_path('storage/images/'.$filename);
-        return storage_path('app/public/images/'.$filename);
-    }
-
-    public function getStorageUrl(string $filename)
-    {
-        return Storage::url('images/'.$filename);
+        //        return storage_path('app/public/images/'.$filename);
+        return Storage::disk('public')->path('images/'.$filename);
     }
 }
