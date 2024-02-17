@@ -6,14 +6,16 @@ use Illuminate\Http\UploadedFile;
 
 class VideoUploadService
 {
-    public function generateFileName(): string
+    protected FilenameService $filenameService;
+
+    public function __construct(FilenameService $filenameService)
     {
-        return date('d-m-Y-H-i-s').'_'.auth('sanctum')->user()->email.'_'.uniqid();
+        $this->filenameService = $filenameService;
     }
 
     public function upload(UploadedFile $video): string
     {
-        $filename = $this->generateFileName().'.'.$video->getClientOriginalExtension();
+        $filename = $this->filenameService->generateFileName($video->extension());
         $video->storeAs('videos', $filename, 'public');
 
         return $filename;
