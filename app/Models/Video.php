@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Video extends Model
 {
@@ -15,6 +16,12 @@ class Video extends Model
         'filename',
         'privacy',
     ];
+
+    public function getUrlAttribute()
+    {
+        //        return route('api.videos.get', ['id' => $this->id], false);
+        return Storage::url('videos/'.$this->filename);
+    }
 
     public function listing()
     {
