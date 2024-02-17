@@ -6,14 +6,16 @@ use Illuminate\Http\UploadedFile;
 
 class ImageUploadService
 {
-    public function generateFileName(): string
+    protected FilenameService $filenameService;
+
+    public function __construct(FilenameService $filenameService)
     {
-        return date('d-m-Y-H-i-s').'_'.auth('sanctum')->user()->email.'_'.uniqid();
+        $this->filenameService = $filenameService;
     }
 
     public function upload(UploadedFile $image): string
     {
-        $filename = $this->generateFileName().'.'.$image->getClientOriginalExtension();
+        $filename = $this->filenameService->generateFileName($image->extension());
         $image->storeAs('images', $filename, 'public');
 
         return $filename;
