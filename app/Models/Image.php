@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Image extends Model
 {
@@ -15,6 +16,12 @@ class Image extends Model
         'filename',
         'privacy',
     ];
+
+    public function getUrlAttribute()
+    {
+        //        route('api.images.get', ['id' => $this->id], false);
+        return Storage::url('images/'.$this->filename);
+    }
 
     public function user()
     {
