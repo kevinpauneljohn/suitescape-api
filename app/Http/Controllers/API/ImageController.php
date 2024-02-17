@@ -37,10 +37,10 @@ class ImageController extends Controller
         if ($image->privacy === 'private' && (! $user || ! $image->isOwnedBy($user))) {
             throw new UnauthorizedException(403, 'You do not have permission to view this image.');
         }
+        //        $imagePath = $this->imageRetrievalService->getImagePath($image->filename);
 
-        $storagePath = $this->imageRetrievalService->getStoragePath($image->filename);
-
-        return response()->file($storagePath);
+        //        return response()->file($imagePath);
+        return new ImageResource($image);
     }
 
     public function uploadImage(UploadImageRequest $request)
