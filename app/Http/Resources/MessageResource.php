@@ -15,6 +15,7 @@ class MessageResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = $request->user('sanctum');
+        $isCurrentSender = $user && $this->sender_id === $user->id;
 
         return [
             'id' => $this->id,
@@ -34,7 +35,7 @@ class MessageResource extends JsonResource
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'is_current_user_sender' => $user && $this->sender_id === $user->id,
+            'is_current_user_sender' => $isCurrentSender,
         ];
     }
 }
