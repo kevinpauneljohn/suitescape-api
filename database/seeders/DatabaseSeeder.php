@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $publicFolders = [
+            'avatars',
             'images',
             'videos',
         ];
