@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Video;
 use Exception;
+use Illuminate\Support\Facades\Storage;
 use Micilini\VideoStream\VideoStream;
 
 class VideoRetrievalService
@@ -11,6 +12,28 @@ class VideoRetrievalService
     public function getAllVideos()
     {
         return Video::all();
+    }
+
+    public function getVideoPath(string $filename)
+    {
+        //        return public_path('storage/videos/'.$filename);
+        //        return storage_path('app/public/videos/'.$filename);
+        return Storage::disk('public')->path('videos/'.$filename);
+    }
+
+    public function streamVideo(Video $video)
+    {
+        $videoPath = $this->getVideoPath($video->filename);
+
+        $options = [
+            'is_localPath' => true,
+        ];
+
+        try {
+            return (new VideoStream())->streamVideo($videoPath, $options);
+        } catch (Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 404);
+        }
     }
 
     public function getVideoFeed(array $filters = [])
@@ -40,26 +63,6 @@ class VideoRetrievalService
                 return $query->orderByLowestPrice();
             })
             ->cursorPaginate(5);
-    }
-
-    public function getVideoUrl(Video $video)
-    {
-        //        return public_path('storage/videos/'.$video['filename']);
-        return storage_path('app/public/videos/'.$video['filename']);
-    }
-
-    public function streamVideo(Video $video)
-    {
-        $videoUrl = $this->getVideoUrl($video);
-        $options = [
-            'is_localPath' => true,
-        ];
-
-        try {
-            return (new VideoStream())->streamVideo($videoUrl, $options);
-        } catch (Exception $exception) {
-            return response()->json(['error' => $exception->getMessage()], 404);
-        }
     }
 
     private function applyDestinationFilter($query, $filters)

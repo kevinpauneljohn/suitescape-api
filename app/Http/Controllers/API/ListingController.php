@@ -12,32 +12,28 @@ use App\Http\Resources\ReviewResource;
 use App\Http\Resources\RoomResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Listing;
-use App\Services\ImageUploadService;
+use App\Services\FileNameService;
 use App\Services\ListingCreateService;
 use App\Services\ListingLikeService;
 use App\Services\ListingRetrievalService;
 use App\Services\ListingSaveService;
 use App\Services\ListingViewService;
 use App\Services\SettingsService;
-use App\Services\VideoUploadService;
 
 class ListingController extends Controller
 {
     private ListingRetrievalService $listingRetrievalService;
 
-    private ImageUploadService $imageUploadService;
-
-    private VideoUploadService $videoUploadService;
+    private FileNameService $fileNameService;
 
     private SettingsService $settingsService;
 
-    public function __construct(ListingRetrievalService $listingRetrievalService, ImageUploadService $imageUploadService, VideoUploadService $videoUploadService, SettingsService $settingsService)
+    public function __construct(ListingRetrievalService $listingRetrievalService, FileNameService $fileNameService, SettingsService $settingsService)
     {
         $this->middleware('auth:sanctum')->only(['uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
 
         $this->listingRetrievalService = $listingRetrievalService;
-        $this->imageUploadService = $imageUploadService;
-        $this->videoUploadService = $videoUploadService;
+        $this->fileNameService = $fileNameService;
         $this->settingsService = $settingsService;
     }
 
@@ -87,7 +83,9 @@ class ListingController extends Controller
     {
         $validated = $request->validated();
 
-        $filename = $this->imageUploadService->upload($request->file('image'));
+        $filename = $this->fileNameService->generateFileName($request->file('image')->extension());
+        $request->file('image')->storeAs('listings/'.$id.'/images', $filename, 'public');
+
         $image = (new ListingCreateService($id, $filename, $validated))->createListingImage();
 
         return response()->json([
@@ -100,7 +98,9 @@ class ListingController extends Controller
     {
         $validated = $request->validated();
 
-        $filename = $this->videoUploadService->upload($request->file('video'));
+        $filename = $this->fileNameService->generateFileName($request->file('video')->extension());
+        $request->file('video')->storeAs('listings/'.$id.'/videos', $filename, 'public');
+
         $video = (new ListingCreateService($id, $filename, $validated))->createListingVideo();
 
         return response()->json([

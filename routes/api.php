@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\BookingController;
+use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
@@ -45,9 +46,10 @@ Route::prefix('profile')->group(function () {
     Route::get('/liked', [ProfileController::class, 'getLikedListings'])->name('profile.likes');
     Route::get('/viewed', [ProfileController::class, 'getViewedListings'])->name('profile.views');
 
-    Route::post('/', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/validate', [ProfileController::class, 'validateProfile'])->name('profile.validate');
+    Route::post('/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/update-active-session', [ProfileController::class, 'updateActiveSession'])->name('profile.active-session');
 });
 
 Route::prefix('settings')->group(function () {
@@ -116,4 +118,10 @@ Route::prefix('hosts')->group(function () {
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
+});
+
+Route::prefix('messages')->group(function () {
+    Route::get('/', [ChatController::class, 'getAllChats'])->name('chat.all');
+    Route::get('/{id}', [ChatController::class, 'getAllMessages'])->name('chat.get')->whereUuid('id');
+    Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
 });

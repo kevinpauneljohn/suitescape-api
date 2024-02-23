@@ -21,8 +21,7 @@ class VideoResource extends JsonResource
             //            'listing_id' => $this->whenNotNull($this->whenLoaded('listing', null, $this->listing_id)),
             $this->mergeUnless($this->relationLoaded('listing'), ['listing_id' => $this->listing_id]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
-            //            'url' => route('api.videos.get', $this->id, false),
-            'url' => '/videos/'.$this->id,
+            'url' => $this->url,
         ];
     }
 }

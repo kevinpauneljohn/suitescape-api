@@ -88,7 +88,7 @@ class User extends Authenticatable
         $filename = 'default-'.$user->firstname[0].$user->lastname[0].'.png';
 
         // Check if the image does not exist
-        if (! Storage::exists('public/images/'.$filename)) {
+        if (Storage::disk('public')->missing('avatars/'.$filename)) {
             // Generate random color using Faker
             $faker = Faker::create();
             $color = $faker->hexColor;
@@ -97,7 +97,7 @@ class User extends Authenticatable
             $img = DefaultProfileImage::create($user->firstname[0].' '.$user->lastname[0], 512, $color);
 
             // Save the image to the storage
-            Storage::put('public/images/'.$filename, $img->encode());
+            Storage::disk('public')->put('avatars/'.$filename, $img->encode());
         }
 
         // Set the filename to the user
@@ -114,9 +114,19 @@ class User extends Authenticatable
         return ['id'];
     }
 
-    public function fullName()
+    public function getFullNameAttribute()
     {
         return "$this->firstname $this->lastname";
+    }
+
+    public function getPictureUrlAttribute()
+    {
+        return $this->picture ? Storage::url('avatars/'.$this->picture) : null;
+    }
+
+    public function chats()
+    {
+        return $this->belongsToMany(Chat::class);
     }
 
     public function listings()
@@ -177,5 +187,46 @@ class User extends Authenticatable
     public function viewedListings()
     {
         return $this->hasMany(ListingView::class);
+    }
+
+    public function activeSessions()
+    {
+        return $this->hasMany(ActiveSession::class);
+    }
+
+    public function isActive()
+    {
+        if ($this->relationLoaded('activeSessions')) {
+            return $this->activeSessions->isNotEmpty();
+        }
+
+        return $this->activeSessions()->exists();
+    }
+
+    public function createActiveSession($deviceId, $deviceName = null)
+    {
+        $activeSession = $this->activeSessions()->where('device_id', $deviceId)->first();
+
+        if ($activeSession) {
+            return $activeSession;
+        }
+
+        return $this->activeSessions()->create([
+            'device_id' => $deviceId,
+            'device_name' => $deviceName,
+        ]);
+    }
+
+    public function deleteActiveSession($deviceId)
+    {
+        $activeSession = $this->activeSessions()->where('device_id', $deviceId)->first();
+
+        if (! $activeSession) {
+            return false;
+        }
+
+        $activeSession->delete();
+
+        return true;
     }
 }

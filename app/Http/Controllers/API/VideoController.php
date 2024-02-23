@@ -44,7 +44,8 @@ class VideoController extends Controller
             throw new UnauthorizedException(403, 'You do not have permission to view this video.');
         }
 
-        return $this->videoRetrievalService->streamVideo($video);
+        //        return $this->videoRetrievalService->streamVideo($video);
+        return new VideoResource($video);
     }
 
     public function uploadVideo(UploadVideoRequest $request)

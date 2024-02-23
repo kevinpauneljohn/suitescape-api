@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.8",
         "micilini/video-stream": "^1.0",
         "propaganistas/laravel-phone": "^5.1",
+        "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-permission": "^5.11"
     },
     "require-dev": {
