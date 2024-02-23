@@ -15,9 +15,12 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $user = $request->user('sanctum');
+        $isCurrentUser = $user && $user->id === $this->id;
+
         return [
             'id' => $this->id,
-            'fullname' => $this->fullName(),
+            'fullname' => $this->full_name,
             'firstname' => $this->firstname,
             'middlename' => $this->middlename,
             'lastname' => $this->lastname,
@@ -29,7 +32,12 @@ class UserResource extends JsonResource
             'region' => $this->region,
             'mobile_number' => $this->mobile_number,
             'date_of_birth' => $this->date_of_birth,
-            'picture_url' => $this->picture ? Storage::url('images/'.$this->picture) : null,
+            'picture_url' => $this->picture_url,
+            'active' => $this->isActive(),
+
+            $this->mergeWhen($isCurrentUser, [
+                'is_current_user' => true,
+            ]),
         ];
     }
 }

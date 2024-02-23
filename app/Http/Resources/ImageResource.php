@@ -17,8 +17,7 @@ class ImageResource extends JsonResource
         return [
             'id' => $this->id,
             'privacy' => $this->privacy,
-            'url' => '/images/'.$this->id,
-            //            'url' => route('api.images.get', $this->id, false),
+            'url' => $this->url,
         ];
     }
 }

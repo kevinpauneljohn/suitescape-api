@@ -2,14 +2,19 @@
 
 namespace App\Services;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 define('WAIT_TIME', '-5 minutes');
+define('WAIT_TIME_IN_SECONDS', 300);
+define('INCREASED_WAIT_TIME', '-30 minutes');
+define('MAX_ATTEMPTS', 1);
 
 class RegistrationService
 {
@@ -23,6 +28,7 @@ class RegistrationService
         return response()->json([
             'message' => 'User created successfully',
             'token' => $token,
+            'user' => new UserResource($user),
         ]);
     }
 
@@ -37,7 +43,7 @@ class RegistrationService
                 'errors' => [
                     'email' => ['The provided credentials are incorrect.'],
                 ],
-            ]);
+            ], 401);
         }
 
         // Check if password is correct
@@ -47,7 +53,7 @@ class RegistrationService
                 'errors' => [
                     'password' => ['The provided password is incorrect.'],
                 ],
-            ]);
+            ], 401);
         }
 
         // Create a token for the user
@@ -56,24 +62,18 @@ class RegistrationService
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
+            'user' => new UserResource($user),
         ]);
     }
 
-    public function logout(): JsonResponse
+    public function logout(): void
     {
         $user = auth()->user();
 
         // Revoke the token of the user
         $user->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Logout successful',
-        ]);
     }
 
-    /**
-     * @throws Exception
-     */
     public function forgotPassword($email): JsonResponse
     {
         $user = $this->getUserByEmail($email);
@@ -88,15 +88,29 @@ class RegistrationService
             ], 404);
         }
 
-        $passwordResetToken = DB::table('password_reset_tokens')->where('email', $email)->first();
-
         // Check if password reset token exists
-        if ($passwordResetToken) {
-            // Check if password reset token is expired
-            if (strtotime($passwordResetToken->created_at) > strtotime(WAIT_TIME)) {
-                throw new Exception('You must wait before requesting to reset your password again.', 429);
-            }
+        //        $passwordResetToken = DB::table('password_reset_tokens')->where('email', $email)->first();
+        //        if ($passwordResetToken) {
+        //            // Check if password reset token is expired
+        //            if (strtotime($passwordResetToken->created_at) > strtotime(WAIT_TIME)) {
+        //                return response()->json([
+        //                    'message' => 'You must wait before requesting to reset your password again.',
+        //                ], 429);
+        //            }
+        //        }
+
+        // Check if the user has reached the maximum number of attempts
+        if (RateLimiter::tooManyAttempts('forgot-password:'.$email, MAX_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn('forgot-password:'.$email);
+            $minutes = ceil($seconds / 60);
+
+            return response()->json([
+                'message' => 'You may try again in '.$minutes.' '.($minutes == 1 ? 'minute' : 'minutes').'.',
+            ], 429);
         }
+
+        // Throttle the user from requesting to reset the password
+        RateLimiter::hit('forgot-password:'.$email, WAIT_TIME_IN_SECONDS);
 
         // Make a token with 6-digit numbers
         $token = $this->createResetToken($email);
@@ -114,6 +128,9 @@ class RegistrationService
      */
     public function resetPassword($email, $token, $newPassword): JsonResponse
     {
+        // Clear the rate limiter for the forgot password
+        RateLimiter::clear('forgot-password:'.$email);
+
         // Validate the password reset token first
         $this->validatePasswordToken($email, $token, true);
 
@@ -150,8 +167,8 @@ class RegistrationService
 
     public function createResetToken($email): int
     {
-        $token = rand(100000, 999999);
         //        $token = random_int(100000, 999999);
+        $token = rand(100000, 999999);
 
         // Delete any existing password reset token
         DB::table('password_reset_tokens')->where('email', $email)->delete();
@@ -189,7 +206,7 @@ class RegistrationService
         }
 
         // Check if password reset token is expired
-        if (strtotime($passwordResetToken->created_at) < strtotime($increasedExpiration ? '-30 minutes' : WAIT_TIME)) {
+        if (strtotime($passwordResetToken->created_at) < strtotime($increasedExpiration ? INCREASED_WAIT_TIME : WAIT_TIME)) {
             throw new Exception('This password reset token is expired.', 404);
         }
 
