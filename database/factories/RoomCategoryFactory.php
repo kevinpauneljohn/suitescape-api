@@ -11,8 +11,6 @@ class RoomCategoryFactory extends Factory
 {
     /**
      * The array of bed types.
-     *
-     * @var array
      */
     protected array $bedTypes = [
         'futon',
@@ -33,11 +31,12 @@ class RoomCategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'size' => fake()->numberBetween(10, 100),
+            'description' => fake()->paragraphs(3, true),
+            'floor_area' => fake()->numberBetween(10, 100),
             'type_of_beds' => $this->generateTypeOfBeds(),
             'pax' => fake()->numberBetween(1, 10),
             'price' => fake()->randomFloat(2, 1000, 10000),
-            'tax' => fake()->randomFloat(2, 0, 100),
+            'quantity' => fake()->numberBetween(1, 10),
         ];
     }
 
