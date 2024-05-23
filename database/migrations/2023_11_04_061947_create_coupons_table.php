@@ -14,7 +14,12 @@ return new class extends Migration
         Schema::create('coupons', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('listing_id');
+            $table->string('label');
             $table->string('code');
+            $table->datetime('activated_date')->nullable();
+            $table->datetime('expiry_date')->nullable();
+            $table->integer('quantity');
+            $table->enum('measurement', ['minutes', 'hours', 'days', 'weeks', 'months', 'years']);
             $table->timestamps();
         });
     }
