@@ -12,6 +12,11 @@ class ListingSeeder extends Seeder
      */
     public function run(): void
     {
-        Listing::factory()->count(15)->create();
+        // Get number of videos and create that many listings
+        $videos = glob(database_path('seeders/videos').'/*');
+        $videoCount = count($videos);
+
+        Listing::factory()->count($videoCount)->create();
+        //        Listing::factory()->count(15)->create();
     }
 }
