@@ -25,9 +25,9 @@ class HostRetrievalService
     public function getHostDetails(string $id)
     {
         return $this->getHost($id)->load([
-            'listings' => fn ($query) => $query->with('images')->withAggregate('reviews', 'rating', 'avg'),
-            'listingsReviews' => fn ($query) => $query->with(['user', 'room.roomCategory', 'listing.images']),
-        ])->loadCount(['listings', 'listingsLikes', 'listingsReviews']);
+            'listings' => fn ($query) => $query->with('publicImages')->withAggregate('reviews', 'rating', 'avg'),
+            'listingsReviews' => fn ($query) => $query->with(['user', 'listing.publicImages']),
+        ])->loadCount(['listings', 'listingsLikes', 'listingsReviews'])->loadAvg('listingsReviews', 'rating');
     }
 
     public function getHostListings(string $id)
