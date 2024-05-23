@@ -37,7 +37,8 @@ class User extends Authenticatable
         'mobile_number',
         'password',
         'date_of_birth',
-        'picture',
+        'profile_image',
+        'cover_image',
     ];
 
     /**
@@ -63,6 +64,17 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'full_name',
+        'profile_image_url',
+        'cover_image_url',
+    ];
+
+    /**
      * The "booted" method of the model.
      */
     protected static function booted(): void
@@ -85,7 +97,13 @@ class User extends Authenticatable
      */
     private static function generateDefaultProfileImage($user): void
     {
-        $filename = 'default-'.$user->firstname[0].$user->lastname[0].'.png';
+        // Split the name
+        $splitName = explode(' ', $user->fullname);
+        $firstName = $splitName[0];
+        $lastName = end($splitName);
+
+        // Set the filename
+        $filename = 'default-'.$firstName[0].$lastName[0].'.png';
 
         // Check if the image does not exist
         if (Storage::disk('public')->missing('avatars/'.$filename)) {
@@ -101,7 +119,7 @@ class User extends Authenticatable
         }
 
         // Set the filename to the user
-        $user->fill(['picture' => $filename])->saveQuietly();
+        $user->fill(['profile_image' => $filename])->saveQuietly();
     }
 
     /**
@@ -119,9 +137,14 @@ class User extends Authenticatable
         return "$this->firstname $this->lastname";
     }
 
-    public function getPictureUrlAttribute()
+    public function getProfileImageUrlAttribute()
     {
-        return $this->picture ? Storage::url('avatars/'.$this->picture) : null;
+        return $this->profile_image ? Storage::url('avatars/'.$this->profile_image) : null;
+    }
+
+    public function getCoverImageUrlAttribute()
+    {
+        return $this->cover_image ? Storage::url('covers/'.$this->cover_image) : null;
     }
 
     public function chats()
