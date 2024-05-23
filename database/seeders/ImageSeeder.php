@@ -16,19 +16,26 @@ class ImageSeeder extends Seeder
     {
         $images = glob(database_path('seeders/images').'/*');
 
-        foreach ($images as $image) {
-            Storage::disk('public')->putFileAs(
-                'images',
-                $image,
-                basename($image)
-            );
-        }
+        //        foreach ($images as $image) {
+        //            Storage::disk('public')->putFileAs(
+        //                'images',
+        //                $image,
+        //                basename($image)
+        //            );
+        //        }
 
         $listings = Listing::all();
+
         foreach ($listings as $listing) {
-            foreach ($images as $index => $image) {
+            foreach ($images as $image) {
+                Storage::disk('public')->putFileAs(
+                    'listings/'.$listing->id.'/images',
+                    $image,
+                    basename($image)
+                );
+
                 $image = Image::factory()->make([
-                    'filename' => basename($images[$index]),
+                    'filename' => basename($image),
                 ]);
 
                 $listing->images()->save($image);
