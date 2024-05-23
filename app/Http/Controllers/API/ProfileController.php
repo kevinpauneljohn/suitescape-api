@@ -22,7 +22,6 @@ class ProfileController extends Controller
 
     private FileNameService $fileNameService;
 
-
     public function __construct(ProfileRetrievalService $profileRetrievalService, ProfileUpdateService $profileUpdateService, FileNameService $fileNameService)
     {
         $this->middleware('auth:sanctum')->except('validateProfile');
@@ -46,15 +45,26 @@ class ProfileController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->hasFile('picture')) {
-            // Generate a unique filename
-            $filename = $this->fileNameService->generateFileName($request->file('picture')->extension());
+        if ($request->hasFile('profile_image')) {
+            // Generate a unique filename for the profile image
+            $filename = $this->fileNameService->generateFileName($request->file('profile_image')->extension());
 
-            // Store the image in the public disk
-            $request->file('picture')->storeAs('avatars', $filename, 'public');
+            // Store the profile image in the public disk
+            $request->file('profile_image')->storeAs('avatars', $filename, 'public');
 
             // Set the filename to the validated data
-            $validated['picture'] = $filename;
+            $validated['profile_image'] = $filename;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            // Generate a unique filename for the cover image
+            $filename = $this->fileNameService->generateFileName($request->file('cover_image')->extension());
+
+            // Store the cover image in the public disk
+            $request->file('cover_image')->storeAs('covers', $filename, 'public');
+
+            // Set the filename to the validated data
+            $validated['cover_image'] = $filename;
         }
 
         $updated = $this->profileUpdateService->updateProfile($validated);
