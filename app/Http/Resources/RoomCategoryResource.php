@@ -17,11 +17,12 @@ class RoomCategoryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'size' => $this->size,
+            'description' => $this->description,
+            'floor_area' => $this->floor_area,
             'type_of_beds' => $this->type_of_beds,
             'pax' => $this->pax,
-            'price' => round($this->price),
-            'tax' => floatval($this->tax),
+            'price' => floatval($this->price),
+            'quantity' => $this->quantity,
         ];
     }
 }
