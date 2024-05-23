@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Listing;
+use App\Models\Video;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -14,13 +16,28 @@ use Illuminate\Support\Facades\Broadcast;
 */
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    return $user->id === $id;
 });
 
 Broadcast::channel('private-chat.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    return $user->id === $id;
 });
 
 Broadcast::channel('private-active-status.{id}', function ($user) {
     return (bool) $user;
+});
+
+Broadcast::channel('private-video-transcoding.{id}', function ($user, $id) {
+    $video = Video::find($id);
+    $listing = Listing::find($id);
+
+    if ($video) {
+        return $video->isOwnedBy($user);
+    }
+
+    if ($listing) {
+        return $listing->user_id === $user->id;
+    }
+
+    return $user->id === $id;
 });
