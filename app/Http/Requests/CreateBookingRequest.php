@@ -15,6 +15,17 @@ class CreateBookingRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'rooms' => json_decode($this->rooms, true),
+            'addons' => json_decode($this->addons, true),
+        ]);
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -30,13 +41,14 @@ class CreateBookingRequest extends FormRequest
         //            'paymentMethod' => ['required', 'string'],
         //        ], $guestInfoRequest->rules());
 
-        return [
-            'room_id' => ['required', 'string'],
-            'coupon_id' => ['nullable', 'string'],
-            'amount' => ['required', 'numeric'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date'],
+        $bookingDatesRequest = UpdateBookingDatesRequest::createFrom($this);
+
+        return array_merge([
+            'listing_id' => ['required', 'string', 'exists:listings,id'],
+            'rooms' => ['nullable', 'array'],
+            'addons' => ['nullable', 'array'],
+            'coupon_code' => ['nullable', 'string'],
             'message' => ['nullable', 'string'],
-        ];
+        ], $bookingDatesRequest->rules());
     }
 }
