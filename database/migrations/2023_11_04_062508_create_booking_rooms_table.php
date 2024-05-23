@@ -15,8 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('booking_id');
             $table->foreignUuid('room_id');
-            $table->date('date_start');
-            $table->date('date_end');
+            $table->integer('quantity');
             $table->timestamps();
         });
     }
