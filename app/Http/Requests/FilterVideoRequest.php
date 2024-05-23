@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class FilterRequest extends FormRequest
+class FilterVideoRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,8 @@ class FilterRequest extends FormRequest
         return [
             'min_price' => ['sometimes', 'numeric'],
             'max_price' => ['sometimes', 'numeric'],
-            'check_in' => ['sometimes', 'nullable', 'date', 'before:check_out'],
-            'check_out' => ['sometimes', 'nullable', 'date', 'after:check_in'],
+            'check_in' => ['sometimes', 'nullable', 'date', 'before_or_equal:check_out', 'required_with:check_out'],
+            'check_out' => ['sometimes', 'nullable', 'date', 'after_or_equal:check_in', 'required_with:check_in'],
             'destination' => ['sometimes', 'nullable', 'string'],
             'facilities' => ['sometimes', 'array'],
             'adults' => ['sometimes', 'numeric'],
