@@ -16,13 +16,9 @@ class ReviewSeeder extends Seeder
         $listings = Listing::all();
 
         foreach ($listings as $listing) {
-            foreach ($listing->rooms as $room) {
-                $reviews = Review::factory()->count(rand(0, 3))->make([
-                    'room_id' => $room->id,
-                ]);
+            $reviews = Review::factory()->count(rand(0, 3))->make();
 
-                $listing->reviews()->saveMany($reviews);
-            }
+            $listing->reviews()->saveMany($reviews);
         }
     }
 }
