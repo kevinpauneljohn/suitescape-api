@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
+        $schedule->command('queue:work --stop-when-empty')->withoutOverlapping();
         $schedule->command('app:update-booking-status')->daily();
         $schedule->command('app:clean-up-bookings')->daily();
         $schedule->command('sanctum:prune-expired --hours=24')->daily();
@@ -25,7 +26,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__ . '/Commands');
+        $this->load(__DIR__.'/Commands');
 
         require base_path('routes/console.php');
     }
