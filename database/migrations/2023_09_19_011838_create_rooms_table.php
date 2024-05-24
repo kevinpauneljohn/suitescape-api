@@ -15,7 +15,6 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('listing_id');
             $table->foreignUuid('room_category_id');
-            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

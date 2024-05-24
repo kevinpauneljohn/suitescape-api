@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('service_ratings', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('listing_id');
+            $table->foreignUuid('user_id');
             $table->integer('cleanliness');
             $table->integer('price_affordability');
             $table->integer('facility_service');

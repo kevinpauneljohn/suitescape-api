@@ -23,19 +23,12 @@ class RoomRetrievalService
             ->load([
                 'roomRule',
                 'roomCategory',
-                'roomAmenities.amenity',
-                'reviews.user'])
-            ->loadCount('reviews')
-            ->loadAggregate('reviews', 'rating', 'avg');
+                'unavailableDates',
+                'roomAmenities.amenity']);
     }
 
     public function getRoomListing(string $id)
     {
         return $this->getRoom($id)->listing;
-    }
-
-    public function getRoomReviews(string $id)
-    {
-        return $this->getRoom($id)->reviews->load(['user', 'room.roomCategory', 'listing.images']);
     }
 }

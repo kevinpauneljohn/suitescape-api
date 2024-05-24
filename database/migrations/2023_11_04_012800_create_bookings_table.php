@@ -14,11 +14,15 @@ return new class extends Migration
         Schema::create('bookings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
+            $table->foreignUuid('listing_id');
             $table->foreignUuid('coupon_id')->nullable();
-            $table->decimal('amount');
+            $table->decimal('amount', 10, 2, true);
             $table->text('message')->nullable();
-            $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed'])->default('upcoming');
+            $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed', 'to_rate'])->default('upcoming');
+            $table->date('date_start');
+            $table->date('date_end');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

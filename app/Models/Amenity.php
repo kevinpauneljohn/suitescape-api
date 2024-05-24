@@ -13,6 +13,11 @@ class Amenity extends Model
         'name',
     ];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
     public function roomAmenities()
     {
         return $this->hasMany(RoomAmenity::class);

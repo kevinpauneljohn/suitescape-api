@@ -12,15 +12,21 @@ class RoomCategory extends Model
     protected $fillable = [
         'listing_id',
         'name',
-        'size',
+        'description',
+        'floor_area',
         'type_of_beds',
         'pax',
         'price',
-        'tax',
+        'quantity',
     ];
 
     protected $casts = [
         'type_of_beds' => 'array',
+    ];
+
+    protected $hidden = [
+        'created_at',
+        'updated_at',
     ];
 
     public function listing()
@@ -36,5 +42,13 @@ class RoomCategory extends Model
     public function roomAmenities()
     {
         return $this->hasManyThrough(RoomAmenity::class, Room::class);
+    }
+
+    public static function getMinPriceQuery($listingId)
+    {
+        return self::select('price')
+            ->where('listing_id', $listingId)
+            ->orderBy('price')
+            ->limit(1);
     }
 }

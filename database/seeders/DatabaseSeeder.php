@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
 
         $publicFolders = [
             'avatars',
-            'images',
-            'videos',
+            'listings',
+            'packages',
         ];
 
         // Clear out the public folders
@@ -32,20 +32,26 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
-            SettingSeeder::class,
+            ConstantSeeder::class,
             RolesAndPermissionsSeeder::class,
             UserSeeder::class,
             ListingSeeder::class,
             BookingPolicySeeder::class,
             NearbyPlaceSeeder::class,
+            ListingNearbyPlaceSeeder::class,
             ServiceRatingSeeder::class,
+            AddonSeeder::class,
             RoomCategorySeeder::class,
             RoomSeeder::class,
             RoomRuleSeeder::class,
+            UnavailableDateSeeder::class,
             ReviewSeeder::class,
             AmenitySeeder::class,
             RoomAmenitySeeder::class,
+            PackageSeeder::class,
+            PackageImageSeeder::class,
             VideoSeeder::class,
+            SectionSeeder::class,
             ImageSeeder::class,
         ]);
     }

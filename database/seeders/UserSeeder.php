@@ -21,14 +21,14 @@ class UserSeeder extends Seeder
         ])->assignRole('super-admin');
 
         User::factory()->create([
-            'email' => 'host@gmail.com',
-            'password' => bcrypt('12'),
-        ])->assignRole('host');
-
-        User::factory()->create([
             'email' => 'guest@gmail.com',
             'password' => bcrypt('12'),
         ])->assignRole('guest');
+
+        User::factory()->create([
+            'email' => 'host@gmail.com',
+            'password' => bcrypt('12'),
+        ])->assignRole('host');
 
         User::factory()->count(10)->create();
     }

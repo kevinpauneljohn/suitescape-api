@@ -17,15 +17,18 @@ class VideoSeeder extends Seeder
         $videos = glob(database_path('seeders/videos').'/*');
 
         $listings = Listing::all();
+
         foreach ($listings as $index => $listing) {
+            $assignedVideo = $videos[$index];
+
             Storage::disk('public')->putFileAs(
-                'videos',
-                $videos[$index],
-                basename($videos[$index])
+                'listings/'.$listing->id.'/videos',
+                $assignedVideo,
+                basename($assignedVideo)
             );
 
             $video = Video::factory()->make([
-                'filename' => basename($videos[$index]),
+                'filename' => basename($assignedVideo),
             ]);
 
             $listing->videos()->save($video);

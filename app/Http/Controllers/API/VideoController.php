@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\FilterRequest;
+use App\Http\Requests\FilterVideoRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
@@ -30,9 +30,12 @@ class VideoController extends Controller
         return VideoResource::collection($this->videoRetrievalService->getAllVideos());
     }
 
-    public function getVideoFeed(FilterRequest $request)
+    public function getVideoFeed(FilterVideoRequest $request)
     {
-        return VideoResource::collection($this->videoRetrievalService->getVideoFeed($request->validated()));
+        $validated = $request->validated();
+
+        return VideoResource::collection($this->videoRetrievalService->getVideoFeed($validated))
+            ->additional(['order' => empty($validated) ? 'default' : 'filtered']);
     }
 
     public function getVideo(string $id)
@@ -50,6 +53,11 @@ class VideoController extends Controller
 
     public function uploadVideo(UploadVideoRequest $request)
     {
-        return $this->videoUploadService->upload($request->file('video'));
+        $filename = $this->videoUploadService->upload($request->file('video'));
+
+        return response()->json([
+            'message' => 'Video uploaded successfully',
+            'filename' => $filename,
+        ]);
     }
 }

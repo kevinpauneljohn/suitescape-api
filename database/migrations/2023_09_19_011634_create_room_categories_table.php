@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('room_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('listing_id');
-            $table->string('name');
-            $table->integer('size');
+            $table->string('name', 100);
+            $table->string('description', 5000)->nullable();
+            $table->integer('floor_area');
             $table->json('type_of_beds');
             $table->integer('pax');
-            $table->decimal('price');
-            $table->decimal('tax');
+            $table->decimal('price', 10, 2, true);
+            $table->integer('quantity');
             $table->timestamps();
         });
     }

@@ -13,7 +13,6 @@ class Room extends Model
     protected $fillable = [
         'listing_id',
         'room_category_id',
-        'description',
     ];
 
     public function listing()
@@ -26,11 +25,6 @@ class Room extends Model
         return $this->belongsTo(RoomCategory::class);
     }
 
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
-    }
-
     public function roomRule()
     {
         return $this->hasOne(RoomRule::class);
@@ -39,5 +33,17 @@ class Room extends Model
     public function roomAmenities()
     {
         return $this->hasMany(RoomAmenity::class);
+    }
+
+    public function unavailableDates()
+    {
+        return $this->hasMany(UnavailableDate::class);
+    }
+
+    public function scopeExcludeZeroQuantity($query)
+    {
+        return $query->whereHas('roomCategory', function ($query) {
+            $query->where('quantity', '>', 0);
+        });
     }
 }

@@ -17,10 +17,12 @@ class Image extends Model
         'privacy',
     ];
 
+    protected $appends = ['url'];
+
     public function getUrlAttribute()
     {
         //        route('api.images.get', ['id' => $this->id], false);
-        return Storage::url('images/'.$this->filename);
+        return Storage::url('listings/'.$this->listing_id.'/images/'.$this->filename);
     }
 
     public function user()
@@ -41,6 +43,11 @@ class Image extends Model
     public function scopePublic($query)
     {
         return $query->where('privacy', 'public');
+    }
+
+    public function scopePrivate($query)
+    {
+        return $query->where('privacy', 'private');
     }
 
     public function scopeDesc($query)

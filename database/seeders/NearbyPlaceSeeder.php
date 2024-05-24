@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Listing;
 use App\Models\NearbyPlace;
 use Illuminate\Database\Seeder;
 
@@ -14,28 +13,18 @@ class NearbyPlaceSeeder extends Seeder
     public function run(): void
     {
         $nearbyPlaces = [
-            'restaurants',
-            'malls',
+            'restaurant',
+            'mall',
+            'hospital',
             'bank',
             'church',
             'supermarket',
-            'hospital',
         ];
 
-        $listings = Listing::all();
-
-        foreach ($listings as $listing) {
-            foreach ($nearbyPlaces as $nearbyPlace) {
-                if (rand(0, 1)) {
-                    continue;
-                }
-
-                $nearbyPlace = NearbyPlace::factory()->make([
-                    'name' => $nearbyPlace,
-                ]);
-
-                $listing->nearbyPlaces()->save($nearbyPlace);
-            }
+        foreach ($nearbyPlaces as $place) {
+            NearbyPlace::factory()->create([
+                'name' => $place,
+            ]);
         }
     }
 }
