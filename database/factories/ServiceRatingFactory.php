@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,6 +18,7 @@ class ServiceRatingFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id' => User::all()->random()->id,
             'cleanliness' => fake()->numberBetween(1, 5),
             'price_affordability' => fake()->numberBetween(1, 5),
             'facility_service' => fake()->numberBetween(1, 5),

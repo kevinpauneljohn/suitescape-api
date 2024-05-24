@@ -16,11 +16,9 @@ class RoomAmenityResource extends JsonResource
     {
         $amenity = $this->whenLoaded('amenity', fn () => (new AmenityResource($this->amenity))->resolve(), []);
 
-        $roomAmenity = [
-            'id' => $this->id,
-            $this->mergeUnless($this->relationLoaded('amenity'), ['amenity_id' => $this->amenity_id]),
-        ];
-
-        return array_merge($amenity, $roomAmenity);
+        return array_merge($amenity, [
+            'id' => $this->id, // Room amenity id
+            $this->mergeUnless($this->relationLoaded('amenity'), ['amenity_id' => $this->amenity_id]), // Add amenity id instead if amenity is not loaded
+        ]);
     }
 }

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateListingRequest;
+use App\Http\Requests\FilterRoomRequest;
 use App\Http\Requests\SearchRequest;
+use App\Http\Requests\UpdateListingRequest;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\ImageResource;
@@ -12,34 +15,53 @@ use App\Http\Resources\ReviewResource;
 use App\Http\Resources\RoomResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Listing;
-use App\Services\FileNameService;
 use App\Services\ListingCreateService;
+use App\Services\ListingDeleteService;
 use App\Services\ListingLikeService;
 use App\Services\ListingRetrievalService;
 use App\Services\ListingSaveService;
+use App\Services\ListingUpdateService;
 use App\Services\ListingViewService;
-use App\Services\SettingsService;
+use Exception;
+use Illuminate\Http\Request;
 
 class ListingController extends Controller
 {
     private ListingRetrievalService $listingRetrievalService;
 
-    private FileNameService $fileNameService;
+    private ListingCreateService $listingCreateService;
 
-    private SettingsService $settingsService;
+    private ListingUpdateService $listingUpdateService;
 
-    public function __construct(ListingRetrievalService $listingRetrievalService, FileNameService $fileNameService, SettingsService $settingsService)
+    private ListingDeleteService $listingDeleteService;
+
+    public function __construct(ListingRetrievalService $listingRetrievalService, ListingCreateService $listingCreateService, ListingUpdateService $listingUpdateService, ListingDeleteService $listingDeleteService)
     {
-        $this->middleware('auth:sanctum')->only(['uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
+        $this->middleware('auth:sanctum')->only(['createListing', 'uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
 
         $this->listingRetrievalService = $listingRetrievalService;
-        $this->fileNameService = $fileNameService;
-        $this->settingsService = $settingsService;
+        $this->listingCreateService = $listingCreateService;
+        $this->listingUpdateService = $listingUpdateService;
+        $this->listingDeleteService = $listingDeleteService;
     }
 
     public function getAllListings()
     {
         return ListingResource::collection($this->listingRetrievalService->getAllListings());
+    }
+
+    public function getListingsByHost(Request $request)
+    {
+        // If no host id is provided, default to the authenticated user
+        $hostId = $request->id ?? auth('sanctum')->id();
+
+        if (! $hostId) {
+            return response()->json([
+                'message' => 'No host id provided.',
+            ], 400);
+        }
+
+        return ListingResource::collection($this->listingRetrievalService->getListingsByHost($hostId));
     }
 
     public function searchListings(SearchRequest $request)
@@ -49,14 +71,12 @@ class ListingController extends Controller
 
     public function getListing(string $id)
     {
-        $cancellationPolicy = $this->settingsService->getSetting('cancellation_policy')->value;
-
-        return new ListingResource($this->listingRetrievalService->getListingDetails($id), $cancellationPolicy);
+        return new ListingResource($this->listingRetrievalService->getListingDetails($id));
     }
 
-    public function getListingRooms(string $id)
+    public function getListingRooms(FilterRoomRequest $request, string $id)
     {
-        return RoomResource::collection($this->listingRetrievalService->getListingRooms($id));
+        return RoomResource::collection($this->listingRetrievalService->getListingRooms($id, $request->validated()));
     }
 
     //    public function getListingHost(string $id)
@@ -79,14 +99,47 @@ class ListingController extends Controller
         return ReviewResource::collection($this->listingRetrievalService->getListingReviews($id));
     }
 
+    /**
+     * @throws Exception
+     */
+    public function createListing(CreateListingRequest $request)
+    {
+        $listing = $this->listingCreateService->createListing($request->validated());
+
+        return response()->json([
+            'message' => 'Listing created successfully.',
+            'listing' => $listing,
+        ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function updateListing(UpdateListingRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->updateListing($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Listing updated successfully.',
+            'listing' => $listing,
+        ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function deleteListing(string $id)
+    {
+        $this->listingDeleteService->deleteListing($id);
+
+        return response()->json([
+            'message' => 'Listing deleted successfully.',
+        ]);
+    }
+
     public function uploadListingImage(UploadImageRequest $request, string $id)
     {
-        $validated = $request->validated();
-
-        $filename = $this->fileNameService->generateFileName($request->file('image')->extension());
-        $request->file('image')->storeAs('listings/'.$id.'/images', $filename, 'public');
-
-        $image = (new ListingCreateService($id, $filename, $validated))->createListingImage();
+        $image = $this->listingCreateService->createListingImage($id, $request->validated(), $request->file('image'));
 
         return response()->json([
             'message' => 'Listing image uploaded successfully.',
@@ -96,12 +149,7 @@ class ListingController extends Controller
 
     public function uploadListingVideo(UploadVideoRequest $request, string $id)
     {
-        $validated = $request->validated();
-
-        $filename = $this->fileNameService->generateFileName($request->file('video')->extension());
-        $request->file('video')->storeAs('listings/'.$id.'/videos', $filename, 'public');
-
-        $video = (new ListingCreateService($id, $filename, $validated))->createListingVideo();
+        $video = $this->listingCreateService->createListingVideo($id, $request->validated(), $request->file('video'));
 
         return response()->json([
             'message' => 'Listing video uploaded successfully.',

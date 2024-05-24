@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('nearby_places', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('listing_id');
             $table->string('name');
             $table->timestamps();
         });

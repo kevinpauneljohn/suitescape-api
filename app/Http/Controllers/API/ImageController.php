@@ -45,6 +45,11 @@ class ImageController extends Controller
 
     public function uploadImage(UploadImageRequest $request)
     {
-        return $this->imageUploadService->upload($request->file('image'));
+        $filename = $this->imageUploadService->upload($request->file('image'));
+
+        return response()->json([
+            'message' => 'Image uploaded successfully',
+            'filename' => $filename,
+        ]);
     }
 }

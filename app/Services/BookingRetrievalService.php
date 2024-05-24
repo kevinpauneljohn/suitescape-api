@@ -2,16 +2,71 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
+
 class BookingRetrievalService
 {
+    protected BookingCancellationService $bookingCancellationService;
+
+    protected ConstantService $constantService;
+
+    protected Booking $booking;
+
+    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, Booking $booking)
+    {
+        $this->bookingCancellationService = $bookingCancellationService;
+        $this->constantService = $constantService;
+        $this->booking = $booking;
+    }
+
     public function getAllBookings()
     {
-        $user = auth()->user();
+        return $this->getBookingsQuery()->get();
+    }
 
-        return $user->bookings()->desc()->with([
+    public function getUserBookings($userId)
+    {
+        return $this->getBookingsQuery()->where('user_id', $userId)->get();
+    }
+
+    public function getHostBookings($hostId)
+    {
+        return $this->getBookingsQuery()->whereHas('listing', function ($query) use ($hostId) {
+            $query->where('user_id', $hostId);
+        })->get();
+    }
+
+    public function getBooking($id)
+    {
+        $booking = Booking::find($id)->load([
+            'bookingAddons.addon',
+            'bookingRooms.room.roomCategory',
             'coupon',
-            'bookingRooms.room.listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
-            'bookingRooms.room.listing.images',
-        ])->get();
+            'invoice.invoiceDetails',
+            'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
+            'listing.addons',
+            'listing.images',
+            'listing.bookingPolicies',
+        ]);
+
+        // Use the BookingCancellationService to calculate the cancellation fee
+        $cancellationFee = $this->bookingCancellationService->calculateCancellationFee($booking);
+
+        // Set booking data properties
+        $booking->cancellation_fee = $cancellationFee;
+        $booking->suitescape_cancellation_fee = $this->constantService->getConstant('cancellation_fee')->value;
+        $booking->cancellation_policy = $this->constantService->getConstant('cancellation_policy')->value;
+
+        return $booking;
+    }
+
+    private function getBookingsQuery()
+    {
+        return $this->booking->desc()->with([
+            'coupon',
+            'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
+            'listing.host',
+            'listing.images',
+        ]);
     }
 }

@@ -5,16 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Listing extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'user_id',
         'name',
         'location',
         'description',
+        'facility_type',
+        'check_in_time',
+        'check_out_time',
+        'adult_capacity',
+        'child_capacity',
+        'is_pet_friendly',
+        'parking_lot',
+        'is_entire_place',
+        'entire_place_price',
+    ];
+
+    protected $casts = [
+        'check_in_time' => 'datetime',
+        'check_out_time' => 'datetime',
     ];
 
     public function user()
@@ -25,6 +40,11 @@ class Listing extends Model
     public function host()
     {
         return $this->user();
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
     }
 
     public function rooms()
@@ -42,14 +62,24 @@ class Listing extends Model
         return $this->hasMany(BookingPolicy::class);
     }
 
-    public function nearbyPlaces()
+    public function listingNearbyPlaces()
     {
-        return $this->hasMany(NearbyPlace::class);
+        return $this->hasMany(ListingNearbyPlace::class);
     }
 
     public function serviceRatings()
     {
         return $this->hasMany(ServiceRating::class);
+    }
+
+    public function addons()
+    {
+        return $this->hasMany(Addon::class);
+    }
+
+    public function unavailableDates()
+    {
+        return $this->hasMany(UnavailableDate::class);
     }
 
     public function videos()
@@ -60,6 +90,16 @@ class Listing extends Model
     public function images()
     {
         return $this->hasMany(Image::class);
+    }
+
+    public function publicImages()
+    {
+        return $this->images()->where('privacy', 'public');
+    }
+
+    public function publicVideos()
+    {
+        return $this->videos()->where('privacy', 'public');
     }
 
     public function reviews()
@@ -100,5 +140,15 @@ class Listing extends Model
     public function isViewedBy($user)
     {
         return $this->views()->where('user_id', $user->id)->exists();
+    }
+
+    public function scopeEntirePlace($query)
+    {
+        return $query->where('is_entire_place', true);
+    }
+
+    public function scopeHasMultipleRooms($query)
+    {
+        return $query->where('is_entire_place', false);
     }
 }

@@ -26,7 +26,8 @@ return new class extends Migration
             $table->string('mobile_number')->nullable();
             $table->string('password');
             $table->date('date_of_birth');
-            $table->string('picture')->nullable();
+            $table->string('profile_image')->nullable();
+            $table->string('cover_image')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

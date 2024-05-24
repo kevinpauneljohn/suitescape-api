@@ -17,11 +17,19 @@ return new class extends Migration
             $table->string('name');
             $table->text('location');
             $table->text('description')->nullable();
+            $table->enum('facility_type', ['house', 'hotel', 'apartment', 'condominium', 'cabin', 'villa']);
+            $table->time('check_in_time');
+            $table->time('check_out_time');
+            $table->integer('adult_capacity');
+            $table->integer('child_capacity');
+            $table->boolean('is_pet_friendly')->default(false);
+            $table->boolean('parking_lot')->default(false);
+            $table->boolean('is_entire_place');
+            $table->decimal('entire_place_price', 10, 2, true)->nullable();
+            $table->fullText(['name', 'location']);
             $table->timestamps();
+            $table->softDeletes();
         });
-
-        // Add fulltext index
-        DB::statement('ALTER TABLE listings ADD FULLTEXT fulltext_index (name, location)');
     }
 
     /**
@@ -29,7 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('ALTER TABLE listings DROP INDEX fulltext_index');
         Schema::dropIfExists('listings');
     }
 };

@@ -10,12 +10,16 @@ class NearbyPlace extends Model
     use HasFactory;
 
     protected $fillable = [
-        'listing_id',
         'name',
     ];
 
-    public function listing()
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+    ];
+
+    public function listingNearbyPlaces()
     {
-        return $this->belongsTo(Listing::class);
+        return $this->hasMany(ListingNearbyPlace::class);
     }
 }

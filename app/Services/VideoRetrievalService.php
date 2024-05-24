@@ -9,6 +9,13 @@ use Micilini\VideoStream\VideoStream;
 
 class VideoRetrievalService
 {
+    protected FilterService $filterService;
+
+    public function __construct(FilterService $filterService)
+    {
+        $this->filterService = $filterService;
+    }
+
     public function getAllVideos()
     {
         return Video::all();
@@ -38,99 +45,94 @@ class VideoRetrievalService
 
     public function getVideoFeed(array $filters = [])
     {
-        $adults = $filters['adults'] ?? 0;
-        $children = $filters['children'] ?? 0;
-        $pax = $adults + $children;
+        //        $adults = $filters['adults'] ?? 0;
+        //        $children = $filters['children'] ?? 0;
+        //        $pax = $adults + $children;
 
         return Video::public()
-            ->whereHas('listing', function ($query) use ($filters, $pax) {
-                $query = $this->applyDestinationFilter($query, $filters);
-                $query = $this->applyPaxFilter($query, $filters, $pax);
-                $query = $this->applyPriceFilter($query, $filters);
-                $query = $this->applyRatingFilter($query, $filters);
-                $query = $this->applyAmenitiesFilter($query, $filters);
+            ->isTranscoding(false)
+            ->whereHas('listing', function ($query) use ($filters) {
+                // Apply date filter
+                $query->where(function ($query) use ($filters) {
+                    $query->where('is_entire_place', true)
+                        ->where(function ($query) use ($filters) {
+                            $this->applyDateFilter($query, $filters);
+                        });
+                    $query->orWhere('is_entire_place', false)
+                        ->whereHas('rooms', function ($query) use ($filters) {
+                            $this->applyDateFilter($query, $filters);
+                        });
+                });
 
-                return $this->applyRoomsFilter($query, $filters);
+                // Apply main filters
+                $this->applyMainFilters($query, $filters);
             })
             ->with(['listing' => function ($query) {
                 $query->with('host')->withCount('likes')
                     ->withAggregate('roomCategories', 'price', 'min')
                     ->withAggregate('reviews', 'rating', 'avg');
-            }])
+            }, 'sections'])
             ->when(empty($filters), function ($query) {
                 return $query->orderByDesc();
             }, function ($query) {
-                return $query->orderByLowestPrice();
+                return $query->orderByListingType();
             })
             ->cursorPaginate(5);
     }
 
-    private function applyDestinationFilter($query, $filters)
+    private function initializeFilterMethods()
     {
-        return $query->when(isset($filters['destination']), function ($query) use ($filters) {
-            return $query->whereRaw('MATCH(name, location) AGAINST(? IN NATURAL LANGUAGE MODE)', [$filters['destination']]);
-        });
+        return [
+            'destination' => function ($query, $destination) {
+                $this->filterService->applyDestinationFilter($query, $destination);
+            },
+            'adults' => function ($query, $adultCount) {
+                $this->filterService->applyAdultCountFilter($query, $adultCount);
+            },
+            'children' => function ($query, $childrenCount) {
+                $this->filterService->applyChildrenCountFilter($query, $childrenCount);
+            },
+            'facilities' => function ($query, $facilities) {
+                $this->filterService->applyFacilityTypeFilter($query, $facilities);
+            },
+            'max_price' => function ($query, $maxPrice) {
+                $this->filterService->applyPriceFilter($query, $maxPrice);
+            },
+            'min_price' => function ($query, $minPrice) {
+                $this->filterService->applyPriceFilter($query, null, $minPrice);
+            },
+            'max_rating' => function ($query, $maxRating) {
+                $this->filterService->applyRatingFilter($query, $maxRating);
+            },
+            'min_rating' => function ($query, $minRating) {
+                $this->filterService->applyRatingFilter($query, null, $minRating);
+            },
+            'amenities' => function ($query, $amenities) {
+                $this->filterService->applyAmenitiesFilter($query, $amenities);
+            },
+            'rooms' => function ($query, $rooms) {
+                $this->filterService->applyRoomCountFilter($query, $rooms);
+            },
+        ];
     }
 
-    private function applyPaxFilter($query, $filters, $pax)
+    private function applyMainFilters($query, $filters)
     {
-        return $query->when(isset($filters['adults']) || isset($filters['children']), function ($query) use ($pax) {
-            $query->whereHas('roomCategories', function ($query) use ($pax) {
-                return $query->where('pax', '>=', $pax);
-            });
-        });
+        $filterMethods = $this->initializeFilterMethods();
+
+        foreach ($filterMethods as $filterKey => $filterFunction) {
+            if (isset($filters[$filterKey])) {
+                $filterFunction($query, $filters[$filterKey]);
+            }
+        }
     }
 
-    private function applyPriceFilter($query, $filters)
+    private function applyDateFilter($query, $filters)
     {
-        $query = $query->when(isset($filters['max_price']) && $filters['max_price'] >= 0, function ($query) use ($filters) {
-            $query->whereDoesntHave('roomCategories', function ($query) use ($filters) {
-                return $query->where('price', '>', $filters['max_price']);
-            });
-        });
-
-        return $query->when(isset($filters['min_price']), function ($query) use ($filters) {
-            $query->whereDoesntHave('roomCategories', function ($query) use ($filters) {
-                return $query->where('price', '<', $filters['min_price']);
-            });
-        });
-    }
-
-    private function applyRatingFilter($query, $filters)
-    {
-        $query = $query->when(isset($filters['max_rating']) && $filters['max_rating'] >= 0, function ($query) use ($filters) {
-            $query->whereHas('reviews', function ($query) use ($filters) {
-                $query->select('listing_id')->groupBy('listing_id')->havingRaw('AVG(rating) <= ?', [$filters['max_rating']]);
-            });
-        });
-
-        return $query->when(isset($filters['min_rating']), function ($query) use ($filters) {
-            $query->whereHas('reviews', function ($query) use ($filters) {
-                $query->select('listing_id')->groupBy('listing_id')->havingRaw('AVG(rating) >= ?', [$filters['min_rating']]);
-            });
-        });
-    }
-
-    private function applyAmenitiesFilter($query, $filters)
-    {
-        return $query->whereHas('rooms', function ($query) use ($filters) {
-            $query->when(isset($filters['amenities']), function ($query) use ($filters) {
-                return $query->whereHas('roomAmenities', function ($query) use ($filters) {
-                    //                            return $query->whereHas('amenity', function ($query) use ($filters) {
-                    //                                return $query->whereIn('name', $filters['amenities']);
-                    //                            });
-                    return $query->whereDoesntHave('amenity', function ($query) use ($filters) {
-                        return $query->whereNotIn('name', $filters['amenities']);
-                    });
-                });
-            });
-        });
-    }
-
-    private function applyRoomsFilter($query, $filters)
-    {
-        return $query->when(isset($filters['rooms']), function ($query) use ($filters) {
-            return $query->has('rooms', '>=', $filters['rooms']);
-        });
+        if (isset($filters['check_in']) && isset($filters['check_out'])) {
+            $this->filterService->applyUnavailableDateFilter($query, $filters['check_in'], $filters['check_out']);
+        } else {
+            $this->filterService->applyUnavailableDateFilter($query, today(), today()->addDay());
+        }
     }
 }

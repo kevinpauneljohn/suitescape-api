@@ -20,8 +20,8 @@ return new class extends Migration
             $table->date('date_start');
             $table->date('date_end');
             $table->foreignUuid('coupon_id');
-            $table->decimal('coupon_discount_amount');
-            $table->decimal('amount');
+            $table->decimal('coupon_discount_amount', 10, 2, true);
+            $table->decimal('amount', 10, 2, true);
             $table->timestamps();
         });
     }

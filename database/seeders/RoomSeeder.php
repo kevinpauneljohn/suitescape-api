@@ -13,7 +13,7 @@ class RoomSeeder extends Seeder
      */
     public function run(): void
     {
-        $listings = Listing::all();
+        $listings = Listing::hasMultipleRooms()->get();
 
         foreach ($listings as $listing) {
 

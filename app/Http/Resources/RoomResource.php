@@ -20,13 +20,10 @@ class RoomResource extends JsonResource
                 'listing_id' => $this->listing_id,
             ]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
-            'description' => $this->description,
-            'rules' => $this->whenLoaded('roomRule'),
-            'average_rating' => $this->whenNotNull($this->whenAggregated('reviews', 'rating', 'avg', fn ($value) => round($value, 1))),
+            'rule' => new RoomRuleResource($this->whenLoaded('roomRule')),
             'category' => new RoomCategoryResource($this->whenLoaded('roomCategory')),
             'amenities' => RoomAmenityResource::collection($this->whenLoaded('roomAmenities')),
-            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
-            'reviews_count' => $this->whenCounted('reviews'),
+            'unavailable_dates' => UnavailableDateResource::collection($this->whenLoaded('unavailableDates')),
         ];
     }
 }

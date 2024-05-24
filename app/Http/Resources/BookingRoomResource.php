@@ -16,10 +16,11 @@ class BookingRoomResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            $this->mergeUnless($this->relationLoaded('booking'), ['booking_id' => $this->booking_id]),
+            $this->mergeUnless($this->relationLoaded('room'), ['room_id' => $this->room_id]),
             'booking' => new BookingResource($this->whenLoaded('booking')),
             'room' => new RoomResource($this->whenLoaded('room')),
-            'date_start' => $this->date_start,
-            'date_end' => $this->date_end,
+            'quantity' => $this->quantity,
         ];
     }
 }

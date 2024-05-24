@@ -12,18 +12,35 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 define('WAIT_TIME', '-5 minutes');
-define('WAIT_TIME_IN_SECONDS', 300);
 define('INCREASED_WAIT_TIME', '-30 minutes');
-define('MAX_ATTEMPTS', 1);
+define('WAIT_TIME_IN_SECONDS', 300);
+define('MAX_LOGIN_ATTEMPTS', 5);
+define('MAX_FORGOT_ATTEMPTS', 1);
 
 class RegistrationService
 {
     public function register($registrationData): JsonResponse
     {
+        $email = $registrationData['email'];
+
+        // Check if the user has reached the maximum number of attempts
+        if (RateLimiter::tooManyAttempts('register:'.$email, MAX_LOGIN_ATTEMPTS)) {
+            return response()->json([
+                'message' => 'Too many attempts. Please try again later.',
+            ], 429);
+        }
+
+        // Increment the rate limiter for the register
+        RateLimiter::hit('register:'.$email, WAIT_TIME_IN_SECONDS);
+
+        // Create a new user
         $user = User::create($registrationData);
 
         // Create a token for the user
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Clear the rate limiter for the register
+        RateLimiter::clear('register:'.$email);
 
         return response()->json([
             'message' => 'User created successfully',
@@ -34,6 +51,16 @@ class RegistrationService
 
     public function login($email, $password): JsonResponse
     {
+        // Check if the user has reached the maximum number of attempts
+        if (RateLimiter::tooManyAttempts('login:'.$email, MAX_LOGIN_ATTEMPTS)) {
+            return response()->json([
+                'message' => 'Too many attempts. Please try again later.',
+            ], 429);
+        }
+
+        // Increase the rate limiter for the login
+        RateLimiter::hit('login:'.$email, WAIT_TIME_IN_SECONDS);
+
         $user = $this->getUserByEmail($email);
 
         // Check if user exists
@@ -58,6 +85,9 @@ class RegistrationService
 
         // Create a token for the user
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Clear the rate limiter for the login
+        RateLimiter::clear('login:'.$email);
 
         return response()->json([
             'message' => 'Login successful',
@@ -100,7 +130,7 @@ class RegistrationService
         //        }
 
         // Check if the user has reached the maximum number of attempts
-        if (RateLimiter::tooManyAttempts('forgot-password:'.$email, MAX_ATTEMPTS)) {
+        if (RateLimiter::tooManyAttempts('forgot-password:'.$email, MAX_FORGOT_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn('forgot-password:'.$email);
             $minutes = ceil($seconds / 60);
 

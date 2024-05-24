@@ -13,13 +13,12 @@ class BookingRoom extends Model
     protected $fillable = [
         'booking_id',
         'room_id',
-        'date_start',
-        'date_end',
+        'quantity',
     ];
 
-    protected $casts = [
-        'date_start' => 'date',
-        'date_end' => 'date',
+    protected $hidden = [
+        'created_at',
+        'updated_at',
     ];
 
     public function booking()

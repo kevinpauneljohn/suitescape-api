@@ -16,6 +16,7 @@ class ActiveStatusUpdated implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public User $user;
+
     public bool $active;
 
     /**
@@ -56,8 +57,8 @@ class ActiveStatusUpdated implements ShouldBroadcast
     public function broadcastWith(): array
     {
         return [
-            'active' => $this->active,
             'user' => (new UserResource($this->user))->resolve(),
+            'active' => $this->active,
         ];
     }
 }

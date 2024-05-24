@@ -2,13 +2,15 @@
 
 use App\Http\Controllers\API\BookingController;
 use App\Http\Controllers\API\ChatController;
+use App\Http\Controllers\API\ConstantController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
+use App\Http\Controllers\API\PackageController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\RegistrationController;
+use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\RoomController;
-use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\VideoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -30,11 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     })->name('user');
 });
 
-Route::middleware('throttle:5,5')->group(function () {
-    Route::post('/register', [RegistrationController::class, 'register'])->name('register');
-    Route::post('/login', [RegistrationController::class, 'login'])->name('login');
-});
-
+Route::post('/register', [RegistrationController::class, 'register'])->name('register');
+Route::post('/login', [RegistrationController::class, 'login'])->name('login');
 Route::post('/forgot-password', [RegistrationController::class, 'forgotPassword'])->name('password.email');
 Route::post('/validate-reset-token', [RegistrationController::class, 'validateResetToken'])->name('password.reset.validate');
 Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
@@ -48,14 +47,14 @@ Route::prefix('profile')->group(function () {
 
     Route::post('/validate', [ProfileController::class, 'validateProfile'])->name('profile.validate');
     Route::post('/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
-    Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.password');
-    Route::post('/update-active-session', [ProfileController::class, 'updateActiveSession'])->name('profile.active-session');
+    Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
+    Route::post('/update-active-session', [ProfileController::class, 'updateActiveSession'])->name('profile.update-active-session');
 });
 
-Route::prefix('settings')->group(function () {
-    Route::get('/', [SettingController::class, 'getAllSettings'])->name('settings.all');
-    Route::get('/{key}', [SettingController::class, 'getSetting'])->name('settings.get');
-    Route::post('/{key}', [SettingController::class, 'updateSetting'])->name('settings.update');
+Route::prefix('constants')->group(function () {
+    Route::get('/', [ConstantController::class, 'getAllConstants'])->name('constants.all');
+    Route::get('/{key}', [ConstantController::class, 'getConstant'])->name('constants.get');
+    Route::post('/{key}', [ConstantController::class, 'updateConstant'])->name('constants.update');
 });
 
 Route::prefix('videos')->group(function () {
@@ -82,9 +81,16 @@ Route::prefix('rooms')->group(function () {
 });
 
 Route::prefix('listings')->group(function () {
+    Route::middleware('throttle:1000,1')->group(function () {
+        Route::get('/search', [ListingController::class, 'searchListings'])->name('listings.search');
+    });
+
     Route::get('/', [ListingController::class, 'getAllListings'])->name('listings.all');
-    Route::get('/search', [ListingController::class, 'searchListings'])->name('listings.search');
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
+    Route::get('/host', [ListingController::class, 'getListingsByHost'])->name('listings.user')->whereUuid('id');
+    Route::post('/', [ListingController::class, 'createListing'])->name('listings.create');
+    Route::post('/{id}', [ListingController::class, 'updateListing'])->name('listings.update')->whereUuid('id');
+    Route::delete('/{id}', [ListingController::class, 'deleteListing'])->name('listings.delete')->whereUuid('id');
 
     Route::prefix('{id}')->group(function () {
         //        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
@@ -117,7 +123,24 @@ Route::prefix('hosts')->group(function () {
 
 Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
+    Route::get('/user', [BookingController::class, 'getUserBookings'])->name('bookings.user');
+    Route::get('/host', [BookingController::class, 'getHostBookings'])->name('bookings.host');
+    Route::get('/{id}', [BookingController::class, 'getBooking'])->name('bookings.get')->whereUuid('id');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
+    Route::post('/{id}/update-status', [BookingController::class, 'updateBookingStatus'])->name('bookings.update-status')->whereUuid('id');
+    Route::post('/{id}/update-dates', [BookingController::class, 'updateBookingDates'])->name('bookings.update-dates')->whereUuid('id');
+    Route::post('/{id}/update-payment-status', [BookingController::class, 'updateBookingPaymentStatus'])->name('bookings.update-payment-status')->whereUuid('id');
+});
+
+Route::prefix('reviews')->group(function () {
+    Route::get('/', [ReviewController::class, 'getAllReviews'])->name('reviews.all');
+    Route::get('/{id}', [ReviewController::class, 'getReview'])->name('reviews.get')->whereUuid('id');
+    Route::post('/', [ReviewController::class, 'createReview'])->name('reviews.create');
+});
+
+Route::prefix('packages')->group(function () {
+    Route::get('/', [PackageController::class, 'getAllPackages'])->name('packages.all');
+    Route::get('/{id}', [PackageController::class, 'getPackage'])->name('packages.get')->whereUuid('id');
 });
 
 Route::prefix('messages')->group(function () {
