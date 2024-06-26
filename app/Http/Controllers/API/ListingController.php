@@ -4,8 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateListingRequest;
-use App\Http\Requests\FilterRoomRequest;
+use App\Http\Requests\CreateSpecialRateRequest;
+use App\Http\Requests\DateRangeRequest;
 use App\Http\Requests\SearchRequest;
+use App\Http\Requests\UpdateListingPriceRequest;
 use App\Http\Requests\UpdateListingRequest;
 use App\Http\Requests\UploadImageRequest;
 use App\Http\Requests\UploadVideoRequest;
@@ -13,6 +15,7 @@ use App\Http\Resources\ImageResource;
 use App\Http\Resources\ListingResource;
 use App\Http\Resources\ReviewResource;
 use App\Http\Resources\RoomResource;
+use App\Http\Resources\UnavailableDateResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Listing;
 use App\Services\ListingCreateService;
@@ -69,12 +72,12 @@ class ListingController extends Controller
         return ListingResource::collection($this->listingRetrievalService->searchListings($request->search_query, $request->limit));
     }
 
-    public function getListing(string $id)
+    public function getListing(DateRangeRequest $request, string $id)
     {
-        return new ListingResource($this->listingRetrievalService->getListingDetails($id));
+        return new ListingResource($this->listingRetrievalService->getListingDetails($id, $request->validated()));
     }
 
-    public function getListingRooms(FilterRoomRequest $request, string $id)
+    public function getListingRooms(DateRangeRequest $request, string $id)
     {
         return RoomResource::collection($this->listingRetrievalService->getListingRooms($id, $request->validated()));
     }
@@ -99,6 +102,13 @@ class ListingController extends Controller
         return ReviewResource::collection($this->listingRetrievalService->getListingReviews($id));
     }
 
+    public function getUnavailableDates(DateRangeRequest $request, string $id)
+    {
+        $unavailableDates = $this->listingRetrievalService->getUnavailableDatesFromRange($id, $request->validated()['start_date'], $request->validated()['end_date']);
+
+        return UnavailableDateResource::collection($unavailableDates);
+    }
+
     /**
      * @throws Exception
      */
@@ -108,7 +118,7 @@ class ListingController extends Controller
 
         return response()->json([
             'message' => 'Listing created successfully.',
-            'listing' => $listing,
+            'listing' => new ListingResource($listing),
         ]);
     }
 
@@ -121,7 +131,67 @@ class ListingController extends Controller
 
         return response()->json([
             'message' => 'Listing updated successfully.',
-            'listing' => $listing,
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function addSpecialRate(CreateSpecialRateRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->addSpecialRate($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Special rate added successfully.',
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function updateSpecialRate(CreateSpecialRateRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->updateSpecialRate($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Special rate updated successfully.',
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function removeSpecialRate(Request $request, string $id)
+    {
+        $listing = $this->listingUpdateService->removeSpecialRate($id, $request->special_rate_id);
+
+        return response()->json([
+            'message' => 'Special rate removed successfully.',
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function blockDates(DateRangeRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->blockDates($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Listing dates blocked successfully.',
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function unblockDates(DateRangeRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->unblockDates($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Listing dates unblocked successfully.',
+            'listing' => new ListingResource($listing),
+        ]);
+    }
+
+    public function updatePrices(UpdateListingPriceRequest $request, string $id)
+    {
+        $listing = $this->listingUpdateService->updatePrices($id, $request->validated());
+
+        return response()->json([
+            'message' => 'Listing prices updated successfully.',
+            'listing' => new ListingResource($listing),
         ]);
     }
 
@@ -143,7 +213,7 @@ class ListingController extends Controller
 
         return response()->json([
             'message' => 'Listing image uploaded successfully.',
-            'image' => $image,
+            'image' => new ImageResource($image),
         ]);
     }
 
@@ -153,7 +223,7 @@ class ListingController extends Controller
 
         return response()->json([
             'message' => 'Listing video uploaded successfully.',
-            'video' => $video,
+            'video' => new VideoResource($video),
         ]);
     }
 

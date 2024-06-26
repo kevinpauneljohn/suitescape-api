@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UnavailableDateResource extends JsonResource
+class SpecialRateResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -22,14 +22,12 @@ class UnavailableDateResource extends JsonResource
             $this->mergeUnless($this->relationLoaded('room'), [
                 'room_id' => $this->room_id,
             ]),
-            $this->mergeUnless($this->relationLoaded('booking'), [
-                'booking_id' => $this->booking_id,
-            ]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
             'room' => new RoomResource($this->whenLoaded('room')),
-            'booking' => new BookingResource($this->whenLoaded('booking')),
-            'type' => $this->type,
-            'date' => $this->date,
+            'title' => $this->title,
+            'price' => floatval($this->price),
+            'start_date' => $this->start_date,
+            'end_date' => $this->end_date,
         ];
     }
 }

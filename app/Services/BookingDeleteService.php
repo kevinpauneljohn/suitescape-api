@@ -6,9 +6,11 @@ use App\Models\Booking;
 
 class BookingDeleteService
 {
-    public function removeUnavailableDates(Booking $booking)
+    protected UnavailableDateService $unavailableDateService;
+
+    public function __construct(UnavailableDateService $unavailableDateService)
     {
-        $booking->unavailableDates()->delete();
+        $this->unavailableDateService = $unavailableDateService;
     }
 
     public function cleanUnavailableDates()
@@ -16,7 +18,7 @@ class BookingDeleteService
         $completedBookings = Booking::where('status', 'completed')->get();
 
         foreach ($completedBookings as $booking) {
-            $this->removeUnavailableDates($booking);
+            $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
         }
     }
 

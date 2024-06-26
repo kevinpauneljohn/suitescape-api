@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasPrices;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RoomCategory extends Model
 {
-    use HasFactory;
+    use HasFactory, HasPrices;
 
     protected $fillable = [
         'listing_id',
@@ -16,7 +17,8 @@ class RoomCategory extends Model
         'floor_area',
         'type_of_beds',
         'pax',
-        'price',
+        'weekday_price',
+        'weekend_price',
         'quantity',
     ];
 
@@ -28,6 +30,23 @@ class RoomCategory extends Model
         'created_at',
         'updated_at',
     ];
+
+    //    protected $appends = ['price'];
+
+    protected static function weekendPriceColumn()
+    {
+        return 'weekend_price';
+    }
+
+    protected static function weekdayPriceColumn()
+    {
+        return 'weekday_price';
+    }
+
+    //    public function getPriceAttribute()
+    //    {
+    //        return $this->getCurrentPrice();
+    //    }
 
     public function listing()
     {
@@ -44,11 +63,8 @@ class RoomCategory extends Model
         return $this->hasManyThrough(RoomAmenity::class, Room::class);
     }
 
-    public static function getMinPriceQuery($listingId)
+    public function specialRates()
     {
-        return self::select('price')
-            ->where('listing_id', $listingId)
-            ->orderBy('price')
-            ->limit(1);
+        return $this->hasManyThrough(SpecialRate::class, Room::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasPrices;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Listing extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasPrices, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -19,18 +20,61 @@ class Listing extends Model
         'facility_type',
         'check_in_time',
         'check_out_time',
+        'is_check_in_out_same_day',
+        'total_hours',
         'adult_capacity',
         'child_capacity',
-        'is_pet_friendly',
+        'is_pet_allowed',
         'parking_lot',
         'is_entire_place',
-        'entire_place_price',
+        'entire_place_weekday_price',
+        'entire_place_weekend_price',
     ];
 
     protected $casts = [
         'check_in_time' => 'datetime',
         'check_out_time' => 'datetime',
     ];
+
+    //    protected $appends = ['entire_place_price'];
+
+    protected static function weekendPriceColumn()
+    {
+        return 'entire_place_weekend_price';
+    }
+
+    protected static function weekdayPriceColumn()
+    {
+        return 'entire_place_weekday_price';
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function ($listing) {
+            if (! $listing->is_entire_place) {
+                self::removeEntirePlacePrice($listing);
+            }
+        });
+
+        static::updated(function ($listing) {
+            if (! $listing->is_entire_place) {
+                self::removeEntirePlacePrice($listing);
+            }
+        });
+    }
+
+    private static function removeEntirePlacePrice($listing)
+    {
+        $listing->updateQuietly([
+            'entire_place_weekday_price' => null,
+            'entire_place_weekend_price' => null,
+        ]);
+    }
+
+    //    public function getEntirePlacePriceAttribute()
+    //    {
+    //        return $this->getCurrentPrice();
+    //    }
 
     public function user()
     {
@@ -75,6 +119,11 @@ class Listing extends Model
     public function addons()
     {
         return $this->hasMany(Addon::class);
+    }
+
+    public function specialRates()
+    {
+        return $this->hasMany(SpecialRate::class);
     }
 
     public function unavailableDates()

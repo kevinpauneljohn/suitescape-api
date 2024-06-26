@@ -10,14 +10,18 @@ class ListingRetrievalService
 
     protected FilterService $filterService;
 
+    protected PriceCalculatorService $priceCalculatorService;
+
+    protected UnavailableDateService $unavailableDateService;
+
     protected ?Listing $currentListing = null;
 
-    public function __construct(ConstantService $constantService, FilterService $filterService)
+    public function __construct(ConstantService $constantService, FilterService $filterService, PriceCalculatorService $priceCalculatorService, UnavailableDateService $unavailableDateService)
     {
         $this->constantService = $constantService;
         $this->filterService = $filterService;
-
-        $this->currentListing = null;
+        $this->priceCalculatorService = $priceCalculatorService;
+        $this->unavailableDateService = $unavailableDateService;
     }
 
     public function getAllListings()
@@ -53,11 +57,12 @@ class ListingRetrievalService
         return $this->currentListing;
     }
 
-    public function getListingDetails(string $id)
+    public function getListingDetails(string $id, array $filters = [])
     {
-        $suitescapeCancellationPolicy = $this->constantService->getConstant('cancellation_policy')->value;
-
+        $startDate = $filters['start_date'] ?? null;
+        $endDate = $filters['end_date'] ?? null;
         $listing = $this->getListing($id);
+        $suitescapeCancellationPolicy = $this->constantService->getConstant('cancellation_policy')->value;
 
         // Load all images and videos if the authenticated user is the listing owner
         if (auth('sanctum')->id() === $listing->user_id) {
@@ -73,12 +78,18 @@ class ListingRetrievalService
             'reviews' => fn ($query) => $query->with('user')->take(10),
             'bookingPolicies',
             'listingNearbyPlaces.nearbyPlace',
+            'specialRates',
             'unavailableDates',
-            'addons' => fn ($query) => $query->excludeZeroQuantity(),
+            'addons' => fn ($query) => $query->excludeNoStocks(),
         ])
             ->loadCount(['likes', 'saves', 'views', 'reviews'])
-            ->loadAggregate('roomCategories', 'price', 'min')
             ->loadAggregate('reviews', 'rating', 'avg');
+
+        // Get current entire place price
+        $listing->entire_place_price = $listing->getCurrentPrice($startDate, $endDate);
+
+        // Get minimum price from room categories
+        $listing->lowest_room_price = $this->priceCalculatorService->getMinRoomPriceForListing($id, $startDate, $endDate);
 
         $listing->cancellation_policy = $suitescapeCancellationPolicy;
 
@@ -90,23 +101,34 @@ class ListingRetrievalService
         $startDate = $filters['start_date'] ?? null;
         $endDate = $filters['end_date'] ?? null;
 
-        return $this->getListing($id)->rooms()
-            ->excludeZeroQuantity()
-            // Check if room is available for the given date range
+        $query = $this->getListing($id)->rooms()
+            ->excludeNoStocks()
+             // Check if room is available for the given date range
             ->when(isset($startDate) && isset($endDate), function ($query) use ($startDate, $endDate) {
                 $this->filterService->applyUnavailableDateFilter($query, $startDate, $endDate);
             })
             ->with([
-                'roomCategory',
+                'roomCategory' => function ($query) use ($startDate, $endDate) {
+                    return $this->priceCalculatorService->getPriceForRoomCategoriesToQuery($query, $startDate, $endDate);
+                },
                 'roomRule',
                 'unavailableDates',
                 'roomAmenities.amenity',
-            ])
-            // Order rooms by price
-            ->join('room_categories', 'rooms.room_category_id', '=', 'room_categories.id')
-            ->orderBy('room_categories.price')
-            ->select('rooms.*') // Avoid column name collision
-            ->get();
+            ]);
+
+        return $this->orderByRoomPrice($query, $startDate, $endDate)->get();
+    }
+
+    public function orderByRoomPrice($query, $startDate, $endDate)
+    {
+        $roomCategoriesSubquery = $this->priceCalculatorService->getPriceForRoomCategoriesSubquery($startDate, $endDate);
+
+        // Compute price to order by it
+        return $query->joinSub($roomCategoriesSubquery, 'priceSub', function ($join) {
+            $join->on('rooms.room_category_id', '=', 'priceSub.room_category_id');
+        })
+            ->orderBy('priceSub.price') // Order by the computed price
+            ->orderBy('rooms.id'); // Secondary sort by room ID for consistent ordering
     }
 
     //    public function getListingHost(string $id)
@@ -135,5 +157,10 @@ class ListingRetrievalService
     public function getListingReviews(string $id)
     {
         return $this->getListing($id)->reviews->load(['user', 'listing.images']);
+    }
+
+    public function getUnavailableDatesFromRange(string $id, string $startDate, string $endDate)
+    {
+        return $this->unavailableDateService->getUnavailableDatesFromRange('listing', $id, $startDate, $endDate);
     }
 }

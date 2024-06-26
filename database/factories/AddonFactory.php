@@ -16,9 +16,12 @@ class AddonFactory extends Factory
      */
     public function definition(): array
     {
+        $isConsumable = fake()->boolean;
+
         return [
             'price' => fake()->randomFloat(2, 500, 1000),
-            'quantity' => fake()->numberBetween(1, 10),
+            'quantity' => $isConsumable ? fake()->numberBetween(1, 10) : null,
+            'is_consumable' => $isConsumable,
         ];
     }
 }

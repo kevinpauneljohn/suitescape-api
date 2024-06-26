@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignUuid('listing_id')->nullable();
             $table->foreignUuid('room_id')->nullable();
             $table->foreignUuid('booking_id')->nullable();
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->enum('type', ['booked', 'blocked']);
+            $table->date('date');
             $table->timestamps();
         });
     }

@@ -11,9 +11,12 @@ class VideoRetrievalService
 {
     protected FilterService $filterService;
 
-    public function __construct(FilterService $filterService)
+    protected PriceCalculatorService $priceCalculatorService;
+
+    public function __construct(FilterService $filterService, PriceCalculatorService $priceCalculatorService)
     {
         $this->filterService = $filterService;
+        $this->priceCalculatorService = $priceCalculatorService;
     }
 
     public function getAllVideos()
@@ -67,17 +70,37 @@ class VideoRetrievalService
                 // Apply main filters
                 $this->applyMainFilters($query, $filters);
             })
-            ->with(['listing' => function ($query) {
+            ->with(['listing' => function ($query) use ($filters) {
+                $checkIn = $filters['check_in'] ?? null;
+                $checkOut = $filters['check_out'] ?? null;
+
                 $query->with('host')->withCount('likes')
-                    ->withAggregate('roomCategories', 'price', 'min')
-                    ->withAggregate('reviews', 'rating', 'avg');
+                    ->withAggregate('reviews', 'rating', 'avg')
+                    ->addSelect([
+                        'lowest_room_price' => $this->priceCalculatorService->getMinRoomPriceForListingsSubquery($checkIn, $checkOut),
+                    ]);
+
+                return $this->priceCalculatorService->getEntirePriceForListingsToQuery($query, $checkIn, $checkOut);
             }, 'sections'])
             ->when(empty($filters), function ($query) {
                 return $query->orderByDesc();
             }, function ($query) {
-                return $query->orderByListingType();
+                return $this->orderByListingType($query);
             })
             ->cursorPaginate(5);
+    }
+
+    public function orderByListingType($query)
+    {
+        $priceSubquery = $this->priceCalculatorService->getMinPriceByTypeSubquery();
+
+        // Use the subquery in a join to add the lowestPrice to each video
+        return $query->select('videos.*', 'priceSub.min_price')
+            ->joinSub($priceSubquery, 'priceSub', function ($join) {
+                $join->on('videos.listing_id', '=', 'priceSub.listing_id');
+            })
+            ->orderBy('priceSub.min_price')  // Order by the computed lowest price
+            ->orderBy('videos.id');            // Secondary sort by video ID for consistent ordering
     }
 
     private function initializeFilterMethods()
