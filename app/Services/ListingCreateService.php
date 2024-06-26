@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\TranscodeVideo;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\NearbyPlace;
@@ -88,10 +87,11 @@ class ListingCreateService
             'user_id' => auth('sanctum')->user()->id,
             'filename' => $tempFilename,
             'privacy' => $videoData['privacy'],
-            'is_transcoding' => true,
+            // Temporarily removed until ffmpeg is installed
+            //            'is_transcoding' => true,
         ]);
 
-        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);
+        //        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);
 
         if (isset($videoData['sections'])) {
             $this->createVideoSections($video, $videoData['sections']);
