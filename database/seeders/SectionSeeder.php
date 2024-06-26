@@ -5,14 +5,14 @@ namespace Database\Seeders;
 use App\Models\Section;
 use App\Models\Video;
 use Illuminate\Database\Seeder;
-use Log;
-use ProtoneMedia\LaravelFFMpeg\Drivers\UnknownDurationException;
-use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
+use Owenoj\LaravelGetId3\GetId3;
 
 class SectionSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * @throws \getid3_exception
      */
     public function run(): void
     {
@@ -30,16 +30,17 @@ class SectionSeeder extends Seeder
         $videos = Video::all();
 
         foreach ($videos as $video) {
-            // Get the duration of the video
-            try {
-                $mediaDuration = FFMpeg::fromDisk('public')
-                    ->open('listings/'.$video->listing_id.'/videos/'.$video->filename)
-                    ->getDurationInMiliseconds();
-            } catch (UnknownDurationException) {
-                Log::error('Could not get duration for video '.$video->filename);
-
-                $mediaDuration = 10000;
-            }
+            // Get the duration of the video in milliseconds
+            //            try {
+            //                $mediaDuration = FFMpeg::fromDisk('public')
+            //                    ->open('listings/'.$video->listing_id.'/videos/'.$video->filename)
+            //                    ->getDurationInMiliseconds();
+            //            } catch (UnknownDurationException) {
+            //                Log::error('Could not get duration for video '.$video->filename);
+            //
+            //                $mediaDuration = 10000;
+            //            }
+            $mediaDuration = GetId3::fromDiskAndPath('public', 'listings/'.$video->listing_id.'/videos/'.$video->filename)->getPlaytimeSeconds() * 1000;
 
             $sections = Section::factory()->count(5)->sequence(function ($sequence) use ($mediaDuration, $labels) {
                 // Generate random milliseconds based on the video duration
