@@ -14,9 +14,12 @@ class BookingCreateService
 {
     protected ConstantService $constantService;
 
-    public function __construct(ConstantService $constantService)
+    protected UnavailableDateService $unavailableDateService;
+
+    public function __construct(ConstantService $constantService, UnavailableDateService $unavailableDateService)
     {
         $this->constantService = $constantService;
+        $this->unavailableDateService = $unavailableDateService;
     }
 
     /**
@@ -34,7 +37,7 @@ class BookingCreateService
         $this->addBookingAddons($booking, $addons);
 
         if ($isEntirePlace) {
-            $this->addUnavailableDates($booking, 'listing', $bookingData['listing_id'], $booking->date_start, $booking->date_end);
+            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $bookingData['listing_id'], $booking->date_start, $booking->date_end);
         }
 
         return $booking;
@@ -109,11 +112,14 @@ class BookingCreateService
 
         if ($isEntirePlace) {
             // Get the entire place price from the Listing model
-            $amount = Listing::findOrFail($listingId)->entire_place_price;
+            $listing = Listing::findOrFail($listingId);
+
+            // Get the price of the listing
+            $amount = $listing->getCurrentPrice($startDate, $endDate);
         } else {
             // Go through each room and calculate the total amount
             foreach ($rooms as $room) {
-                $amount += $this->getRoomAmount($room);
+                $amount += $this->getRoomAmount($room, $startDate, $endDate);
             }
         }
 
@@ -155,15 +161,6 @@ class BookingCreateService
         ]);
     }
 
-    private function addUnavailableDates($booking, string $type, string $id, string $startDate, string $endDate): void
-    {
-        $booking->unavailableDates()->create([
-            $type.'_id' => $id,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-        ]);
-    }
-
     private function addBookingRooms($booking, Collection $rooms, bool $isEntirePlace): void
     {
         foreach ($rooms as $room) {
@@ -173,7 +170,7 @@ class BookingCreateService
             ]);
 
             if (! $isEntirePlace) {
-                $this->addUnavailableDates($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
             }
         }
     }
@@ -189,8 +186,8 @@ class BookingCreateService
         }
     }
 
-    private function getRoomAmount($room): float
+    private function getRoomAmount($room, string $startDate, string $endDate): float
     {
-        return $room->roomCategory->price * $room->userQuantity;
+        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->userQuantity;
     }
 }

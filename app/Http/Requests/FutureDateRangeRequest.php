@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SendMessageRequest extends FormRequest
+class FutureDateRangeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,8 @@ class SendMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_id' => ['required', 'uuid', 'exists:users,id'],
-            'content' => ['required', 'string'],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
         ];
     }
 }

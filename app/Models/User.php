@@ -84,7 +84,7 @@ class User extends Authenticatable
         });
 
         static::updated(function ($user) {
-            if ($user->wasChanged(['firstname', 'lastname'])) {
+            if ($user->wasChanged(['firstname', 'lastname']) && str_starts_with($user->profile_image, 'default-')) {
                 self::generateDefaultProfileImage($user);
             }
         });

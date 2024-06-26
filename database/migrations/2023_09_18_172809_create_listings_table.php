@@ -20,12 +20,15 @@ return new class extends Migration
             $table->enum('facility_type', ['house', 'hotel', 'apartment', 'condominium', 'cabin', 'villa']);
             $table->time('check_in_time');
             $table->time('check_out_time');
+            $table->boolean('is_check_in_out_same_day');
+            $table->integer('total_hours');
             $table->integer('adult_capacity');
             $table->integer('child_capacity');
-            $table->boolean('is_pet_friendly')->default(false);
+            $table->boolean('is_pet_allowed')->default(false);
             $table->boolean('parking_lot')->default(false);
             $table->boolean('is_entire_place');
-            $table->decimal('entire_place_price', 10, 2, true)->nullable();
+            $table->decimal('entire_place_weekday_price', 10, 2, true)->nullable();
+            $table->decimal('entire_place_weekend_price', 10, 2, true)->nullable();
             $table->fullText(['name', 'location']);
             $table->timestamps();
             $table->softDeletes();

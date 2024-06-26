@@ -23,6 +23,7 @@ class RoomResource extends JsonResource
             'rule' => new RoomRuleResource($this->whenLoaded('roomRule')),
             'category' => new RoomCategoryResource($this->whenLoaded('roomCategory')),
             'amenities' => RoomAmenityResource::collection($this->whenLoaded('roomAmenities')),
+            'special_rates' => SpecialRateResource::collection($this->whenLoaded('specialRates')),
             'unavailable_dates' => UnavailableDateResource::collection($this->whenLoaded('unavailableDates')),
         ];
     }

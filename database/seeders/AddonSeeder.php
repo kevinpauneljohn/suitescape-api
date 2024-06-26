@@ -22,6 +22,14 @@ class AddonSeeder extends Seeder
                 'name' => 'Extra Pillow',
                 'description' => 'Extra pillow for one person',
             ],
+            [
+                'name' => 'Extra Towel',
+                'description' => 'Extra towel for one person',
+            ],
+            [
+                'name' => 'Extra Blanket',
+                'description' => 'Extra blanket for one person',
+            ],
         ];
 
         $listings = Listing::all();

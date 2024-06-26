@@ -41,10 +41,10 @@ class CreateBookingRequest extends FormRequest
         //            'paymentMethod' => ['required', 'string'],
         //        ], $guestInfoRequest->rules());
 
-        $bookingDatesRequest = UpdateBookingDatesRequest::createFrom($this);
+        $bookingDatesRequest = FutureDateRangeRequest::createFrom($this);
 
         return array_merge([
-            'listing_id' => ['required', 'string', 'exists:listings,id'],
+            'listing_id' => ['required', 'uuid', 'exists:listings,id'],
             'rooms' => ['nullable', 'array'],
             'addons' => ['nullable', 'array'],
             'coupon_code' => ['nullable', 'string'],

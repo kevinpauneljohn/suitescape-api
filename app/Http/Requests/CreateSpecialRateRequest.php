@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SendMessageRequest extends FormRequest
+class CreateSpecialRateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,9 +21,11 @@ class SendMessageRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'receiver_id' => ['required', 'uuid', 'exists:users,id'],
-            'content' => ['required', 'string'],
-        ];
+        $specialRateDatesRequest = DateRangeRequest::createFrom($this);
+
+        return array_merge([
+            'title' => ['required', 'string'],
+            'price' => ['required', 'numeric'],
+        ], $specialRateDatesRequest->rules());
     }
 }

@@ -10,12 +10,15 @@ class BookingRetrievalService
 
     protected ConstantService $constantService;
 
+    protected PriceCalculatorService $priceCalculatorService;
+
     protected Booking $booking;
 
-    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, Booking $booking)
+    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, PriceCalculatorService $priceCalculatorService, Booking $booking)
     {
         $this->bookingCancellationService = $bookingCancellationService;
         $this->constantService = $constantService;
+        $this->priceCalculatorService = $priceCalculatorService;
         $this->booking = $booking;
     }
 
@@ -38,9 +41,13 @@ class BookingRetrievalService
 
     public function getBooking($id)
     {
-        $booking = Booking::find($id)->load([
+        $booking = Booking::find($id);
+
+        $booking->load([
             'bookingAddons.addon',
-            'bookingRooms.room.roomCategory',
+            'bookingRooms.room.roomCategory' => function ($query) use ($booking) {
+                return $this->priceCalculatorService->getPriceForRoomCategoriesToQuery($query, $booking->startDate, $booking->endDate);
+            },
             'coupon',
             'invoice.invoiceDetails',
             'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),

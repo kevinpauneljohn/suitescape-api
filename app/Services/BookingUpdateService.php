@@ -8,12 +8,12 @@ class BookingUpdateService
 {
     protected BookingCreateService $bookingCreateService;
 
-    protected BookingDeleteService $bookingDeleteService;
+    protected UnavailableDateService $unavailableDateService;
 
-    public function __construct(BookingCreateService $bookingCreateService, BookingDeleteService $bookingDeleteService)
+    public function __construct(BookingCreateService $bookingCreateService, UnavailableDateService $unavailableDateService)
     {
         $this->bookingCreateService = $bookingCreateService;
-        $this->bookingDeleteService = $bookingDeleteService;
+        $this->unavailableDateService = $unavailableDateService;
     }
 
     public function updateBookingStatus($id, $status)
@@ -21,7 +21,7 @@ class BookingUpdateService
         $booking = Booking::find($id);
 
         if ($status === 'cancelled') {
-            $this->bookingDeleteService->removeUnavailableDates($booking);
+            $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
         }
 
         $booking->update([
@@ -46,7 +46,7 @@ class BookingUpdateService
 
         // Update booking amount
         $nights = $this->bookingCreateService->getBookingNights($startDate, $endDate);
-        $this->updateBookingAmount($bookingRoom, $nights);
+        $this->updateBookingAmount($bookingRoom, $nights, $startDate, $endDate);
 
         return $bookingRoom;
     }
@@ -66,17 +66,17 @@ class BookingUpdateService
         return $booking;
     }
 
-    private function updateBookingAmount($bookingRoom, $nights)
+    private function updateBookingAmount($bookingRoom, $nights, $startDate, $endDate)
     {
-        $amount = $this->getBookingAmount($bookingRoom->room, $nights);
+        $amount = $this->getBookingAmount($bookingRoom->room, $nights, $startDate, $endDate);
 
         $bookingRoom->booking->update([
             'amount' => $amount,
         ]);
     }
 
-    private function getBookingAmount($room, $nights)
+    private function getBookingAmount($room, $nights, $startDate, $endDate)
     {
-        return $room->roomCategory->price * $nights;
+        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $nights;
     }
 }

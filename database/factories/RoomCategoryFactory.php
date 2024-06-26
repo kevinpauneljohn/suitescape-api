@@ -35,7 +35,8 @@ class RoomCategoryFactory extends Factory
             'floor_area' => fake()->numberBetween(10, 100),
             'type_of_beds' => $this->generateTypeOfBeds(),
             'pax' => fake()->numberBetween(1, 10),
-            'price' => fake()->randomFloat(2, 1000, 10000),
+            'weekday_price' => fake()->randomFloat(2, 1000, 10000),
+            'weekend_price' => fake()->randomFloat(2, 1000, 10000),
             'quantity' => fake()->numberBetween(1, 10),
         ];
     }

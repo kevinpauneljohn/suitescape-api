@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SendMessageRequest extends FormRequest
+class UpdateListingPriceRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,8 @@ class SendMessageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'receiver_id' => ['required', 'uuid', 'exists:users,id'],
-            'content' => ['required', 'string'],
+            'entire_place_weekday_price' => ['required_without:entire_place_weekend_price', 'numeric'],
+            'entire_place_weekend_price' => ['required_without:entire_place_weekday_price', 'numeric'],
         ];
     }
 }

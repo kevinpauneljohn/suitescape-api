@@ -16,6 +16,17 @@ class SectionSeeder extends Seeder
      */
     public function run(): void
     {
+        $labels = [
+            'Living Room',
+            'Dining Room',
+            'Bathroom',
+            'Bedroom',
+            'Kitchen',
+            'Garage',
+            'Backyard',
+            'Front Yard',
+        ];
+
         $videos = Video::all();
 
         foreach ($videos as $video) {
@@ -30,7 +41,7 @@ class SectionSeeder extends Seeder
                 $mediaDuration = 10000;
             }
 
-            $sections = Section::factory()->count(5)->sequence(function () use ($mediaDuration) {
+            $sections = Section::factory()->count(5)->sequence(function ($sequence) use ($mediaDuration, $labels) {
                 // Generate random milliseconds based on the video duration
                 $milliseconds = fake()->numberBetween(1000, $mediaDuration);
 
@@ -39,9 +50,12 @@ class SectionSeeder extends Seeder
                     $milliseconds = fake()->numberBetween(1000, $mediaDuration);
                 }
 
-                return [
+                $label = $labels[$sequence->index] ?? null;
+
+                return array_filter([
+                    'label' => $label,
                     'milliseconds' => $milliseconds,
-                ];
+                ]);
             })->make();
 
             $video->sections()->saveMany($sections);

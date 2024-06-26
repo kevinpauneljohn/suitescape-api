@@ -16,6 +16,7 @@ class Addon extends Model
         'price',
         'description',
         'quantity',
+        'is_consumable',
     ];
 
     protected $hidden = [
@@ -23,13 +24,35 @@ class Addon extends Model
         'updated_at',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function ($addon) {
+            if (! $addon->is_consumable) {
+                self::removeQuantity($addon);
+            }
+        });
+
+        static::updated(function ($addon) {
+            if (! $addon->is_consumable) {
+                self::removeQuantity($addon);
+            }
+        });
+    }
+
+    private static function removeQuantity($addon)
+    {
+        $addon->updateQuietly([
+            'quantity' => null,
+        ]);
+    }
+
     public function listing()
     {
         return $this->belongsTo(Listing::class);
     }
 
-    public function scopeExcludeZeroQuantity($query)
+    public function scopeExcludeNoStocks($query)
     {
-        return $query->where('quantity', '>', 0);
+        return $query->where('quantity', '>', 0)->orWhereNull('quantity');
     }
 }
