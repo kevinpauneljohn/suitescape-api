@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('addons', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('listing_id');
-            $table->string('name');
+        Schema::create('special_rates', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUuid('listing_id')->nullable();
+            $table->foreignUuid('room_id')->nullable();
+            $table->string('title');
             $table->decimal('price', 10, 2, true);
-            $table->text('description')->nullable();
-            $table->integer('quantity')->nullable();
-            $table->boolean('is_consumable');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('addons');
+        Schema::dropIfExists('special_rates');
     }
 };

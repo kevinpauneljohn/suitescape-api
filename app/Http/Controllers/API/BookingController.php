@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateBookingRequest;
-use App\Http\Requests\UpdateBookingDatesRequest;
+use App\Http\Requests\FutureDateRangeRequest;
 use App\Http\Requests\UpdateBookingPaymentStatusRequest;
 use App\Http\Requests\UpdateBookingStatusRequest;
 use App\Http\Resources\BookingResource;
@@ -89,7 +89,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function updateBookingDates(UpdateBookingDatesRequest $request, string $id)
+    public function updateBookingDates(FutureDateRangeRequest $request, string $id)
     {
         return response()->json([
             'message' => 'Booking dates updated successfully',

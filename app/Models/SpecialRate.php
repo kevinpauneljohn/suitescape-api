@@ -5,16 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class UnavailableDate extends Model
+class SpecialRate extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'listing_id',
         'room_id',
-        'booking_id',
-        'type',
-        'date',
+        'title',
+        'price',
+        'start_date',
+        'end_date',
     ];
 
     protected $hidden = [
@@ -23,7 +24,8 @@ class UnavailableDate extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function listing()
@@ -34,10 +36,5 @@ class UnavailableDate extends Model
     public function room()
     {
         return $this->belongsTo(Room::class);
-    }
-
-    public function booking()
-    {
-        return $this->belongsTo(Booking::class);
     }
 }

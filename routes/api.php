@@ -76,7 +76,14 @@ Route::prefix('rooms')->group(function () {
 
     Route::prefix('{id}')->group(function () {
         Route::get('/listing', [RoomController::class, 'getRoomListing'])->name('rooms.listing');
-        Route::get('/reviews', [RoomController::class, 'getRoomReviews'])->name('rooms.reviews');
+        Route::get('/unavailable-dates', [RoomController::class, 'getUnavailableDates'])->name('rooms.unavailable-dates');
+
+        Route::post('/add-special-rate', [RoomController::class, 'addSpecialRate'])->name('rooms.add-special-rate');
+        Route::post('/update-special-rate', [RoomController::class, 'updateSpecialRate'])->name('rooms.update-special-rate');
+        Route::post('/remove-special-rate', [RoomController::class, 'removeSpecialRate'])->name('rooms.remove-special-rate');
+        Route::post('/block-dates', [RoomController::class, 'blockDates'])->name('rooms.block-dates');
+        Route::post('/unblock-dates', [RoomController::class, 'unblockDates'])->name('rooms.unblock-dates');
+        Route::post('/update-prices', [RoomController::class, 'updatePrices'])->name('rooms.update-prices');
     })->whereUuid('id');
 });
 
@@ -94,14 +101,22 @@ Route::prefix('listings')->group(function () {
 
     Route::prefix('{id}')->group(function () {
         //        Route::get('/host', [ListingController::class, 'getListingHost'])->name('listings.host');
+        Route::get('/rooms', [ListingController::class, 'getListingRooms'])->name('listings.rooms');
         Route::get('/images', [ListingController::class, 'getListingImages'])->name('listings.images');
         Route::get('/videos', [ListingController::class, 'getListingVideos'])->name('listings.videos');
         Route::get('/reviews', [ListingController::class, 'getListingReviews'])->name('listings.reviews');
-        Route::get('/rooms', [ListingController::class, 'getListingRooms'])->name('listings.rooms');
+        Route::get('/unavailable-dates', [ListingController::class, 'getUnavailableDates'])->name('listings.unavailable-dates');
 
         Route::post('/like', [ListingController::class, 'likeListing'])->name('listings.like');
         Route::post('/save', [ListingController::class, 'saveListing'])->name('listings.save');
         Route::post('/view', [ListingController::class, 'viewListing'])->name('listings.view');
+
+        Route::post('/add-special-rate', [ListingController::class, 'addSpecialRate'])->name('listings.add-special-rate');
+        Route::post('/update-special-rate', [ListingController::class, 'updateSpecialRate'])->name('listings.update-special-rate');
+        Route::post('/remove-special-rate', [ListingController::class, 'removeSpecialRate'])->name('listings.remove-special-rate');
+        Route::post('/block-dates', [ListingController::class, 'blockDates'])->name('listings.block-dates');
+        Route::post('/unblock-dates', [ListingController::class, 'unblockDates'])->name('listings.unblock-dates');
+        Route::post('/update-prices', [ListingController::class, 'updatePrices'])->name('listings.update-prices');
 
         Route::post('/images/upload', [ListingController::class, 'uploadListingImage'])->name('listings.images.upload');
         Route::post('/videos/upload', [ListingController::class, 'uploadListingVideo'])->name('listings.videos.upload');

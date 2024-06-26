@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class FilterRoomRequest extends FormRequest
+class DateRangeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,8 @@ class FilterRoomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'start_date' => ['sometimes', 'date'],
+            'end_date' => ['required_with:start_date', 'date', 'after_or_equal:start_date'],
         ];
     }
 }

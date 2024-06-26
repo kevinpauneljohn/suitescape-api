@@ -12,10 +12,16 @@ class ListingUpdateService
 
     protected ListingCreateService $listingCreateService;
 
-    public function __construct(FileNameService $fileNameService, ListingCreateService $listingCreateService)
+    protected SpecialRateService $specialRateService;
+
+    protected UnavailableDateService $unavailableDateService;
+
+    public function __construct(FileNameService $fileNameService, ListingCreateService $listingCreateService, SpecialRateService $specialRateService, UnavailableDateService $unavailableDateService)
     {
         $this->fileNameService = $fileNameService;
         $this->listingCreateService = $listingCreateService;
+        $this->specialRateService = $specialRateService;
+        $this->unavailableDateService = $unavailableDateService;
     }
 
     /**
@@ -48,6 +54,63 @@ class ListingUpdateService
         if (isset($listingData['nearby_places'])) {
             $this->updateListingNearbyPlaces($listing, $listingData['nearby_places']);
         }
+
+        return $listing;
+    }
+
+    public function addSpecialRate(string $listingId, array $specialRate)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $this->specialRateService->addSpecialRate('listing', $listingId, $specialRate);
+
+        return $listing;
+    }
+
+    public function updateSpecialRate(string $listingId, array $specialRate)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $this->specialRateService->updateSpecialRate('listing', $listingId, $specialRate);
+
+        return $listing;
+    }
+
+    public function removeSpecialRate(string $listingId, string $specialRateId)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $this->specialRateService->removeSpecialRate('listing', $listingId, $specialRateId);
+
+        return $listing;
+    }
+
+    public function blockDates(string $listingId, array $dates)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $this->unavailableDateService->addUnavailableDates('listing', $listingId, $dates['start_date'], $dates['end_date']);
+
+        return $listing;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function unblockDates(string $listingId, array $dates)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $this->unavailableDateService->removeUnavailableDates('listing', $listingId, $dates['start_date'], $dates['end_date']);
+
+        return $listing;
+    }
+
+    public function updatePrices(string $listingId, array $prices)
+    {
+        $listing = Listing::findOrFail($listingId);
+
+        $listing->update($prices);
 
         return $listing;
     }

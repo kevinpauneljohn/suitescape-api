@@ -54,7 +54,8 @@ class UpdateListingRequest extends FormRequest
         }
 
         $this->merge([
-            'is_pet_friendly' => filter_var($this->is_pet_friendly, FILTER_VALIDATE_BOOLEAN),
+            'is_check_in_out_same_day' => filter_var($this->is_check_in_out_same_day, FILTER_VALIDATE_BOOLEAN),
+            'is_pet_allowed' => filter_var($this->is_pet_allowed, FILTER_VALIDATE_BOOLEAN),
             'parking_lot' => filter_var($this->parking_lot, FILTER_VALIDATE_BOOLEAN),
             'is_entire_place' => filter_var($this->is_entire_place, FILTER_VALIDATE_BOOLEAN),
             'rooms' => isset($this->rooms) ? json_decode($this->rooms, true) : null,
@@ -63,11 +64,6 @@ class UpdateListingRequest extends FormRequest
             'images' => $images,
             'videos' => $videos,
         ]);
-
-        // If listing is not an entire place, remove the entire place price
-        if (! $this->is_entire_place) {
-            $this->request->remove('entire_place_price');
-        }
     }
 
     /**
@@ -85,12 +81,15 @@ class UpdateListingRequest extends FormRequest
             'facility_type' => ['required', 'string', 'in:house,hotel,apartment,condominium,cabin,villa'],
             'check_in_time' => ['required', 'date_format:g:i A'],
             'check_out_time' => ['required', 'date_format:g:i A'],
+            'is_check_in_out_same_day' => ['required', 'boolean'],
+            'total_hours' => ['required', 'integer'],
             'adult_capacity' => ['required', 'integer'],
             'child_capacity' => ['required', 'integer'],
-            'is_pet_friendly' => ['required', 'boolean'],
+            'is_pet_allowed' => ['required', 'boolean'],
             'parking_lot' => ['required', 'boolean'],
             'is_entire_place' => ['required', 'boolean'],
-            'entire_place_price' => ['required_if:is_entire_place,true', 'numeric'],
+            'entire_place_weekday_price' => ['exclude_unless:is_entire_place,true',  'numeric'],
+            'entire_place_weekend_price' => ['exclude_unless:is_entire_place,true',  'numeric'],
             'rooms' => ['nullable', 'array'],
             'addons' => ['nullable', 'array'],
             'nearby_places' => ['nullable', 'array'],

@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Listing;
+use App\Models\RoomCategory;
+
 class FilterService
 {
     public function applyDestinationFilter($query, $destination)
@@ -38,30 +41,44 @@ class FilterService
         // Apply max price filter
         $query->when($maxPrice && $maxPrice >= 0, function ($query) use ($maxPrice) {
             $query->where(function ($query) use ($maxPrice) {
-                $query->where('is_entire_place', true)
-                    ->where('entire_place_price', '<=', $maxPrice);
-                $query->orWhere('is_entire_place', false)
-                    ->whereDoesntHave('roomCategories', function ($query) use ($maxPrice) {
-                        return $query->where('price', '>', $maxPrice);
-                    });
-                //                    ->whereHas('roomCategories', function ($query) use ($maxPrice) {
-                //                        return $query->where('price', '<=', $maxPrice);
-                //                    });
+                $query->whereHas('specialRates', function ($query) use ($maxPrice) {
+                    $query->where('start_date', '<=', now())
+                        ->where('end_date', '>=', now())
+                        ->where('price', '<=', $maxPrice);
+                });
+                $query->orDoesntHave('specialRates')->where(function ($query) use ($maxPrice) {
+                    $query->where('is_entire_place', true)
+                        ->where(Listing::getCurrentPriceColumn(), '<=', $maxPrice);
+                    $query->orWhere('is_entire_place', false)
+                        ->whereDoesntHave('roomCategories', function ($query) use ($maxPrice) {
+                            return $query->where(RoomCategory::getCurrentPriceColumn(), '>', $maxPrice);
+                        });
+                    //                    ->whereHas('roomCategories', function ($query) use ($maxPrice) {
+                    //                        return $query->where('price', '<=', $maxPrice);
+                    //                    });
+                });
             });
         });
 
         // Apply min price filter
         $query->when($minPrice, function ($query) use ($minPrice) {
             $query->where(function ($query) use ($minPrice) {
-                $query->where('is_entire_place', true)
-                    ->where('entire_place_price', '>=', $minPrice);
-                $query->orWhere('is_entire_place', false)
-                    ->whereDoesntHave('roomCategories', function ($query) use ($minPrice) {
-                        return $query->where('price', '<', $minPrice);
-                    });
-                //                    ->whereHas('roomCategories', function ($query) use ($minPrice) {
-                //                        return $query->where('price', '>=', $minPrice);
-                //                    });
+                $query->whereHas('specialRates', function ($query) use ($minPrice) {
+                    $query->where('start_date', '<=', now())
+                        ->where('end_date', '>=', now())
+                        ->where('price', '>=', $minPrice);
+                });
+                $query->orDoesntHave('specialRates')->where(function ($query) use ($minPrice) {
+                    $query->where('is_entire_place', true)
+                        ->where(Listing::getCurrentPriceColumn(), '>=', $minPrice);
+                    $query->orWhere('is_entire_place', false)
+                        ->whereDoesntHave('roomCategories', function ($query) use ($minPrice) {
+                            return $query->where(RoomCategory::getCurrentPriceColumn(), '<', $minPrice);
+                        });
+                    //                    ->whereHas('roomCategories', function ($query) use ($minPrice) {
+                    //                        return $query->where('price', '>=', $minPrice);
+                    //                    });
+                });
             });
         });
 
@@ -121,22 +138,27 @@ class FilterService
     public function applyUnavailableDateFilter($query, $startDate, $endDate)
     {
         return $query->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->where(function ($query) use ($startDate, $endDate) {
-
-                // Criteria for excluding rooms that are unavailable
-                $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
-                    // Exclude rooms that are unavailable on the user's selected dates
-                    $query->whereBetween('start_date', [$startDate, $endDate])
-                        ->orWhereBetween('end_date', [$startDate, $endDate])
-
-                        // Exclude rooms that are unavailable during the entire range of the user's selected dates
-                        ->orWhere(function ($query) use ($startDate, $endDate) {
-                            // Checks if the unavailability range overlaps with the user's selected range
-                            $query->where('start_date', '<=', $endDate)
-                                ->where('end_date', '>=', $startDate);
-                        });
-                });
+            $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
+                // Exclude rooms that are unavailable on the user's selected dates
+                $query->whereBetween('date', [$startDate, $endDate]);
             });
+
+            //            $query->where(function ($query) use ($startDate, $endDate) {
+            //
+            //                // Criteria for excluding rooms that are unavailable
+            //                $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
+            //                    // Exclude rooms that are unavailable on the user's selected dates
+            //                    $query->whereBetween('start_date', [$startDate, $endDate])
+            //                        ->orWhereBetween('end_date', [$startDate, $endDate])
+            //
+            //                        // Exclude rooms that are unavailable during the entire range of the user's selected dates
+            //                        ->orWhere(function ($query) use ($startDate, $endDate) {
+            //                            // Checks if the unavailability range overlaps with the user's selected range
+            //                            $query->where('start_date', '<=', $endDate)
+            //                                ->where('end_date', '>=', $startDate);
+            //                        });
+            //                });
+            //            });
         });
     }
 }

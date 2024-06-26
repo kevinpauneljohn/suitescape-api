@@ -19,8 +19,9 @@ return new class extends Migration
             $table->integer('floor_area');
             $table->json('type_of_beds');
             $table->integer('pax');
-            $table->decimal('price', 10, 2, true);
-            $table->integer('quantity');
+            $table->decimal('weekday_price', 10, 2, true);
+            $table->decimal('weekend_price', 10, 2, true);
+            $table->integer('quantity')->nullable();
             $table->timestamps();
         });
     }
