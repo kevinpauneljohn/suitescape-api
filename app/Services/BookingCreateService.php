@@ -63,7 +63,7 @@ class BookingCreateService
         $rooms = Room::whereIn('id', $roomIds)->with('roomCategory')->get();
 
         if (! $isEntirePlace && $rooms->isEmpty()) {
-            throw new Exception('No rooms found');
+            throw new Exception('No rooms found.');
         }
 
         // Set quantity for each room
@@ -97,7 +97,7 @@ class BookingCreateService
             $coupon = Coupon::where('code', $couponCode)->first();
 
             if (! $coupon) {
-                throw new Exception('Coupon not found');
+                throw new Exception('Coupon not found.');
             }
 
             return $coupon;

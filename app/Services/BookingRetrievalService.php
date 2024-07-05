@@ -34,9 +34,7 @@ class BookingRetrievalService
 
     public function getHostBookings($hostId)
     {
-        return $this->getBookingsQuery()->whereHas('listing', function ($query) use ($hostId) {
-            $query->where('user_id', $hostId);
-        })->get();
+        return $this->getBookingsQuery()->findByHostId($hostId)->get();
     }
 
     public function getBooking($id)
