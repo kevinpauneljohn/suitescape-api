@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\BookingController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\ConstantController;
+use App\Http\Controllers\API\EarningsController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
@@ -12,7 +13,6 @@ use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\RoomController;
 use App\Http\Controllers\API\VideoController;
-use App\Http\Controllers\EarningsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
