@@ -7,8 +7,10 @@ use App\Http\Requests\FilterVideoRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
+use App\Services\VideoApprovalService;
 use App\Services\VideoRetrievalService;
 use App\Services\VideoUploadService;
+use Exception;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
 class VideoController extends Controller
@@ -17,12 +19,15 @@ class VideoController extends Controller
 
     private VideoUploadService $videoUploadService;
 
-    public function __construct(VideoRetrievalService $videoRetrievalService, VideoUploadService $videoUploadService)
+    private VideoApprovalService $videoApprovalService;
+
+    public function __construct(VideoRetrievalService $videoRetrievalService, VideoUploadService $videoUploadService, VideoApprovalService $videoApprovalService)
     {
         $this->middleware('auth:sanctum')->only(['uploadVideo']);
 
         $this->videoRetrievalService = $videoRetrievalService;
         $this->videoUploadService = $videoUploadService;
+        $this->videoApprovalService = $videoApprovalService;
     }
 
     public function getAllVideos()
@@ -58,6 +63,23 @@ class VideoController extends Controller
         return response()->json([
             'message' => 'Video uploaded successfully',
             'filename' => $filename,
+        ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function approveVideo(string $id)
+    {
+        $result = $this->videoApprovalService->approveVideo($id);
+
+        if (! $result) {
+            throw new Exception('Failed to approve video.');
+        }
+
+        return response()->json([
+            'approved' => true,
+            'message' => 'Video approved successfully',
         ]);
     }
 }
