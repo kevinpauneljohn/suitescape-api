@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\BookingController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\ConstantController;
+use App\Http\Controllers\API\EarningsController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// require __DIR__ . '/auth.php';
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
@@ -62,6 +65,7 @@ Route::prefix('videos')->group(function () {
     Route::get('/feed', [VideoController::class, 'getVideoFeed'])->name('videos.feed');
     Route::get('/{id}', [VideoController::class, 'getVideo'])->name('videos.get')->whereUuid('id');
     Route::post('/upload', [VideoController::class, 'uploadVideo'])->name('videos.upload');
+    Route::post('/{id}/approve', [VideoController::class, 'approveVideo'])->name('videos.approve')->whereUuid('id');
 });
 
 Route::prefix('images')->group(function () {
@@ -162,4 +166,9 @@ Route::prefix('messages')->group(function () {
     Route::get('/', [ChatController::class, 'getAllChats'])->name('chat.all');
     Route::get('/{id}', [ChatController::class, 'getAllMessages'])->name('chat.get')->whereUuid('id');
     Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+});
+
+Route::prefix('earnings')->group(function () {
+    Route::get('/{year}', [EarningsController::class, 'getYearlyEarnings'])->name('earnings.yearly')->whereNumber('year');
+    Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
 });

@@ -60,7 +60,7 @@ class TranscodeVideo implements ShouldQueue
         // Update the video's transcoded status
         $this->video->update([
             'filename' => $this->filename,
-            'is_transcoding' => false,
+            'is_transcoded' => true,
         ]);
     }
 }
