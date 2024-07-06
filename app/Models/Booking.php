@@ -67,4 +67,11 @@ class Booking extends Model
         return $query->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
     }
+
+    public static function findByHostId(string $hostId)
+    {
+        return static::whereHas('listing', function ($query) use ($hostId) {
+            $query->where('user_id', $hostId);
+        });
+    }
 }

@@ -53,7 +53,7 @@ class VideoRetrievalService
         //        $pax = $adults + $children;
 
         return Video::public()
-            ->isTranscoding(false)
+            ->isTranscoded()
             ->whereHas('listing', function ($query) use ($filters) {
                 // Apply date filter
                 $query->where(function ($query) use ($filters) {

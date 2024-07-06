@@ -34,9 +34,9 @@ class BookingRetrievalService
 
     public function getHostBookings($hostId)
     {
-        return $this->getBookingsQuery()->whereHas('listing', function ($query) use ($hostId) {
-            $query->where('user_id', $hostId);
-        })->get();
+        $scopedQuery = Booking::findByHostId($hostId);
+
+        return $this->getBookingsQuery($scopedQuery)->get();
     }
 
     public function getBooking($id)
@@ -67,9 +67,11 @@ class BookingRetrievalService
         return $booking;
     }
 
-    private function getBookingsQuery()
+    private function getBookingsQuery($query = null)
     {
-        return $this->booking->desc()->with([
+        $query = $query ?? $this->booking;
+
+        return $query->desc()->with([
             'coupon',
             'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'listing.host',

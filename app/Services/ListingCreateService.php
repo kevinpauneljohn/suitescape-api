@@ -88,7 +88,7 @@ class ListingCreateService
             'filename' => $tempFilename,
             'privacy' => $videoData['privacy'],
             // Temporarily removed until ffmpeg is installed
-            //            'is_transcoding' => true,
+            'is_transcoded' => true,
         ]);
 
         //        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);

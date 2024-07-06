@@ -18,6 +18,8 @@ class VideoFactory extends Factory
     {
         return [
             'privacy' => 'public',
+            'is_transcoded' => true,
+            'is_approved' => true,
         ];
     }
 
@@ -26,6 +28,24 @@ class VideoFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'privacy' => 'private',
+            ];
+        });
+    }
+
+    public function untranscoded(): self
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'is_transcoded' => false,
+            ];
+        });
+    }
+
+    public function unapproved(): self
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'is_approved' => false,
             ];
         });
     }

@@ -15,7 +15,8 @@ class Video extends Model
         'listing_id',
         'filename',
         'privacy',
-        'is_transcoding',
+        'is_transcoded',
+        'is_approved',
     ];
 
     protected $appends = ['url'];
@@ -23,7 +24,7 @@ class Video extends Model
     public function getUrlAttribute()
     {
         // If the video is currently transcoding, return null
-        if ($this->is_transcoding) {
+        if (! $this->is_transcoded) {
             return null;
         }
 
@@ -56,9 +57,9 @@ class Video extends Model
         return $query->where('privacy', 'private');
     }
 
-    public function scopeIsTranscoding($query, $isTranscoding = true)
+    public function scopeIsTranscoded($query, $isTranscoded = true)
     {
-        return $query->where('is_transcoding', $isTranscoding);
+        return $query->where('is_transcoded', $isTranscoded);
     }
 
     public function scopeOrderByDesc($query)
