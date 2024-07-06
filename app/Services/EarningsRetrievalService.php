@@ -29,6 +29,7 @@ class EarningsRetrievalService
                                 ->where('date_end', '>', $endDate);
                         });
                 })
+                ->where('status', 'completed')
                 ->sum('amount');
 
             $monthlyEarnings[] = [
