@@ -22,16 +22,42 @@ class RegistrationController extends Controller
         $this->registrationService = $registrationService;
     }
 
+    /**
+     * Register a new user.
+     *
+     * Validates the incoming request data and registers a new user based on the provided information.
+     * Returns a JSON response indicating the success of the registration process.
+     *
+     * @param RegisterUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function register(RegisterUserRequest $request)
     {
         return $this->registrationService->register($request->validated());
     }
 
+    /**
+     * User login.
+     *
+     * Validates the incoming request data for email and password, and attempts to log the user in.
+     * Returns a JSON response with login status and user information on success.
+     *
+     * @param LoginUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(LoginUserRequest $request)
     {
         return $this->registrationService->login($request->validated()['email'], $request->validated()['password']);
     }
 
+    /**
+     * User logout.
+     *
+     * Logs out the currently authenticated user by invalidating their session/token.
+     * Returns a JSON response indicating the user has been successfully logged out.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function logout()
     {
         $this->registrationService->logout();
@@ -41,11 +67,30 @@ class RegistrationController extends Controller
         ]);
     }
 
+    /**
+     * Forgot password.
+     *
+     * Initiates the password reset process for a user by validating the provided email address
+     * and sending a password reset link if the email is associated with an account.
+     * Returns a JSON response indicating the status of the password reset request.
+     *
+     * @param PasswordForgotRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function forgotPassword(PasswordForgotRequest $request)
     {
         return $this->registrationService->forgotPassword($request->validated()['email']);
     }
 
+    /**
+     * Validate password reset token.
+     *
+     * Validates the password reset token for the given email address to ensure it's valid and has not expired.
+     * Returns a JSON response indicating the validity of the token.
+     *
+     * @param TokenValidateRequest $request
+     * @return \Illuminate\Http\JsonResponse|object
+     */
     public function validateResetToken(TokenValidateRequest $request)
     {
         try {
@@ -57,6 +102,16 @@ class RegistrationController extends Controller
         }
     }
 
+    /**
+     * Reset password.
+     *
+     * Resets the user's password to the new password provided in the request, after validating
+     * the password reset token and ensuring it matches the user's email address.
+     * Returns a JSON response indicating the success of the password reset operation.
+     *
+     * @param PasswordResetRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function resetPassword(PasswordResetRequest $request)
     {
         try {

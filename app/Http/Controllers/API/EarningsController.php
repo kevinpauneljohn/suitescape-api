@@ -18,6 +18,14 @@ class EarningsController extends Controller
     }
 
     /**
+     * Get Yearly Earnings
+     *
+     * Retrieves the yearly earnings for a specific host and optionally for a specific listing.
+     * Requires a host ID to be provided. If a listing ID is provided, earnings are filtered by the listing.
+     *
+     * @param YearlyEarningsRequest $request
+     * @param int $year
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function getYearlyEarnings(YearlyEarningsRequest $request, int $year)
@@ -37,6 +45,13 @@ class EarningsController extends Controller
     }
 
     /**
+     * Get Available Years
+     *
+     * Retrieves the years for which earnings data is available for a specific host.
+     * Requires a host ID to be provided.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function getAvailableYears(Request $request)
