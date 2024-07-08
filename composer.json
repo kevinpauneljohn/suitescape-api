@@ -10,6 +10,7 @@
     "require": {
         "php": "^8.1",
         "a6digital/laravel-default-profile-image": "^2.0",
+        "dedoc/scramble": "^0.8.6",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
         "laravel/pail": "^1.1",
