@@ -13,7 +13,7 @@ class BookingDeleteService
         $this->unavailableDateService = $unavailableDateService;
     }
 
-    public function cleanUnavailableDates()
+    public function cleanUnavailableDates(): void
     {
         $completedBookings = Booking::where('status', 'completed')->get();
 
@@ -22,7 +22,7 @@ class BookingDeleteService
         }
     }
 
-    public function cleanOldCancelledBookings()
+    public function cleanOldCancelledBookings(): void
     {
         $dateLimit = now()->subDays(30);
 

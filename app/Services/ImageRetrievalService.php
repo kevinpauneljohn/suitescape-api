@@ -12,7 +12,7 @@ class ImageRetrievalService
         return Image::all();
     }
 
-    public function getImagePath(string $filename)
+    public function getImagePath(string $filename): string
     {
         //        return public_path('storage/images/'.$filename);
         //        return storage_path('app/public/images/'.$filename);

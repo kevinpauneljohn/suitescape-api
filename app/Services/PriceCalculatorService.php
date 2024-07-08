@@ -29,7 +29,7 @@ class PriceCalculatorService
             ->selectRaw("COALESCE((SELECT price FROM special_rates WHERE special_rates.room_id = rooms.id AND start_date <= ? AND end_date >= ? ORDER BY price ASC LIMIT 1), room_categories.$roomPriceColumn) as price", [$startDate, $endDate]);
     }
 
-    public function getMinRoomPriceForListingsSubquery($startDate = null, $endDate = null)
+    public function getMinRoomPriceForListingsSubquery($startDate = null, $endDate = null): Room
     {
         $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
@@ -40,7 +40,7 @@ class PriceCalculatorService
             ->join('room_categories', 'rooms.room_category_id', '=', 'room_categories.id');
     }
 
-    public function getPriceForRoomCategoriesSubquery($startDate = null, $endDate = null)
+    public function getPriceForRoomCategoriesSubquery($startDate = null, $endDate = null): Room
     {
         $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
@@ -51,7 +51,7 @@ class PriceCalculatorService
             ->selectRaw("COALESCE((SELECT price FROM special_rates WHERE special_rates.room_id = rooms.id AND start_date <= ? AND end_date >= ? ORDER BY price ASC LIMIT 1), room_categories.$roomPriceColumn) as price", [$startDate, $endDate]);
     }
 
-    public function getMinPriceByTypeSubquery($startDate = null, $endDate = null)
+    public function getMinPriceByTypeSubquery($startDate = null, $endDate = null): Listing
     {
         $listingPriceColumn = Listing::getCurrentPriceColumn();
         $roomPriceColumn = RoomCategory::getCurrentPriceColumn();

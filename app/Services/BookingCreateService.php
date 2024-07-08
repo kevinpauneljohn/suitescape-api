@@ -161,6 +161,9 @@ class BookingCreateService
         ]);
     }
 
+    /**
+     * @throws Exception
+     */
     private function addBookingRooms($booking, Collection $rooms, bool $isEntirePlace): void
     {
         foreach ($rooms as $room) {

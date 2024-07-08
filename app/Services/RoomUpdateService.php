@@ -44,6 +44,9 @@ class RoomUpdateService
         return $room;
     }
 
+    /**
+     * @throws Exception
+     */
     public function blockDates(string $roomId, array $dates)
     {
         $room = Room::findOrFail($roomId);

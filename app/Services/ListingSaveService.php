@@ -16,14 +16,14 @@ class ListingSaveService
         $this->userId = auth()->id();
     }
 
-    public function addSave()
+    public function addSave(): void
     {
         $this->listing->saves()->create([
             'user_id' => $this->userId,
         ]);
     }
 
-    public function removeSave()
+    public function removeSave(): void
     {
         $this->listing->saves()->where('user_id', $this->userId)->delete();
     }

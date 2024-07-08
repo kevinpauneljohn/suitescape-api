@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 class EarningsRetrievalService
 {
-    public function getYearlyEarnings(int $year, string $hostId, ?string $listingId = null)
+    public function getYearlyEarnings(int $year, string $hostId, ?string $listingId = null): array
     {
         $monthlyEarnings = [];
 
@@ -44,7 +44,7 @@ class EarningsRetrievalService
         ];
     }
 
-    public function getAvailableYears(string $hostId)
+    public function getAvailableYears(string $hostId): array
     {
         return Booking::findByHostId($hostId)
             ->selectRaw('DISTINCT YEAR(date_start) AS year')

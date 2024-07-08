@@ -11,12 +11,12 @@ class ConstantService
         return Constant::all();
     }
 
-    public function getConstant(string $key)
+    public function getConstant(string $key): Constant
     {
         return Constant::where('key', $key)->firstOrFail();
     }
 
-    public function updateConstant(string $key, string $value)
+    public function updateConstant(string $key, string $value): void
     {
         $setting = Constant::where('key', $key)->firstOrFail();
         $setting->update(['value' => $value]);
