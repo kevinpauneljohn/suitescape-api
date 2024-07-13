@@ -10,9 +10,9 @@ class VideoDurationValidation implements ValidationRule
 {
     protected int $minDuration;
 
-    protected int $maxDuration;
+    protected ?int $maxDuration;
 
-    public function __construct($minDuration = 0, $maxDuration = null)
+    public function __construct(int $minDuration = 0, ?int $maxDuration = null)
     {
         $this->minDuration = $minDuration;
         $this->maxDuration = $maxDuration;

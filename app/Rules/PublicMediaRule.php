@@ -9,7 +9,7 @@ class PublicMediaRule implements ValidationRule
 {
     protected string $mediaType;
 
-    public function __construct($mediaType)
+    public function __construct(string $mediaType)
     {
         $this->mediaType = $mediaType;
     }

@@ -22,7 +22,7 @@ class ActiveStatusUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      */
-    public function __construct($user, $active)
+    public function __construct(User $user, bool $active)
     {
         $this->user = $user;
         $this->active = $active;
