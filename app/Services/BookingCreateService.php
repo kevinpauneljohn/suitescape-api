@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Mail\BookingCompletedHost;
+use App\Mail\BookingCompletedUser;
 use App\Models\Addon;
 use App\Models\Coupon;
 use App\Models\Listing;
@@ -9,6 +11,7 @@ use App\Models\Room;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 
 class BookingCreateService
 {
@@ -40,6 +43,8 @@ class BookingCreateService
             $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $bookingData['listing_id'], $booking->date_start, $booking->date_end);
         }
 
+        $this->sendBookingEmails($booking);
+
         return $booking;
     }
 
@@ -62,7 +67,7 @@ class BookingCreateService
         $roomIds = array_keys($roomsData);
         $rooms = Room::whereIn('id', $roomIds)->with('roomCategory')->get();
 
-        if (! $isEntirePlace && $rooms->isEmpty()) {
+        if (!$isEntirePlace && $rooms->isEmpty()) {
             throw new Exception('No rooms found.');
         }
 
@@ -96,7 +101,7 @@ class BookingCreateService
         if ($couponCode) {
             $coupon = Coupon::where('code', $couponCode)->first();
 
-            if (! $coupon) {
+            if (!$coupon) {
                 throw new Exception('Coupon not found.');
             }
 
@@ -172,7 +177,7 @@ class BookingCreateService
                 'quantity' => $room->userQuantity,
             ]);
 
-            if (! $isEntirePlace) {
+            if (!$isEntirePlace) {
                 $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
             }
         }
@@ -192,5 +197,14 @@ class BookingCreateService
     private function getRoomAmount($room, string $startDate, string $endDate): float
     {
         return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->userQuantity;
+    }
+
+    private function sendBookingEmails($booking)
+    {
+        // Send email to the host
+        Mail::to($booking->listing->user->email)->send(new BookingCompletedHost($booking));
+
+        // Send email to the user
+        Mail::to($booking->user->email)->send(new BookingCompletedUser($booking));
     }
 }
