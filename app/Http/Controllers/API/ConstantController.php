@@ -19,16 +19,41 @@ class ConstantController extends Controller
         $this->constantService = $constantService;
     }
 
+    /**
+     * Get All Constants
+     *
+     * Retrieves a collection of all constants.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getAllConstants()
     {
         return ConstantResource::collection($this->constantService->getAllConstants());
     }
 
+    /**
+     * Get Constant
+     *
+     * Retrieves a specific constant by key.
+     *
+     * @param string $key
+     * @return ConstantResource
+     */
     public function getConstant(string $key)
     {
         return new ConstantResource($this->constantService->getConstant($key));
     }
 
+    /**
+     * Update Constant
+     *
+     * Updates the value of a specific constant.
+     *
+     * @param string $key
+     * @param ConstantUpdateRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws UnauthorizedException
+     */
     public function updateConstant(string $key, ConstantUpdateRequest $request)
     {
         $validated = $request->validated();

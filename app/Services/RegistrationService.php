@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Http\Resources\UserResource;
+use App\Mail\ResetPassword;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -215,10 +216,7 @@ class RegistrationService
 
     public function sendResetToken($email, $token): void
     {
-        Mail::send('forgot-password', ['token' => $token], function ($message) use ($email) {
-            $message->to($email);
-            $message->subject('Reset Password Notification');
-        });
+        Mail::to($email)->send(new ResetPassword($token));
     }
 
     /**

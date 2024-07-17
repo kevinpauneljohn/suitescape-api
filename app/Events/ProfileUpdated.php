@@ -20,7 +20,7 @@ class ProfileUpdated implements ShouldBroadcast
     /**
      * Create a new event instance.
      */
-    public function __construct($user)
+    public function __construct(User $user)
     {
         $this->user = $user;
     }

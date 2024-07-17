@@ -32,11 +32,26 @@ class BookingController extends Controller
         $this->bookingUpdateService = $bookingUpdateService;
     }
 
+    /**
+     * Get All Bookings
+     *
+     * Retrieves a collection of all bookings.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getAllBookings()
     {
         return BookingResource::collection($this->bookingRetrievalService->getAllBookings());
     }
 
+    /**
+     * Get User Bookings
+     *
+     * Retrieves bookings for a specific user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
+     */
     public function getUserBookings(Request $request)
     {
         // If no user id is provided, default to the authenticated user
@@ -51,6 +66,14 @@ class BookingController extends Controller
         return BookingResource::collection($this->bookingRetrievalService->getUserBookings($userId));
     }
 
+    /**
+     * Get Host Bookings
+     *
+     * Retrieves bookings for a specific host.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
+     */
     public function getHostBookings(Request $request)
     {
         // If no host id is provided, default to the authenticated user
@@ -65,12 +88,26 @@ class BookingController extends Controller
         return BookingResource::collection($this->bookingRetrievalService->getHostBookings($hostId));
     }
 
+    /**
+     * Get Booking
+     *
+     * Retrieves a specific booking by ID.
+     *
+     * @param  string  $id
+     * @return BookingResource
+     */
     public function getBooking(string $id)
     {
         return new BookingResource($this->bookingRetrievalService->getBooking($id));
     }
 
     /**
+     * Create Booking
+     *
+     * Creates a new booking.
+     *
+     * @param \App\Http\Requests\CreateBookingRequest $request
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function createBooking(CreateBookingRequest $request)
@@ -81,6 +118,15 @@ class BookingController extends Controller
         ]);
     }
 
+    /**
+     * Update Booking Status
+     *
+     * Updates the status of a booking.
+     *
+     * @param  \App\Http\Requests\UpdateBookingStatusRequest  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateBookingStatus(UpdateBookingStatusRequest $request, string $id)
     {
         return response()->json([
@@ -89,6 +135,15 @@ class BookingController extends Controller
         ]);
     }
 
+    /**
+     * Update Booking Dates
+     *
+     * Updates the start and end dates of a booking.
+     *
+     * @param  \App\Http\Requests\FutureDateRangeRequest  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateBookingDates(FutureDateRangeRequest $request, string $id)
     {
         return response()->json([
@@ -97,6 +152,15 @@ class BookingController extends Controller
         ]);
     }
 
+    /**
+     * Update Booking Payment Status
+     *
+     * Updates the payment status of a booking.
+     *
+     * @param  \App\Http\Requests\UpdateBookingPaymentStatusRequest  $request
+     * @param  string  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateBookingPaymentStatus(UpdateBookingPaymentStatusRequest $request, string $id)
     {
         return response()->json([

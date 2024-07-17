@@ -66,7 +66,7 @@ class BookingUpdateService
         return $booking;
     }
 
-    private function updateBookingAmount($bookingRoom, $nights, $startDate, $endDate)
+    private function updateBookingAmount($bookingRoom, $nights, $startDate, $endDate): void
     {
         $amount = $this->getBookingAmount($bookingRoom->room, $nights, $startDate, $endDate);
 
@@ -75,7 +75,7 @@ class BookingUpdateService
         ]);
     }
 
-    private function getBookingAmount($room, $nights, $startDate, $endDate)
+    private function getBookingAmount($room, $nights, $startDate, $endDate): float|int
     {
         return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $nights;
     }

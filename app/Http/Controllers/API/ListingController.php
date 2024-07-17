@@ -48,11 +48,27 @@ class ListingController extends Controller
         $this->listingDeleteService = $listingDeleteService;
     }
 
+    /**
+     * Get All Listings
+     *
+     * Retrieves a collection of all listings available.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getAllListings()
     {
         return ListingResource::collection($this->listingRetrievalService->getAllListings());
     }
 
+    /**
+     * Get Listings By Host
+     *
+     * Retrieves listings for a specific host. This method requires the host's unique ID.
+     * If no host ID is provided, it defaults to the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getListingsByHost(Request $request)
     {
         // If no host id is provided, default to the authenticated user
@@ -67,16 +83,45 @@ class ListingController extends Controller
         return ListingResource::collection($this->listingRetrievalService->getListingsByHost($hostId));
     }
 
+    /**
+     * Search Listings
+     *
+     * Performs a search on listings based on a query string and optional limit.
+     * Returns a collection of listings that match the search criteria.
+     *
+     * @param SearchRequest $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function searchListings(SearchRequest $request)
     {
         return ListingResource::collection($this->listingRetrievalService->searchListings($request->search_query, $request->limit));
     }
 
+    /**
+     * Get Listing
+     *
+     * Retrieves detailed information about a specific listing, including availability for a given date range.
+     * The date range is used to calculate the current price of the entire place.
+     *
+     * @param DateRangeRequest $request
+     * @param string $id
+     * @return ListingResource
+     */
     public function getListing(DateRangeRequest $request, string $id)
     {
         return new ListingResource($this->listingRetrievalService->getListingDetails($id, $request->validated()));
     }
 
+    /**
+     * Get Listing Rooms
+     *
+     * Retrieves a collection of rooms associated with a specific listing, considering availability for a given date range.
+     * The date range is used for both calculating the price of each room and determining the rooms available during that period.
+     *
+     * @param DateRangeRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getListingRooms(DateRangeRequest $request, string $id)
     {
         return RoomResource::collection($this->listingRetrievalService->getListingRooms($id, $request->validated()));
@@ -87,21 +132,54 @@ class ListingController extends Controller
     //        return new HostResource($this->listingRetrievalService->getListingHost($id));
     //    }
 
+    /**
+     * Get Listing Images
+     *
+     * Retrieves a collection of images associated with a specific listing.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getListingImages(string $id)
     {
         return ImageResource::collection($this->listingRetrievalService->getListingImages($id));
     }
 
+    /**
+     * Get Listing Videos
+     *
+     * Retrieves a collection of videos associated with a specific listing.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getListingVideos(string $id)
     {
         return VideoResource::collection($this->listingRetrievalService->getListingVideos($id));
     }
 
+    /**
+     * Get Listing Reviews
+     *
+     * Retrieves a collection of reviews written for a specific listing.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getListingReviews(string $id)
     {
         return ReviewResource::collection($this->listingRetrievalService->getListingReviews($id));
     }
 
+    /**
+     * Get Unavailable Dates
+     *
+     * Retrieves a collection of dates when a specific listing is unavailable, within a given date range.
+     *
+     * @param DateRangeRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getUnavailableDates(DateRangeRequest $request, string $id)
     {
         $unavailableDates = $this->listingRetrievalService->getUnavailableDatesFromRange($id, $request->validated()['start_date'], $request->validated()['end_date']);
@@ -110,6 +188,12 @@ class ListingController extends Controller
     }
 
     /**
+     * Create Listing
+     *
+     * Creates a new listing based on the provided details.
+     *
+     * @param CreateListingRequest $request
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function createListing(CreateListingRequest $request)
@@ -123,6 +207,13 @@ class ListingController extends Controller
     }
 
     /**
+     * Update Listing
+     *
+     * Updates the details of an existing listing.
+     *
+     * @param UpdateListingRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function updateListing(UpdateListingRequest $request, string $id)
@@ -135,6 +226,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Add Special Rate
+     *
+     * Adds a special rate to a listing for a specific date range.
+     *
+     * @param CreateSpecialRateRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function addSpecialRate(CreateSpecialRateRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->addSpecialRate($id, $request->validated());
@@ -145,6 +245,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Update Special Rate
+     *
+     * Updates an existing special rate for a listing.
+     *
+     * @param CreateSpecialRateRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateSpecialRate(CreateSpecialRateRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->updateSpecialRate($id, $request->validated());
@@ -155,6 +264,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Remove Special Rate
+     *
+     * Removes a special rate from a listing.
+     *
+     * @param Request $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function removeSpecialRate(Request $request, string $id)
     {
         $listing = $this->listingUpdateService->removeSpecialRate($id, $request->special_rate_id);
@@ -165,6 +283,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Block Dates
+     *
+     * Blocks a range of dates for a listing, making it unavailable for booking.
+     *
+     * @param DateRangeRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function blockDates(DateRangeRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->blockDates($id, $request->validated());
@@ -175,6 +302,16 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Unblock Dates
+     *
+     * Unblocks a previously blocked range of dates for a listing, making it available for booking again.
+     *
+     * @param DateRangeRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     * @throws Exception
+     */
     public function unblockDates(DateRangeRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->unblockDates($id, $request->validated());
@@ -185,6 +322,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Update Prices
+     *
+     * Updates the pricing details of a listing.
+     *
+     * @param UpdateListingPriceRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updatePrices(UpdateListingPriceRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->updatePrices($id, $request->validated());
@@ -196,6 +342,12 @@ class ListingController extends Controller
     }
 
     /**
+     * Delete Listing
+     *
+     * Deletes a listing.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      * @throws Exception
      */
     public function deleteListing(string $id)
@@ -207,6 +359,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Upload Listing Image
+     *
+     * Uploads an image for a listing and associates it with the listing.
+     *
+     * @param UploadImageRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadListingImage(UploadImageRequest $request, string $id)
     {
         $image = $this->listingCreateService->createListingImage($id, $request->validated(), $request->file('image'));
@@ -217,6 +378,15 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Upload Listing Video
+     *
+     * Uploads a video for a listing and associates it with the listing.
+     *
+     * @param UploadVideoRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadListingVideo(UploadVideoRequest $request, string $id)
     {
         $video = $this->listingCreateService->createListingVideo($id, $request->validated(), $request->file('video'));
@@ -227,6 +397,14 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Like Listing
+     *
+     * Allows a user to like a listing. If the listing is already liked by the user, it removes the like.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function likeListing(string $id)
     {
         $listing = Listing::findOrFail($id);
@@ -251,6 +429,14 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * Save Listing
+     *
+     * Allows a user to save a listing for later viewing. If the listing is already saved by the user, it removes the save.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function saveListing(string $id)
     {
         $listing = Listing::findOrFail($id);
@@ -275,6 +461,14 @@ class ListingController extends Controller
         ]);
     }
 
+    /**
+     * View Listing
+     *
+     * Increments the view count of a listing. This is typically called when a listing is viewed by a user.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function viewListing(string $id)
     {
         $listing = Listing::findOrFail($id);

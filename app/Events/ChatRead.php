@@ -21,7 +21,7 @@ class ChatRead implements ShouldBroadcast
     /**
      * Create a new event instance.
      */
-    public function __construct($chat, $user)
+    public function __construct(Chat $chat, User $user)
     {
         $this->chat = $chat;
         $this->user = $user;

@@ -79,7 +79,7 @@ class ChatService
         return $message;
     }
 
-    public function markMessagesAsRead(string $chatId, string $userId)
+    public function markMessagesAsRead(string $chatId, string $userId): void
     {
         $chat = Chat::find($chatId);
         $user = User::find($userId);

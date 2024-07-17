@@ -16,14 +16,14 @@ class ListingLikeService
         $this->userId = auth()->id();
     }
 
-    public function addLike()
+    public function addLike(): void
     {
         $this->listing->likes()->create([
             'user_id' => $this->userId,
         ]);
     }
 
-    public function removeLike()
+    public function removeLike(): void
     {
         $this->listing->likes()->where('user_id', $this->userId)->delete();
     }
