@@ -1,6 +1,7 @@
 <?php
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
+use \App\Http\Middleware\ForceHttpsForDocs;
 
 return [
     /*
@@ -72,6 +73,7 @@ return [
     'middleware' => [
         'web',
         RestrictedDocsAccess::class,
+        ForceHttpsForDocs::class
     ],
 
     'extensions' => [],
