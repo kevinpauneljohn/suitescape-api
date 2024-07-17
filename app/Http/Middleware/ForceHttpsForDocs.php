@@ -24,7 +24,6 @@ class ForceHttpsForDocs
         // Force HTTPS
         if ($appUrlIsHttps && $shouldForceHttps && !$request->secure()) {
             $request->server->set('HTTPS', 'on');
-            $request->server->set('SERVER_PORT', 443);
         }
 
         return $next($request);
