@@ -31,16 +31,40 @@ class ProfileController extends Controller
         $this->fileNameService = $fileNameService;
     }
 
+    /**
+     * Get Profile
+     *
+     * Retrieves the profile of the currently authenticated user.
+     *
+     * @return UserResource
+     */
     public function getProfile()
     {
         return new UserResource($this->profileRetrievalService->getProfile());
     }
 
+    /**
+     * Validate Profile
+     *
+     * Validates the provided profile update request data without persisting any changes.
+     *
+     * @param ProfileUpdateRequest $request
+     * @return mixed
+     */
     public function validateProfile(ProfileUpdateRequest $request)
     {
         return $request->validated();
     }
 
+    /**
+     * Update Profile
+     *
+     * Updates the profile of the currently authenticated user with the provided data.
+     * Handles profile and cover image uploads if provided.
+     *
+     * @param ProfileUpdateRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateProfile(ProfileUpdateRequest $request)
     {
         $validated = $request->validated();
@@ -80,6 +104,14 @@ class ProfileController extends Controller
         ]);
     }
 
+    /**
+     * Update Password
+     *
+     * Updates the password of the currently authenticated user.
+     *
+     * @param PasswordUpdateRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updatePassword(PasswordUpdateRequest $request)
     {
         $user = $this->profileUpdateService->updatePassword($request->validated()['new_password']);
@@ -90,6 +122,15 @@ class ProfileController extends Controller
         ]);
     }
 
+    /**
+     * Update Active Session
+     *
+     * Updates the active session status for the currently authenticated user.
+     * Creates or deletes an active session based on the provided status.
+     *
+     * @param UpdateActiveStatusRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateActiveSession(UpdateActiveStatusRequest $request)
     {
         $user = auth()->user();
@@ -129,16 +170,37 @@ class ProfileController extends Controller
         ]);
     }
 
+    /**
+     * Get Liked Listings
+     *
+     * Retrieves a collection of listings liked by the currently authenticated user.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getLikedListings()
     {
         return ListingMetricResource::collection($this->profileRetrievalService->getLikedListings());
     }
 
+    /**
+     * Get Saved Listings
+     *
+     * Retrieves a collection of listings saved by the currently authenticated user for later viewing.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getSavedListings()
     {
         return ListingMetricResource::collection($this->profileRetrievalService->getSavedListings());
     }
 
+    /**
+     * Get Viewed Listings
+     *
+     * Retrieves a collection of listings viewed by the currently authenticated user.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getViewedListings()
     {
         return ListingMetricResource::collection($this->profileRetrievalService->getViewedListings());

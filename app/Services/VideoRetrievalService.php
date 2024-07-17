@@ -24,7 +24,7 @@ class VideoRetrievalService
         return Video::all();
     }
 
-    public function getVideoPath(string $filename)
+    public function getVideoPath(string $filename): string
     {
         //        return public_path('storage/videos/'.$filename);
         //        return storage_path('app/public/videos/'.$filename);
@@ -103,7 +103,7 @@ class VideoRetrievalService
             ->orderBy('videos.id');            // Secondary sort by video ID for consistent ordering
     }
 
-    private function initializeFilterMethods()
+    private function initializeFilterMethods(): array
     {
         return [
             'destination' => function ($query, $destination) {
@@ -139,7 +139,7 @@ class VideoRetrievalService
         ];
     }
 
-    private function applyMainFilters($query, $filters)
+    private function applyMainFilters($query, $filters): void
     {
         $filterMethods = $this->initializeFilterMethods();
 
@@ -150,7 +150,7 @@ class VideoRetrievalService
         }
     }
 
-    private function applyDateFilter($query, $filters)
+    private function applyDateFilter($query, $filters): void
     {
         if (isset($filters['check_in']) && isset($filters['check_out'])) {
             $this->filterService->applyUnavailableDateFilter($query, $filters['check_in'], $filters['check_out']);

@@ -63,11 +63,17 @@ class UnavailableDateService
             ->get();
     }
 
+    /**
+     * @throws Exception
+     */
     public function addUnavailableDates(string $type, string $id, string $startDate, string $endDate): void
     {
         $this->createUnavailableDatesFromRange(null, $type, $id, $startDate, $endDate, 'blocked');
     }
 
+    /**
+     * @throws Exception
+     */
     public function addUnavailableDatesForBooking($booking, string $type, string $id, string $startDate, string $endDate): void
     {
         $this->createUnavailableDatesFromRange($booking, $type, $id, $startDate, $endDate, 'booked');

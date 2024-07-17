@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Listing;
 use App\Models\ListingView;
-use App\Models\User;
 
 class ListingViewService
 {

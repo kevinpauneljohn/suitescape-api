@@ -103,7 +103,7 @@ class ListingCreateService
     /**
      * @throws Exception
      */
-    public function createListingRoom($listing, $room)
+    public function createListingRoom($listing, $room): void
     {
         if (! isset($room['category'])) {
             throw new Exception('Room category is required.');
@@ -134,7 +134,7 @@ class ListingCreateService
         return $listing->roomCategories()->create($roomCategory);
     }
 
-    public function createRoomRule($room, $roomRule)
+    public function createRoomRule($room, $roomRule): void
     {
         $room->roomRule()->create($roomRule);
     }
@@ -142,7 +142,7 @@ class ListingCreateService
     /**
      * @throws Exception
      */
-    public function createRoomAmenities($room, $amenities)
+    public function createRoomAmenities($room, $amenities): void
     {
         $roomAmenities = array_keys(array_filter($amenities));
 
@@ -161,7 +161,7 @@ class ListingCreateService
         }
     }
 
-    public function createListingNearbyPlaces($listing, $nearbyPlaces)
+    public function createListingNearbyPlaces($listing, $nearbyPlaces): void
     {
         $listingNearbyPlaces = array_keys(array_filter($nearbyPlaces));
 
@@ -180,19 +180,19 @@ class ListingCreateService
         }
     }
 
-    public function createListingAddons($listing, $addons)
+    public function createListingAddons($listing, $addons): void
     {
         $listing->addons()->createMany($addons);
     }
 
-    public function createVideoSections($video, $sections)
+    public function createVideoSections($video, $sections): void
     {
         foreach ($sections as $section) {
             $video->sections()->create($section);
         }
     }
 
-    private function filterBeds($roomCategory)
+    private function filterBeds($roomCategory): array
     {
         // Filter out all the -1 in type of beds associative array
         return array_filter($roomCategory['type_of_beds'], function ($value) {

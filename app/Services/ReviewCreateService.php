@@ -6,7 +6,7 @@ use App\Models\Listing;
 
 class ReviewCreateService
 {
-    public function createReview($listingId, $feedback, $overallRating, $serviceRatings)
+    public function createReview($listingId, $feedback, $overallRating, $serviceRatings): void
     {
         $userId = auth()->id();
         $listing = Listing::findOrFail($listingId);

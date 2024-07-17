@@ -32,6 +32,11 @@ class Booking extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function host()
+    {
+        return $this->listing()->user();
+    }
+
     public function listing()
     {
         return $this->belongsTo(Listing::class);

@@ -27,7 +27,7 @@ class ListingUpdateService
     /**
      * @throws Exception
      */
-    public function updateListing(string $listingId, array $listingData)
+    public function updateListing(string $listingId, array $listingData): Listing
     {
         // Add the authenticated user's ID to the listing data
         $listingData['user_id'] = auth('sanctum')->user()->id;
@@ -85,6 +85,9 @@ class ListingUpdateService
         return $listing;
     }
 
+    /**
+     * @throws Exception
+     */
     public function blockDates(string $listingId, array $dates)
     {
         $listing = Listing::findOrFail($listingId);
@@ -115,7 +118,7 @@ class ListingUpdateService
         return $listing;
     }
 
-    public function updateListingImages($listing, $listingImages)
+    public function updateListingImages($listing, $listingImages): void
     {
         // Create a map with id as keys for quick lookup
         $newImagesMap = collect($listingImages)
@@ -144,7 +147,7 @@ class ListingUpdateService
         }
     }
 
-    public function updateListingVideos($listing, $listingVideos)
+    public function updateListingVideos($listing, $listingVideos): void
     {
         // Create a map with id as keys for quick lookup
         $newVideosMap = collect($listingVideos)
@@ -176,7 +179,7 @@ class ListingUpdateService
     /**
      * @throws Exception
      */
-    public function updateListingRooms($listing, $listingRooms)
+    public function updateListingRooms($listing, $listingRooms): void
     {
         foreach ($listingRooms as $room) {
             if (isset($room['category'])) {
@@ -204,7 +207,7 @@ class ListingUpdateService
     /**
      * @throws Exception
      */
-    public function updateRoomCategory($listing, $roomCategory)
+    public function updateRoomCategory($listing, $roomCategory): void
     {
         $roomCategory['type_of_beds'] = $this->filterBeds($roomCategory);
 
@@ -213,7 +216,7 @@ class ListingUpdateService
         ], $roomCategory);
     }
 
-    public function updateRoomRule($room, $roomRule)
+    public function updateRoomRule($room, $roomRule): void
     {
         $room->roomRule()->update($roomRule);
     }
@@ -221,7 +224,7 @@ class ListingUpdateService
     /**
      * @throws Exception
      */
-    public function updateRoomAmenities($room, $amenities)
+    public function updateRoomAmenities($room, $amenities): void
     {
         $newAmenities = array_filter($amenities);
 
@@ -242,7 +245,7 @@ class ListingUpdateService
         $this->listingCreateService->createRoomAmenities($room, $newAmenities);
     }
 
-    public function updateListingNearbyPlaces($listing, $nearbyPlaces)
+    public function updateListingNearbyPlaces($listing, $nearbyPlaces): void
     {
         $newNearbyPlaces = array_filter($nearbyPlaces);
 
@@ -263,7 +266,7 @@ class ListingUpdateService
         $this->listingCreateService->createListingNearbyPlaces($listing, $newNearbyPlaces);
     }
 
-    public function updateListingAddons($listing, $addons)
+    public function updateListingAddons($listing, $addons): void
     {
         $newAddons = collect($addons)->keyBy('id')->toArray();
 
@@ -285,7 +288,7 @@ class ListingUpdateService
         $this->listingCreateService->createListingAddons($listing, $newAddons);
     }
 
-    private function filterBeds($roomCategory)
+    private function filterBeds($roomCategory): array
     {
         // Filter out all the -1 in type of beds associative array
         return array_filter($roomCategory['type_of_beds'], function ($value) {

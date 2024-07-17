@@ -7,14 +7,14 @@ use Carbon\Carbon;
 
 class BookingStatusService
 {
-    public function updateBookingStatuses()
+    public function updateBookingStatuses(): void
     {
         $today = Carbon::today();
         $this->updateToOngoing($today);
         $this->updateToCompleted($today);
     }
 
-    private function updateToOngoing($today)
+    private function updateToOngoing($today): void
     {
         Booking::where('status', 'upcoming')
             ->whereDate('date_start', '<=', $today)
@@ -22,7 +22,7 @@ class BookingStatusService
             ->update(['status' => 'ongoing']);
     }
 
-    private function updateToCompleted($today)
+    private function updateToCompleted($today): void
     {
         Booking::where('status', 'ongoing')
             ->whereDate('date_end', '<', $today)

@@ -20,11 +20,26 @@ class ChatController extends Controller
         $this->chatService = $chatService;
     }
 
+    /**
+     * Get All Chats
+     *
+     * Retrieves a collection of all chats for the authenticated user.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getAllChats()
     {
         return ChatResource::collection($this->chatService->getAllChats());
     }
 
+    /**
+     * Get All Messages
+     *
+     * Retrieves all messages between the authenticated user and the specified receiver.
+     *
+     * @param string $receiverId
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|JsonResource
+     */
     public function getAllMessages(string $receiverId)
     {
         $userId = auth()->id();
@@ -39,6 +54,15 @@ class ChatController extends Controller
         return MessageResource::collection($this->chatService->getMessages($userId, $receiverId));
     }
 
+    /**
+     * Send Message
+     *
+     * Sends a new message from the authenticated user to the specified receiver.
+     *
+     * @param SendMessageRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
+     */
     public function sendMessage(SendMessageRequest $request)
     {
         $message = $this->chatService->sendMessage(

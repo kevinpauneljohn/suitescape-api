@@ -25,7 +25,7 @@ class VideoTranscodingProgress implements ShouldBroadcast
     /**
      * Create a new event instance.
      */
-    public function __construct($video, $percentage, $remaining, $rate)
+    public function __construct(Video $video, float $percentage, float $remaining, float $rate)
     {
         $this->video = $video;
         $this->percentage = $percentage;

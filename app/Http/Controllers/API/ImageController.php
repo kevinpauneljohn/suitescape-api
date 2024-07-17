@@ -24,11 +24,26 @@ class ImageController extends Controller
         $this->imageUploadService = $imageUploadService;
     }
 
+    /**
+     * Get All Images
+     *
+     * Retrieves a collection of all images. This method does not require authentication and returns all images regardless of their privacy settings.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
     public function getAllImages()
     {
         return ImageResource::collection($this->imageRetrievalService->getAllImages());
     }
 
+    /**
+     * Get Image
+     *
+     * Retrieves a specific image by its unique ID. This method checks the image's privacy settings and the user's permission to view the image. If the image is private and the user does not have permission, it throws an UnauthorizedException.
+     *
+     * @param string $id
+     * @return ImageResource
+     */
     public function getImage(string $id)
     {
         $image = Image::findOrFail($id);
@@ -43,6 +58,14 @@ class ImageController extends Controller
         return new ImageResource($image);
     }
 
+    /**
+     * Upload Image
+     *
+     * Allows authenticated users to upload a new image. The method expects an image file in the request and returns the filename of the uploaded image upon success.
+     *
+     * @param UploadImageRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function uploadImage(UploadImageRequest $request)
     {
         $filename = $this->imageUploadService->upload($request->file('image'));
