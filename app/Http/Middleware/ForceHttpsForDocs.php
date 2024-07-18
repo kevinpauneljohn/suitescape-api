@@ -15,8 +15,8 @@ class ForceHttpsForDocs
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if the app URL is HTTPS
-        $appUrlIsHttps = parse_url(config('app.url'), PHP_URL_SCHEME) === 'https';
+        // Check if the docs should be served over HTTPS
+        $appUrlIsHttps = config('scramble.https') === true;
 
         // Check if the request path is one of the docs paths
         $shouldForceHttps = in_array($request->path(), ['docs/api', 'docs/api.json']);
