@@ -1,7 +1,7 @@
 <?php
 
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
-use \App\Http\Middleware\ForceHttpsForDocs;
+use App\Http\Middleware\ForceHttpsForDocs;
 
 return [
     /*
@@ -75,6 +75,8 @@ return [
         RestrictedDocsAccess::class,
         ForceHttpsForDocs::class
     ],
+
+    'https' => env('HTTPS_DOCS', false),
 
     'extensions' => [],
 ];
