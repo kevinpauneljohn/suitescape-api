@@ -54,6 +54,7 @@ class VideoRetrievalService
 
         return Video::public()
             ->isTranscoded()
+            ->isApproved()
             ->whereHas('listing', function ($query) use ($filters) {
                 // Apply date filter
                 $query->where(function ($query) use ($filters) {

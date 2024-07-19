@@ -22,7 +22,7 @@ class AddonResource extends JsonResource
             'price' => $this->price,
             'description' => $this->description,
             'quantity' => $this->quantity,
-            'is_consumable' => $this->is_consumable,
+            'is_consumable' => boolval($this->is_consumable),
         ];
     }
 }

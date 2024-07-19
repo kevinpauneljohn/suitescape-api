@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\TranscodeVideo;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\NearbyPlace;
@@ -67,7 +68,6 @@ class ListingCreateService
         $file->storeAs($directory, $filename, 'public');
 
         return $listing->images()->create([
-            'user_id' => auth('sanctum')->user()->id,
             'filename' => $filename,
             'privacy' => $imageData['privacy'],
         ]);
@@ -84,14 +84,11 @@ class ListingCreateService
         $tempPath = $file->storeAs($directory, $tempFilename, 'public');
 
         $video = $listing->videos()->create([
-            'user_id' => auth('sanctum')->user()->id,
             'filename' => $tempFilename,
             'privacy' => $videoData['privacy'],
-            // Temporarily removed until ffmpeg is installed
-            'is_transcoded' => true,
         ]);
 
-        //        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);
+        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);
 
         if (isset($videoData['sections'])) {
             $this->createVideoSections($video, $videoData['sections']);
