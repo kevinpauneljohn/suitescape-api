@@ -62,6 +62,11 @@ class Video extends Model
         return $query->where('is_transcoded', $isTranscoded);
     }
 
+    public function scopeIsApproved($query, $isApproved = true)
+    {
+        return $query->where('is_approved', $isApproved);
+    }
+
     public function scopeOrderByDesc($query)
     {
         return $query->orderBy('created_at', 'desc')->orderBy('id', 'desc');
