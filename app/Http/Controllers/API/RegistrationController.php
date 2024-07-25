@@ -8,8 +8,11 @@ use App\Http\Requests\PasswordForgotRequest;
 use App\Http\Requests\PasswordResetRequest;
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\TokenValidateRequest;
+use App\Models\User;
 use App\Services\RegistrationService;
 use Exception;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
 {
@@ -17,7 +20,8 @@ class RegistrationController extends Controller
 
     public function __construct(RegistrationService $registrationService)
     {
-        $this->middleware('auth:sanctum')->only('logout');
+        $this->middleware('auth:sanctum')->only(['resendEmail', 'logout']);
+        $this->middleware('signed')->only('verifyEmail');
 
         $this->registrationService = $registrationService;
     }
@@ -121,5 +125,49 @@ class RegistrationController extends Controller
                 'message' => $e->getMessage(),
             ], $e->getCode());
         }
+    }
+
+    /**
+     * Verify the user's email address.
+     *
+     * Marks the user's email as verified after clicking the verification link sent to their email.
+     * Returns a JSON response indicating the email has been successfully verified.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verifyEmail(Request $request) {
+        $user = User::findOrfail($request->id);
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Email already verified'
+            ]);
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($request->user()));
+        }
+
+        return response()->json([
+            'message' => 'Email verified successfully',
+        ]);
+    }
+
+    /**
+     * Resend the email verification link.
+     *
+     * Triggers a new verification email to be sent to the user's email address if they haven't verified yet.
+     * Returns a redirect response with a success message indicating the verification link has been sent.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resendEmail(Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Verification email sent successfully',
+        ]);
     }
 }

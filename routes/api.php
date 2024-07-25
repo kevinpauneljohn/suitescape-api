@@ -42,6 +42,11 @@ Route::post('/validate-reset-token', [RegistrationController::class, 'validateRe
 Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
+Route::prefix('email')->group(function () {
+    Route::get('/verify', [RegistrationController::class, 'verifyEmail'])->name('verification.verify');
+    Route::post('/resend', [RegistrationController::class, 'resendEmail'])->name('verification.resend');
+});
+
 Route::prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'getProfile'])->name('profile.get');
     Route::get('/saved', [ProfileController::class, 'getSavedListings'])->name('profile.saves');
