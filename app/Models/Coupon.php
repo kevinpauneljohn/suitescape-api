@@ -11,7 +11,13 @@ class Coupon extends Model
 
     protected $fillable = [
         'listing_id',
+        'label',
         'code',
+        'discount_amount',
+        'activated_date',
+        'expiry_date',
+        'quantity',
+        'measurement',
     ];
 
     public function listing()

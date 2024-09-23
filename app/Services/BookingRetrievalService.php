@@ -49,7 +49,7 @@ class BookingRetrievalService
                 return $this->priceCalculatorService->getPriceForRoomCategoriesToQuery($query, $booking->startDate, $booking->endDate);
             },
             'coupon',
-            'invoice.invoiceDetails',
+            'invoice',
             'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'listing.addons',
             'listing.images',
@@ -73,6 +73,7 @@ class BookingRetrievalService
 
         return $query->desc()->with([
             'coupon',
+            'invoice',
             'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'listing.host',
             'listing.images',

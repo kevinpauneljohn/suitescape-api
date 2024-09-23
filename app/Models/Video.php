@@ -29,7 +29,17 @@ class Video extends Model
         }
 
         //        return route('api.videos.get', ['id' => $this->id], false);
-        return Storage::url('listings/'.$this->listing_id.'/videos/'.$this->filename);
+        return Storage::url($this->file_path);
+    }
+
+    public function getFilePathAttribute()
+    {
+        return $this->directory.'/'.$this->filename;
+    }
+
+    public function getDirectoryAttribute()
+    {
+        return 'listings/'.$this->listing_id.'/videos';
     }
 
     public function listing()

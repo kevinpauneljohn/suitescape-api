@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateBookingPaymentStatusRequest extends FormRequest
+class CreateFeedbackRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,8 @@ class UpdateBookingPaymentStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_status' => ['required', 'in:paid,refunded'],
+            'rating' => ['required', 'numeric', 'min:1', 'max:5'],
+            'comment' => ['required', 'string'],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Jobs\SyncVideoServer;
 use App\Models\Listing;
 use App\Models\Video;
 use Illuminate\Database\Seeder;
@@ -32,6 +33,8 @@ class VideoSeeder extends Seeder
             ]);
 
             $listing->videos()->save($video);
+
+            SyncVideoServer::dispatch($video, $listing->user);
         }
     }
 }

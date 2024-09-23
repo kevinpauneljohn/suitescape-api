@@ -32,7 +32,6 @@ class RegistrationController extends Controller
      * Validates the incoming request data and registers a new user based on the provided information.
      * Returns a JSON response indicating the success of the registration process.
      *
-     * @param RegisterUserRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(RegisterUserRequest $request)
@@ -46,7 +45,6 @@ class RegistrationController extends Controller
      * Validates the incoming request data for email and password, and attempts to log the user in.
      * Returns a JSON response with login status and user information on success.
      *
-     * @param LoginUserRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function login(LoginUserRequest $request)
@@ -78,7 +76,6 @@ class RegistrationController extends Controller
      * and sending a password reset link if the email is associated with an account.
      * Returns a JSON response indicating the status of the password reset request.
      *
-     * @param PasswordForgotRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function forgotPassword(PasswordForgotRequest $request)
@@ -92,7 +89,6 @@ class RegistrationController extends Controller
      * Validates the password reset token for the given email address to ensure it's valid and has not expired.
      * Returns a JSON response indicating the validity of the token.
      *
-     * @param TokenValidateRequest $request
      * @return \Illuminate\Http\JsonResponse|object
      */
     public function validateResetToken(TokenValidateRequest $request)
@@ -113,7 +109,6 @@ class RegistrationController extends Controller
      * the password reset token and ensuring it matches the user's email address.
      * Returns a JSON response indicating the success of the password reset operation.
      *
-     * @param PasswordResetRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function resetPassword(PasswordResetRequest $request)
@@ -133,15 +128,15 @@ class RegistrationController extends Controller
      * Marks the user's email as verified after clicking the verification link sent to their email.
      * Returns a JSON response indicating the email has been successfully verified.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function verifyEmail(Request $request) {
+    public function verifyEmail(Request $request)
+    {
         $user = User::findOrfail($request->id);
 
         if ($user->hasVerifiedEmail()) {
             return response()->json([
-                'message' => 'Email already verified'
+                'message' => 'Email already verified',
             ]);
         }
 
@@ -160,10 +155,10 @@ class RegistrationController extends Controller
      * Triggers a new verification email to be sent to the user's email address if they haven't verified yet.
      * Returns a redirect response with a success message indicating the verification link has been sent.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function resendEmail(Request $request) {
+    public function resendEmail(Request $request)
+    {
         $request->user()->sendEmailVerificationNotification();
 
         return response()->json([

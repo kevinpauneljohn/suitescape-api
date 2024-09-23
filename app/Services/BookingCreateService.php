@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\BookingCompletedHost;
 use App\Mail\BookingCompletedUser;
 use App\Models\Addon;
+use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Listing;
 use App\Models\Room;
@@ -30,17 +31,27 @@ class BookingCreateService
      */
     public function createBooking(array $bookingData)
     {
-        $isEntirePlace = $this->isEntirePlace($bookingData['listing_id']);
-        $rooms = $this->getRooms($bookingData['rooms'], $isEntirePlace);
-        $addons = $this->getAddons($bookingData['addons']);
-        $coupon = $this->getCoupon($bookingData['coupon_code'] ?? null);
-        $amount = $this->calculateAmount($bookingData['listing_id'], $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date'], $isEntirePlace);
-        $booking = $this->createBookingRecord($bookingData['listing_id'], $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
-        $this->addBookingRooms($booking, $rooms, $isEntirePlace);
+        $listing = Listing::findOrFail($bookingData['listing_id']);
+
+        $coupon = null;
+        if ($bookingData['coupon_code']) {
+            $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
+        }
+
+        $rooms = $this->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
+        $addons = $this->normalizeAddons($bookingData['addons']);
+        $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
+        $booking = $this->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
+
+        $this->addBookingRooms($booking, $rooms);
         $this->addBookingAddons($booking, $addons);
 
-        if ($isEntirePlace) {
-            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $bookingData['listing_id'], $booking->date_start, $booking->date_end);
+        if ($listing->is_entire_place) {
+            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
+        } else {
+            foreach ($rooms as $room) {
+                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+            }
         }
 
         $this->sendBookingEmails($booking);
@@ -48,77 +59,28 @@ class BookingCreateService
         return $booking;
     }
 
+    public function createBookingInvoice(string $bookingId)
+    {
+        $booking = Booking::findOrFail($bookingId);
+
+        return $booking->invoice()->create([
+            'user_id' => $booking->user_id,
+            'coupon_id' => $booking->coupon_id,
+            'coupon_discount_amount' => $booking->coupon->discount_amount ?? 0,
+            'payment_status' => 'paid',
+        ]);
+    }
+
     public function getBookingNights(string $startDate, $endDate): int
     {
         return Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate));
     }
 
-    private function isEntirePlace(string $listingId): bool
-    {
-        return Listing::findOrFail($listingId)->is_entire_place;
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function getRooms(array $roomsData, bool $isEntirePlace): Collection
-    {
-        // Get rooms by ids
-        $roomIds = array_keys($roomsData);
-        $rooms = Room::whereIn('id', $roomIds)->with('roomCategory')->get();
-
-        if (!$isEntirePlace && $rooms->isEmpty()) {
-            throw new Exception('No rooms found.');
-        }
-
-        // Set quantity for each room
-        foreach ($rooms as $room) {
-            $room->userQuantity = $roomsData[$room->id];
-        }
-
-        return $rooms;
-    }
-
-    private function getAddons(array $addonsData): Collection
-    {
-        // Get addons by ids
-        $addonIds = array_keys($addonsData);
-        $addons = Addon::whereIn('id', $addonIds)->get();
-
-        // Set quantity for each addon
-        foreach ($addons as $addon) {
-            $addon->userQuantity = $addonsData[$addon->id];
-        }
-
-        return $addons;
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function getCoupon(?string $couponCode): ?Coupon
-    {
-        if ($couponCode) {
-            $coupon = Coupon::where('code', $couponCode)->first();
-
-            if (!$coupon) {
-                throw new Exception('Coupon not found.');
-            }
-
-            return $coupon;
-        }
-
-        return null;
-    }
-
-    private function calculateAmount(string $listingId, Collection $rooms, Collection $addons, ?Coupon $coupon, string $startDate, string $endDate, bool $isEntirePlace): float
+    public function calculateAmount(Listing $listing, Collection $rooms, Collection $addons, ?Coupon $coupon, string $startDate, string $endDate): array
     {
         $amount = 0;
 
-        if ($isEntirePlace) {
-            // Get the entire place price from the Listing model
-            $listing = Listing::findOrFail($listingId);
-
+        if ($listing->is_entire_place) {
             // Get the price of the listing
             $amount = $listing->getCurrentPrice($startDate, $endDate);
         } else {
@@ -130,8 +92,11 @@ class BookingCreateService
 
         // Add the price of addons
         foreach ($addons as $addon) {
-            $amount += $addon->price * $addon->userQuantity;
+            $amount += $this->getAddonAmount($addon);
         }
+
+        // The base amount without the nights multiplier and other fees
+        $base = $amount;
 
         // Multiply by nights
         $nights = $this->getBookingNights($startDate, $endDate);
@@ -139,7 +104,7 @@ class BookingCreateService
 
         // Apply coupon discount
         //        if ($coupon) {
-        //            $amount -= $amount * $coupon->discount / 100;
+        //            $amount -= $amount * $coupon->discount_amount / 100;
         //        }
 
         // Apply 10% discount as example (Make sure to change also in the app)
@@ -149,37 +114,75 @@ class BookingCreateService
         $suitescapeFee = $this->constantService->getConstant('suitescape_fee')->value;
         $amount += $suitescapeFee;
 
-        return $amount;
+        return [
+            'total' => $amount,
+            'base' => $base,
+        ];
     }
 
-    private function createBookingRecord(string $listingId, float $amount, ?string $message, string $startDate, string $endDate, ?string $couponId)
+    /**
+     * @throws Exception
+     */
+    private function normalizeRooms(array $roomsData, bool $isEntirePlace): Collection
+    {
+        // Get rooms by ids
+        $roomIds = array_keys($roomsData);
+        $rooms = Room::whereIn('id', $roomIds)->with('roomCategory')->get();
+
+        // Set room data for each room model
+        foreach ($rooms as $room) {
+            foreach ($roomsData[$room->id] as $key => $value) {
+                $room->$key = $value;
+            }
+        }
+
+        if (! $isEntirePlace && $rooms->isEmpty()) {
+            throw new Exception('No rooms found.');
+        }
+
+        return $rooms;
+    }
+
+    private function normalizeAddons(array $addonsData): Collection
+    {
+        // Get addons by ids
+        $addonIds = array_keys($addonsData);
+        $addons = Addon::whereIn('id', $addonIds)->get();
+
+        // Set addon data for each addon model
+        foreach ($addons as $addon) {
+            foreach ($addonsData[$addon->id] as $key => $value) {
+                $addon->$key = $value;
+            }
+        }
+
+        return $addons;
+    }
+
+    private function createBookingRecord(string $listingId, array $amount, ?string $message, string $startDate, string $endDate, ?string $couponId)
     {
         $user = auth()->user();
 
         return $user->bookings()->create([
             'listing_id' => $listingId,
             'coupon_id' => $couponId,
-            'amount' => $amount,
+            'amount' => $amount['total'],
+            'base_amount' => $amount['base'],
             'message' => $message,
             'date_start' => $startDate,
             'date_end' => $endDate,
         ]);
     }
 
-    /**
-     * @throws Exception
-     */
-    private function addBookingRooms($booking, Collection $rooms, bool $isEntirePlace): void
+    private function addBookingRooms($booking, Collection $rooms): void
     {
         foreach ($rooms as $room) {
             $booking->bookingRooms()->create([
                 'room_id' => $room->id,
-                'quantity' => $room->userQuantity,
+                'name' => $room->name,
+                'quantity' => $room->quantity,
+                'price' => $room->roomCategory->getCurrentPrice($booking->date_start, $booking->date_end),
             ]);
-
-            if (!$isEntirePlace) {
-                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
-            }
         }
     }
 
@@ -188,15 +191,21 @@ class BookingCreateService
         foreach ($addons as $addon) {
             $booking->bookingAddons()->create([
                 'addon_id' => $addon->id,
-                'quantity' => $addon->userQuantity,
-                'price' => $addon->price * $addon->userQuantity,
+                'name' => $addon->name,
+                'quantity' => $addon->quantity,
+                'price' => $addon->price,
             ]);
         }
     }
 
     private function getRoomAmount($room, string $startDate, string $endDate): float
     {
-        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->userQuantity;
+        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->quantity; // Quantity is either from Booking<Model> or from the normalized <model>
+    }
+
+    private function getAddonAmount($addon): float
+    {
+        return $addon->price * $addon->quantity;
     }
 
     private function sendBookingEmails($booking)

@@ -26,6 +26,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<int, string>
      */
     protected $fillable = [
+        'paymongo_customer_id',
         'firstname',
         'middlename',
         'lastname',
@@ -34,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'address',
         'zipcode',
         'city',
+        'state',
         'region',
         'mobile_number',
         'password',
@@ -211,6 +213,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function viewedListings()
     {
         return $this->hasMany(ListingView::class);
+    }
+
+    public function payoutMethods()
+    {
+        return $this->hasMany(PayoutMethod::class);
     }
 
     public function activeSessions()

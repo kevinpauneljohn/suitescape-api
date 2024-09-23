@@ -66,7 +66,6 @@ class ListingController extends Controller
      * Retrieves listings for a specific host. This method requires the host's unique ID.
      * If no host ID is provided, it defaults to the authenticated user.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getListingsByHost(Request $request)
@@ -89,7 +88,6 @@ class ListingController extends Controller
      * Performs a search on listings based on a query string and optional limit.
      * Returns a collection of listings that match the search criteria.
      *
-     * @param SearchRequest $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function searchListings(SearchRequest $request)
@@ -103,8 +101,6 @@ class ListingController extends Controller
      * Retrieves detailed information about a specific listing, including availability for a given date range.
      * The date range is used to calculate the current price of the entire place.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return ListingResource
      */
     public function getListing(DateRangeRequest $request, string $id)
@@ -118,8 +114,6 @@ class ListingController extends Controller
      * Retrieves a collection of rooms associated with a specific listing, considering availability for a given date range.
      * The date range is used for both calculating the price of each room and determining the rooms available during that period.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getListingRooms(DateRangeRequest $request, string $id)
@@ -137,7 +131,6 @@ class ListingController extends Controller
      *
      * Retrieves a collection of images associated with a specific listing.
      *
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getListingImages(string $id)
@@ -150,7 +143,6 @@ class ListingController extends Controller
      *
      * Retrieves a collection of videos associated with a specific listing.
      *
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getListingVideos(string $id)
@@ -163,7 +155,6 @@ class ListingController extends Controller
      *
      * Retrieves a collection of reviews written for a specific listing.
      *
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getListingReviews(string $id)
@@ -176,8 +167,6 @@ class ListingController extends Controller
      *
      * Retrieves a collection of dates when a specific listing is unavailable, within a given date range.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getUnavailableDates(DateRangeRequest $request, string $id)
@@ -192,8 +181,8 @@ class ListingController extends Controller
      *
      * Creates a new listing based on the provided details.
      *
-     * @param CreateListingRequest $request
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function createListing(CreateListingRequest $request)
@@ -211,9 +200,8 @@ class ListingController extends Controller
      *
      * Updates the details of an existing listing.
      *
-     * @param UpdateListingRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function updateListing(UpdateListingRequest $request, string $id)
@@ -231,8 +219,6 @@ class ListingController extends Controller
      *
      * Adds a special rate to a listing for a specific date range.
      *
-     * @param CreateSpecialRateRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function addSpecialRate(CreateSpecialRateRequest $request, string $id)
@@ -250,8 +236,6 @@ class ListingController extends Controller
      *
      * Updates an existing special rate for a listing.
      *
-     * @param CreateSpecialRateRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateSpecialRate(CreateSpecialRateRequest $request, string $id)
@@ -269,8 +253,6 @@ class ListingController extends Controller
      *
      * Removes a special rate from a listing.
      *
-     * @param Request $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function removeSpecialRate(Request $request, string $id)
@@ -288,8 +270,6 @@ class ListingController extends Controller
      *
      * Blocks a range of dates for a listing, making it unavailable for booking.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function blockDates(DateRangeRequest $request, string $id)
@@ -307,9 +287,8 @@ class ListingController extends Controller
      *
      * Unblocks a previously blocked range of dates for a listing, making it available for booking again.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function unblockDates(DateRangeRequest $request, string $id)
@@ -327,8 +306,6 @@ class ListingController extends Controller
      *
      * Updates the pricing details of a listing.
      *
-     * @param UpdateListingPriceRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updatePrices(UpdateListingPriceRequest $request, string $id)
@@ -346,8 +323,8 @@ class ListingController extends Controller
      *
      * Deletes a listing.
      *
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function deleteListing(string $id)
@@ -364,8 +341,6 @@ class ListingController extends Controller
      *
      * Uploads an image for a listing and associates it with the listing.
      *
-     * @param UploadImageRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function uploadListingImage(UploadImageRequest $request, string $id)
@@ -383,8 +358,6 @@ class ListingController extends Controller
      *
      * Uploads a video for a listing and associates it with the listing.
      *
-     * @param UploadVideoRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function uploadListingVideo(UploadVideoRequest $request, string $id)
@@ -402,7 +375,6 @@ class ListingController extends Controller
      *
      * Allows a user to like a listing. If the listing is already liked by the user, it removes the like.
      *
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function likeListing(string $id)
@@ -434,7 +406,6 @@ class ListingController extends Controller
      *
      * Allows a user to save a listing for later viewing. If the listing is already saved by the user, it removes the save.
      *
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function saveListing(string $id)
@@ -466,7 +437,6 @@ class ListingController extends Controller
      *
      * Increments the view count of a listing. This is typically called when a listing is viewed by a user.
      *
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function viewListing(string $id)

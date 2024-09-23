@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('paymongo_customer_id')->nullable();
             $table->string('firstname');
             $table->string('middlename')->nullable();
             $table->string('lastname');
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('zipcode')->nullable();
             $table->string('city')->nullable();
+            $table->string('state')->nullable();
             $table->string('region')->nullable();
             $table->string('mobile_number')->nullable();
             $table->string('password');

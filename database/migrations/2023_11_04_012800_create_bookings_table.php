@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignUuid('listing_id');
             $table->foreignUuid('coupon_id')->nullable();
             $table->decimal('amount', 10, 2, true);
+            $table->decimal('base_amount', 10, 2, true);
             $table->text('message')->nullable();
             $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed', 'to_rate'])->default('upcoming');
             $table->date('date_start');

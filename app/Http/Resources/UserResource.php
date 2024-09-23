@@ -19,6 +19,7 @@ class UserResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'paymongo_customer_id' => $this->paymongo_customer_id,
             'fullname' => $this->full_name,
             'firstname' => $this->firstname,
             'middlename' => $this->middlename,
@@ -29,6 +30,7 @@ class UserResource extends JsonResource
             'address' => $this->address,
             'zipcode' => $this->zipcode,
             'city' => $this->city,
+            'state' => $this->state,
             'region' => $this->region,
             'mobile_number' => $this->mobile_number,
             'date_of_birth' => $this->date_of_birth,

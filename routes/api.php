@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\AppFeedbackController;
 use App\Http\Controllers\API\BookingController;
 use App\Http\Controllers\API\ChatController;
 use App\Http\Controllers\API\ConstantController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
 use App\Http\Controllers\API\PackageController;
+use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\ReviewController;
@@ -41,6 +43,8 @@ Route::post('/forgot-password', [RegistrationController::class, 'forgotPassword'
 Route::post('/validate-reset-token', [RegistrationController::class, 'validateResetToken'])->name('password.reset.validate');
 Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
+
+Route::post('/app-feedback', [AppFeedbackController::class, 'createAppFeedback'])->name('app.feedback');
 
 Route::prefix('email')->group(function () {
     Route::get('/verify', [RegistrationController::class, 'verifyEmail'])->name('verification.verify');
@@ -150,10 +154,10 @@ Route::prefix('bookings')->group(function () {
     Route::get('/user', [BookingController::class, 'getUserBookings'])->name('bookings.user');
     Route::get('/host', [BookingController::class, 'getHostBookings'])->name('bookings.host');
     Route::get('/{id}', [BookingController::class, 'getBooking'])->name('bookings.get')->whereUuid('id');
+    Route::get('/{id}/amount', [BookingController::class, 'getBookingAmount'])->name('bookings.amount')->whereUuid('id');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
     Route::post('/{id}/update-status', [BookingController::class, 'updateBookingStatus'])->name('bookings.update-status')->whereUuid('id');
     Route::post('/{id}/update-dates', [BookingController::class, 'updateBookingDates'])->name('bookings.update-dates')->whereUuid('id');
-    Route::post('/{id}/update-payment-status', [BookingController::class, 'updateBookingPaymentStatus'])->name('bookings.update-payment-status')->whereUuid('id');
 });
 
 Route::prefix('reviews')->group(function () {
@@ -176,4 +180,20 @@ Route::prefix('messages')->group(function () {
 Route::prefix('earnings')->group(function () {
     Route::get('/{year}', [EarningsController::class, 'getYearlyEarnings'])->name('earnings.yearly')->whereNumber('year');
     Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
+});
+
+Route::prefix('customer')->group(function () {
+    Route::get('/', [PaymentController::class, 'getCustomer'])->name('payments.customer');
+    Route::post('/delete', [PaymentController::class, 'deleteCustomer'])->name('payments.customer.delete');
+});
+
+Route::prefix('payments')->group(function () {
+    Route::get('/', [PaymentController::class, 'getPaymentMethods'])->name('payments.methods');
+    Route::post('/', [PaymentController::class, 'createPayment'])->name('payments.create');
+    Route::post('/{id}/capture', [PaymentController::class, 'capturePayment'])->name('payments.capture')->whereUuid('id');
+});
+
+Route::prefix('payouts')->group(function () {
+    Route::get('/', [PaymentController::class, 'getPayoutMethods'])->name('payouts.methods');
+    Route::post('/', [PaymentController::class, 'addPayoutMethod'])->name('payouts.add');
 });
