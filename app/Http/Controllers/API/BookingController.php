@@ -102,7 +102,7 @@ class BookingController extends Controller
     /**
      * Get Booking Amount
      *
-     * Retrieves the amount for a booking.
+     * Retrieves the base amount for a booking.
      *
      * @return \Illuminate\Http\JsonResponse
      */
