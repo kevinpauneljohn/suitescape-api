@@ -8,6 +8,14 @@ use App\Models\AppFeedback;
 
 class AppFeedbackController extends Controller
 {
+    /**
+     * Create App Feedback
+     *
+     * Creates a new feedback entry. This method does not require the user to be authenticated,
+     * but if the user is authenticated, the feedback will be associated with the user.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createAppFeedback(CreateFeedbackRequest $request)
     {
         $userId = auth('sanctum')->id();

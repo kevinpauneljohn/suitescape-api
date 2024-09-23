@@ -99,6 +99,13 @@ class BookingController extends Controller
         return new BookingResource($this->bookingRetrievalService->getBooking($id));
     }
 
+    /**
+     * Get Booking Amount
+     *
+     * Retrieves the amount for a booking.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getBookingAmount(DateRangeRequest $request, string $id)
     {
         $booking = Booking::findOrFail($id);
