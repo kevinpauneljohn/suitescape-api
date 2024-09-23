@@ -13,7 +13,9 @@ class BookingRoom extends Model
     protected $fillable = [
         'booking_id',
         'room_id',
+        'name',
         'quantity',
+        'price',
     ];
 
     protected $hidden = [
@@ -29,5 +31,10 @@ class BookingRoom extends Model
     public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function roomCategory()
+    {
+        return $this->room->roomCategory();
     }
 }

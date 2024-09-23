@@ -7,21 +7,21 @@ use App\Http\Requests\UploadImageRequest;
 use App\Http\Resources\ImageResource;
 use App\Models\Image;
 use App\Services\ImageRetrievalService;
-use App\Services\ImageUploadService;
+use App\Services\MediaUploadService;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
 class ImageController extends Controller
 {
     private ImageRetrievalService $imageRetrievalService;
 
-    private ImageUploadService $imageUploadService;
+    private MediaUploadService $mediaUploadService;
 
-    public function __construct(ImageRetrievalService $imageRetrievalService, ImageUploadService $imageUploadService)
+    public function __construct(ImageRetrievalService $imageRetrievalService, MediaUploadService $mediaUploadService)
     {
         $this->middleware('auth:sanctum')->only(['uploadImage']);
 
         $this->imageRetrievalService = $imageRetrievalService;
-        $this->imageUploadService = $imageUploadService;
+        $this->mediaUploadService = $mediaUploadService;
     }
 
     /**
@@ -68,7 +68,7 @@ class ImageController extends Controller
      */
     public function uploadImage(UploadImageRequest $request)
     {
-        $filename = $this->imageUploadService->upload($request->file('image'));
+        $filename = $this->mediaUploadService->upload($request->file('image'), 'images');
 
         return response()->json([
             'message' => 'Image uploaded successfully',

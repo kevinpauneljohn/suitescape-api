@@ -2,20 +2,25 @@
 
 namespace App\Services;
 
+use App\Jobs\SyncVideoServer;
 use App\Jobs\TranscodeVideo;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\NearbyPlace;
 use Exception;
+use Illuminate\Http\UploadedFile;
 use Log;
 
 class ListingCreateService
 {
     protected FileNameService $fileNameService;
 
-    public function __construct(FileNameService $fileNameService)
+    protected MediaUploadService $mediaUploadService;
+
+    public function __construct(FileNameService $fileNameService, MediaUploadService $mediaUploadService)
     {
         $this->fileNameService = $fileNameService;
+        $this->mediaUploadService = $mediaUploadService;
     }
 
     /**
@@ -58,14 +63,13 @@ class ListingCreateService
         return $listing;
     }
 
-    public function createListingImage(string $listingId, array $imageData, $file)
+    public function createListingImage(string $listingId, array $imageData, UploadedFile $file)
     {
         $listing = Listing::findOrFail($listingId);
 
         // Upload the image to the storage
-        $filename = $this->fileNameService->generateFileName($file->extension());
         $directory = 'listings/'.$listingId.'/images/';
-        $file->storeAs($directory, $filename, 'public');
+        $filename = $this->mediaUploadService->upload($file, $directory);
 
         return $listing->images()->create([
             'filename' => $filename,
@@ -73,26 +77,25 @@ class ListingCreateService
         ]);
     }
 
-    public function createListingVideo(string $listingId, array $videoData, $file)
+    public function createListingVideo(string $listingId, array $videoData, UploadedFile $file)
     {
         $listing = Listing::findOrFail($listingId);
 
-        // Upload temp video to the storage
-        $filename = $this->fileNameService->generateFileName($file->extension());
+        // Upload as temp video for transcoding
         $directory = 'listings/'.$listingId.'/videos';
-        $tempFilename = 'temp_'.$filename;
-        $tempPath = $file->storeAs($directory, $tempFilename, 'public');
+        $tempData = $this->mediaUploadService->upload($file, $directory, true);
 
         $video = $listing->videos()->create([
-            'filename' => $tempFilename,
+            'filename' => $tempData['filename'],
             'privacy' => $videoData['privacy'],
         ]);
-
-        TranscodeVideo::dispatch($video, $tempPath, $directory, $filename);
 
         if (isset($videoData['sections'])) {
             $this->createVideoSections($video, $videoData['sections']);
         }
+
+        TranscodeVideo::dispatch($video, $directory, $tempData['filename'], $tempData['temp_path']);
+        SyncVideoServer::dispatch($video, $listing->user);
 
         return $video;
     }

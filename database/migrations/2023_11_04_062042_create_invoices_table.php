@@ -15,6 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
             $table->foreignUuid('booking_id');
+            $table->foreignUuid('coupon_id')->nullable();
+            $table->decimal('coupon_discount_amount', 10, 2, true);
             $table->enum('payment_status', ['paid', 'refunded']);
             $table->timestamps();
         });

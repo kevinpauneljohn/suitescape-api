@@ -6,6 +6,7 @@ use App\Http\Resources\UserResource;
 use App\Mail\ResetPassword;
 use App\Models\User;
 use Exception;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\RateLimiter;
 define('WAIT_TIME', '-5 minutes');
 define('INCREASED_WAIT_TIME', '-30 minutes');
 define('WAIT_TIME_IN_SECONDS', 300);
+define('MAX_REGISTER_ATTEMPTS', 1);
 define('MAX_LOGIN_ATTEMPTS', 5);
 define('MAX_FORGOT_ATTEMPTS', 1);
 
@@ -25,17 +27,19 @@ class RegistrationService
         $email = $registrationData['email'];
 
         // Check if the user has reached the maximum number of attempts
-        if (RateLimiter::tooManyAttempts('register:'.$email, MAX_LOGIN_ATTEMPTS)) {
+        if (RateLimiter::tooManyAttempts('register:'.$email, MAX_REGISTER_ATTEMPTS)) {
             return response()->json([
                 'message' => 'Too many attempts. Please try again later.',
             ], 429);
         }
 
         // Increment the rate limiter for the register
-        RateLimiter::hit('register:'.$email, WAIT_TIME_IN_SECONDS);
+        RateLimiter::increment('register:'.$email, WAIT_TIME_IN_SECONDS);
 
         // Create a new user
         $user = User::create($registrationData);
+
+        event(new Registered($user));
 
         // Create a token for the user
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -60,7 +64,7 @@ class RegistrationService
         }
 
         // Increase the rate limiter for the login
-        RateLimiter::hit('login:'.$email, WAIT_TIME_IN_SECONDS);
+        RateLimiter::increment('login:'.$email, WAIT_TIME_IN_SECONDS);
 
         $user = $this->getUserByEmail($email);
 
@@ -141,7 +145,7 @@ class RegistrationService
         }
 
         // Throttle the user from requesting to reset the password
-        RateLimiter::hit('forgot-password:'.$email, WAIT_TIME_IN_SECONDS);
+        RateLimiter::increment('forgot-password:'.$email, WAIT_TIME_IN_SECONDS);
 
         // Make a token with 6-digit numbers
         $token = $this->createResetToken($email);
@@ -198,8 +202,8 @@ class RegistrationService
 
     public function createResetToken($email): int
     {
-        //        $token = random_int(100000, 999999);
         $token = rand(100000, 999999);
+        //        $token = random_int(100000, 999999);
 
         // Delete any existing password reset token
         DB::table('password_reset_tokens')->where('email', $email)->delete();

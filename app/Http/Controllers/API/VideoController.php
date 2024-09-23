@@ -7,9 +7,9 @@ use App\Http\Requests\FilterVideoRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
+use App\Services\MediaUploadService;
 use App\Services\VideoApprovalService;
 use App\Services\VideoRetrievalService;
-use App\Services\VideoUploadService;
 use Exception;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 
@@ -17,17 +17,17 @@ class VideoController extends Controller
 {
     private VideoRetrievalService $videoRetrievalService;
 
-    private VideoUploadService $videoUploadService;
-
     private VideoApprovalService $videoApprovalService;
 
-    public function __construct(VideoRetrievalService $videoRetrievalService, VideoUploadService $videoUploadService, VideoApprovalService $videoApprovalService)
+    private MediaUploadService $mediaUploadService;
+
+    public function __construct(VideoRetrievalService $videoRetrievalService, VideoApprovalService $videoApprovalService, MediaUploadService $mediaUploadService)
     {
         $this->middleware('auth:sanctum')->only(['uploadVideo']);
 
         $this->videoRetrievalService = $videoRetrievalService;
-        $this->videoUploadService = $videoUploadService;
         $this->videoApprovalService = $videoApprovalService;
+        $this->mediaUploadService = $mediaUploadService;
     }
 
     /**
@@ -48,7 +48,6 @@ class VideoController extends Controller
      * Retrieves a filtered collection of videos based on the provided criteria.
      * This can include filtering by category, tags, or any other specified attributes.
      *
-     * @param FilterVideoRequest $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getVideoFeed(FilterVideoRequest $request)
@@ -65,7 +64,6 @@ class VideoController extends Controller
      * Retrieves a single video by its ID. This method also checks for the video's privacy settings
      * and determines if the current user has permission to view the video.
      *
-     * @param string $id
      * @return VideoResource
      */
     public function getVideo(string $id)
@@ -87,12 +85,11 @@ class VideoController extends Controller
      * Handles the uploading of a new video to the system. This method processes the uploaded video file,
      * stores it, and returns the filename of the stored video.
      *
-     * @param UploadVideoRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function uploadVideo(UploadVideoRequest $request)
     {
-        $filename = $this->videoUploadService->upload($request->file('video'));
+        $filename = $this->mediaUploadService->upload($request->file('video'), 'videos');
 
         return response()->json([
             'message' => 'Video uploaded successfully',
@@ -106,8 +103,8 @@ class VideoController extends Controller
      * Marks a video as approved. This is typically used in a moderation workflow where videos
      * need to be reviewed before they are made available to the public.
      *
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function approveVideo(string $id)

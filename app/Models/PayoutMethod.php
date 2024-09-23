@@ -6,16 +6,12 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Invoice extends Model
+class PayoutMethod extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
         'user_id',
-        'booking_id',
-        'coupon_id',
-        'coupon_discount_amount',
-        'payment_status',
     ];
 
     public function user()
@@ -23,8 +19,8 @@ class Invoice extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function booking()
+    public function payoutMethodDetail()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->hasOne(PayoutMethodDetail::class);
     }
 }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('filename');
             $table->enum('privacy', ['public', 'private'])->default('public');
             $table->boolean('is_transcoded')->default(false);
-            $table->boolean('is_approved')->default(false);
+            $table->boolean('is_approved')->nullable();
             $table->timestamps();
         });
     }

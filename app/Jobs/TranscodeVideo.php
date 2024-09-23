@@ -20,21 +20,21 @@ class TranscodeVideo implements ShouldQueue
 
     protected Video $video;
 
-    protected string $tempPath;
-
     protected string $directory;
 
     protected string $filename;
 
+    protected string $tempPath;
+
     /**
      * Create a new job instance.
      */
-    public function __construct(Video $video, string $tempPath, string $directory, string $filename)
+    public function __construct(Video $video, string $directory, string $filename, string $tempPath)
     {
         $this->video = $video;
-        $this->tempPath = $tempPath;
         $this->directory = $directory;
         $this->filename = $filename;
+        $this->tempPath = $tempPath;
     }
 
     /**
@@ -52,15 +52,15 @@ class TranscodeVideo implements ShouldQueue
                 broadcast(new VideoTranscodingProgress($this->video, $percentage, $remaining, $rate));
             })
             ->toDisk('public')
-            ->save($this->directory . '/' . $this->filename);
-
-        // Delete the temp video
-        Storage::disk('public')->delete($this->tempPath);
+            ->save($this->directory.'/'.$this->filename);
 
         // Update the video's transcoded status
         $this->video->update([
             'filename' => $this->filename,
             'is_transcoded' => true,
         ]);
+
+        // Delete the temp video
+        Storage::disk('public')->delete($this->tempPath);
     }
 }
