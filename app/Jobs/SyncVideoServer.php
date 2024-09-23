@@ -40,7 +40,7 @@ class SyncVideoServer implements ShouldQueue
         $videoServerUrl = config('services.video_server.url');
 
         if (! $videoServerUrl) {
-            Log::error('Video server URL is not set');
+            Log::error("Video server URL is not set. Can't sync video for video ID: {$this->video->id}");
 
             return;
         }
