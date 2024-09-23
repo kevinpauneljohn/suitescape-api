@@ -13,6 +13,7 @@ class BookingAddon extends Model
     protected $fillable = [
         'booking_id',
         'addon_id',
+        'name',
         'quantity',
         'price',
     ];

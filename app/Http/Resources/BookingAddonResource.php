@@ -20,6 +20,7 @@ class BookingAddonResource extends JsonResource
             $this->mergeUnless($this->relationLoaded('addon'), ['addon_id' => $this->addon_id]),
             'booking' => new BookingResource($this->whenLoaded('booking')),
             'addon' => new AddonResource($this->whenLoaded('addon')),
+            'name' => $this->name,
             'quantity' => $this->quantity,
             'price' => $this->price,
         ];

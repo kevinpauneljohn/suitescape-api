@@ -11,13 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('booking_addons', function (Blueprint $table) {
+        Schema::create('payout_methods', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('booking_id');
-            $table->foreignUuid('addon_id');
-            $table->string('name');
-            $table->integer('quantity');
-            $table->decimal('price', 10, 2, true);
+            $table->foreignUuid('user_id');
             $table->timestamps();
         });
     }
@@ -27,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('booking_addons');
+        Schema::dropIfExists('payout_methods');
     }
 };

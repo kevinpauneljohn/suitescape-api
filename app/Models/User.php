@@ -6,6 +6,7 @@ namespace App\Models;
 use A6digital\Image\DefaultProfileImage;
 use Exception;
 use Faker\Factory as Faker;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -15,7 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Propaganistas\LaravelPhone\Casts\E164PhoneNumberCast;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
 
@@ -25,6 +26,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'paymongo_customer_id',
         'firstname',
         'middlename',
         'lastname',
@@ -33,6 +35,7 @@ class User extends Authenticatable
         'address',
         'zipcode',
         'city',
+        'state',
         'region',
         'mobile_number',
         'password',
@@ -210,6 +213,11 @@ class User extends Authenticatable
     public function viewedListings()
     {
         return $this->hasMany(ListingView::class);
+    }
+
+    public function payoutMethods()
+    {
+        return $this->hasMany(PayoutMethod::class);
     }
 
     public function activeSessions()

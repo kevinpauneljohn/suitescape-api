@@ -11,7 +11,7 @@ class PriceCalculatorService
 {
     public function getEntirePriceForListingsToQuery($query, $startDate = null, $endDate = null)
     {
-        $listingPriceColumn = Listing::getCurrentPriceColumn();
+        $listingPriceColumn = Listing::getCurrentPriceColumn($startDate);
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
 
@@ -20,7 +20,7 @@ class PriceCalculatorService
 
     public function getPriceForRoomCategoriesToQuery($query, $startDate = null, $endDate = null)
     {
-        $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
+        $roomPriceColumn = RoomCategory::getCurrentPriceColumn($startDate);
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
 
@@ -31,7 +31,7 @@ class PriceCalculatorService
 
     public function getMinRoomPriceForListingsSubquery($startDate = null, $endDate = null)
     {
-        $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
+        $roomPriceColumn = RoomCategory::getCurrentPriceColumn($startDate);
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
 
@@ -42,7 +42,7 @@ class PriceCalculatorService
 
     public function getPriceForRoomCategoriesSubquery($startDate = null, $endDate = null)
     {
-        $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
+        $roomPriceColumn = RoomCategory::getCurrentPriceColumn($startDate);
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
 
@@ -53,7 +53,7 @@ class PriceCalculatorService
 
     public function getMinPriceByTypeSubquery($startDate = null, $endDate = null)
     {
-        $listingPriceColumn = Listing::getCurrentPriceColumn();
+        $listingPriceColumn = Listing::getCurrentPriceColumn($startDate);
         $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
@@ -68,7 +68,7 @@ class PriceCalculatorService
 
     public function getMinRoomPriceForListing($listingId, $startDate = null, $endDate = null)
     {
-        $roomPriceColumn = RoomCategory::getCurrentPriceColumn();
+        $roomPriceColumn = RoomCategory::getCurrentPriceColumn($startDate);
         $startDate = $startDate ? Carbon::parse($startDate)->toDateString() : Carbon::now()->toDateString();
         $endDate = $endDate ? Carbon::parse($endDate)->toDateString() : $startDate;
 

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('listing_id');
             $table->string('label');
             $table->string('code');
+            $table->decimal('discount_amount', 10, 2, true);
             $table->datetime('activated_date')->nullable();
             $table->datetime('expiry_date')->nullable();
             $table->integer('quantity');

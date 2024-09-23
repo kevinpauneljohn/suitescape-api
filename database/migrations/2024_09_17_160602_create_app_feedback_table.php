@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('booking_addons', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->foreignUuid('booking_id');
-            $table->foreignUuid('addon_id');
-            $table->string('name');
-            $table->integer('quantity');
-            $table->decimal('price', 10, 2, true);
+        Schema::create('app_feedback', function (Blueprint $table) {
+            $table->id();
+            $table->foreignUuid('user_id')->nullable();
+            $table->float('rating');
+            $table->text('comment');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('booking_addons');
+        Schema::dropIfExists('app_feedback');
     }
 };

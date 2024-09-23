@@ -18,7 +18,7 @@ class BookingUpdateService
 
     public function updateBookingStatus($id, $status)
     {
-        $booking = Booking::find($id);
+        $booking = Booking::findOrFail($id);
 
         if ($status === 'cancelled') {
             $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
@@ -33,50 +33,34 @@ class BookingUpdateService
 
     public function updateBookingDates($id, $startDate, $endDate)
     {
-        $booking = Booking::find($id);
-
-        // Get first booking room only
-        $bookingRoom = $booking->bookingRooms->first();
+        $booking = Booking::findOrFail($id);
 
         // Update booking room dates
-        $bookingRoom->update([
+        $booking->update([
             'date_start' => $startDate,
             'date_end' => $endDate,
         ]);
 
         // Update booking amount
-        $nights = $this->bookingCreateService->getBookingNights($startDate, $endDate);
-        $this->updateBookingAmount($bookingRoom, $nights, $startDate, $endDate);
-
-        return $bookingRoom;
-    }
-
-    public function updateBookingPaymentStatus($id, $status)
-    {
-        $booking = Booking::find($id);
-
-        $booking->invoice()->updateOrCreate(
-            ['booking_id' => $booking->id],
-            [
-                'user_id' => $booking->user_id,
-                'payment_status' => $status,
-            ]
-        );
+        $this->updateBookingAmount($booking, $startDate, $endDate);
 
         return $booking;
     }
 
-    private function updateBookingAmount($bookingRoom, $nights, $startDate, $endDate): void
+    private function updateBookingAmount($booking, $startDate, $endDate): void
     {
-        $amount = $this->getBookingAmount($bookingRoom->room, $nights, $startDate, $endDate);
+        $amount = $this->bookingCreateService->calculateAmount(
+            $booking->listing,
+            $booking->bookingRooms,
+            $booking->bookingAddons,
+            $booking->coupon,
+            $startDate,
+            $endDate
+        );
 
-        $bookingRoom->booking->update([
-            'amount' => $amount,
+        $booking->update([
+            'amount' => $amount['total'],
+            'base_amount' => $amount['base'],
         ]);
-    }
-
-    private function getBookingAmount($room, $nights, $startDate, $endDate): float|int
-    {
-        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $nights;
     }
 }

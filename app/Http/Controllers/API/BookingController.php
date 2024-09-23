@@ -4,11 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateBookingRequest;
+use App\Http\Requests\DateRangeRequest;
 use App\Http\Requests\FutureDateRangeRequest;
-use App\Http\Requests\UpdateBookingPaymentStatusRequest;
 use App\Http\Requests\UpdateBookingStatusRequest;
 use App\Http\Resources\BookingResource;
 use App\Http\Resources\BookingRoomResource;
+use App\Models\Booking;
 use App\Services\BookingCreateService;
 use App\Services\BookingRetrievalService;
 use App\Services\BookingUpdateService;
@@ -49,7 +50,6 @@ class BookingController extends Controller
      *
      * Retrieves bookings for a specific user.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
      */
     public function getUserBookings(Request $request)
@@ -71,7 +71,6 @@ class BookingController extends Controller
      *
      * Retrieves bookings for a specific host.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\Illuminate\Http\JsonResponse
      */
     public function getHostBookings(Request $request)
@@ -93,7 +92,6 @@ class BookingController extends Controller
      *
      * Retrieves a specific booking by ID.
      *
-     * @param  string  $id
      * @return BookingResource
      */
     public function getBooking(string $id)
@@ -102,12 +100,37 @@ class BookingController extends Controller
     }
 
     /**
+     * Get Booking Amount
+     *
+     * Retrieves the base amount for a booking.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBookingAmount(DateRangeRequest $request, string $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $amount = $this->bookingCreateService->calculateAmount(
+            $booking->listing,
+            $booking->bookingRooms,
+            $booking->bookingAddons,
+            $booking->coupon,
+            $request->validated()['start_date'],
+            $request->validated()['end_date'],
+        );
+
+        return response()->json([
+            'amount' => $amount['base'],
+        ]);
+    }
+
+    /**
      * Create Booking
      *
      * Creates a new booking.
      *
-     * @param \App\Http\Requests\CreateBookingRequest $request
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws Exception
      */
     public function createBooking(CreateBookingRequest $request)
@@ -123,8 +146,6 @@ class BookingController extends Controller
      *
      * Updates the status of a booking.
      *
-     * @param  \App\Http\Requests\UpdateBookingStatusRequest  $request
-     * @param  string  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateBookingStatus(UpdateBookingStatusRequest $request, string $id)
@@ -140,8 +161,6 @@ class BookingController extends Controller
      *
      * Updates the start and end dates of a booking.
      *
-     * @param  \App\Http\Requests\FutureDateRangeRequest  $request
-     * @param  string  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateBookingDates(FutureDateRangeRequest $request, string $id)
@@ -149,23 +168,6 @@ class BookingController extends Controller
         return response()->json([
             'message' => 'Booking dates updated successfully',
             'booking_room' => new BookingRoomResource($this->bookingUpdateService->updateBookingDates($id, $request->validated()['start_date'], $request->validated()['end_date'])),
-        ]);
-    }
-
-    /**
-     * Update Booking Payment Status
-     *
-     * Updates the payment status of a booking.
-     *
-     * @param  \App\Http\Requests\UpdateBookingPaymentStatusRequest  $request
-     * @param  string  $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updateBookingPaymentStatus(UpdateBookingPaymentStatusRequest $request, string $id)
-    {
-        return response()->json([
-            'message' => 'Booking payment status updated successfully',
-            'booking' => new BookingResource($this->bookingUpdateService->updateBookingPaymentStatus($id, $request->validated()['payment_status'])),
         ]);
     }
 }

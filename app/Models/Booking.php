@@ -16,6 +16,7 @@ class Booking extends Model
         'listing_id',
         'coupon_id',
         'amount',
+        'base_amount',
         'message',
         'status',
         'date_start',
@@ -42,11 +43,6 @@ class Booking extends Model
         return $this->belongsTo(Listing::class);
     }
 
-    public function bookingAddons()
-    {
-        return $this->hasMany(BookingAddon::class);
-    }
-
     public function coupon()
     {
         return $this->belongsTo(Coupon::class);
@@ -57,14 +53,29 @@ class Booking extends Model
         return $this->hasOne(Invoice::class);
     }
 
+    public function unavailableDates()
+    {
+        return $this->hasMany(UnavailableDate::class);
+    }
+
     public function bookingRooms()
     {
         return $this->hasMany(BookingRoom::class);
     }
 
-    public function unavailableDates()
+    public function bookingAddons()
     {
-        return $this->hasMany(UnavailableDate::class);
+        return $this->hasMany(BookingAddon::class);
+    }
+
+    public function rooms()
+    {
+        return $this->belongsToMany(Room::class, 'booking_rooms');
+    }
+
+    public function addons()
+    {
+        return $this->belongsToMany(Addon::class, 'booking_addons');
     }
 
     public function scopeDesc($query)
@@ -72,6 +83,25 @@ class Booking extends Model
         return $query->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc');
     }
+
+    //    public function getBaseAmount(): float
+    //    {
+    //        if ($this->listing->is_entire_place) {
+    //            return $this->listing->getCurrentPrice($this->date_start, $this->date_end);
+    //        }
+    //
+    //        $baseAmount = 0;
+    //
+    //        foreach ($this->bookingRooms as $room) {
+    //            $baseAmount += $room->price * $room->quantity;
+    //        }
+    //
+    //        foreach ($this->bookingAddons as $addon) {
+    //            $baseAmount += $addon->price * $addon->quantity;
+    //        }
+    //
+    //        return $baseAmount;
+    //    }
 
     public static function findByHostId(string $hostId)
     {

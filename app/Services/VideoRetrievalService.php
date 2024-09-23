@@ -40,7 +40,7 @@ class VideoRetrievalService
         ];
 
         try {
-            return (new VideoStream())->streamVideo($videoPath, $options);
+            return (new VideoStream)->streamVideo($videoPath, $options);
         } catch (Exception $exception) {
             return response()->json(['error' => $exception->getMessage()], 404);
         }
