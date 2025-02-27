@@ -111,7 +111,7 @@ class PayoutService
         };
     }
 
-    private function resetDefaultPayoutMethod(?PayoutMethod $currentPayoutMethod = null)
+    private function resetDefaultPayoutMethod($currentPayoutMethod = null)
     {
         // Get the authenticated user
         $user = auth()->user();
