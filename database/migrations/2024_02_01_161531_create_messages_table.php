@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignUuid('receiver_id')->constrained('users');
             $table->text('content');
             $table->dateTime('read_at')->nullable();
+            $table->fullText(['content']);
             $table->timestamps();
         });
     }
