@@ -2,13 +2,34 @@
 
 namespace App\Services;
 
+use App\Events\PaymentFailed;
+use App\Events\PaymentSuccessful;
+use App\Models\Invoice;
 use App\Models\User;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Carbon;
 use Luigel\Paymongo\Facades\Paymongo;
 
 class PaymentService
 {
+    protected UnavailableDateService $unavailableDateService;
+
+    public function __construct(UnavailableDateService $unavailableDateService)
+    {
+        $this->unavailableDateService = $unavailableDateService;
+    }
+
+    public function createPaymentLink(float $amount, string $description)
+    {
+        return $this->createLink($amount, $description)->getData();
+    }
+
+    public function createPaymentSource(string $type, float $amount, string $bookingId)
+    {
+       return $this->createSource($type, $amount, $bookingId)->getData();
+    }
+
     /**
      * @throws GuzzleException
      */
@@ -31,27 +52,130 @@ class PaymentService
         return $paymentIntent->getData();
     }
 
-    public function addPayoutMethod(array $data)
+    public function archivePaymentLink(string $paymentLinkId)
     {
-        $user = auth('sanctum')->user();
+        $paymentLink = Paymongo::link()->find($paymentLinkId);
 
-        // Create the payout method
-        $payoutMethod = $user->payoutMethods()->create();
-
-        // Add the details of the payout method
-        $payoutMethod->payoutMethodDetail()->create($data);
-
-        return $payoutMethod;
+        $paymentLink->archive();
     }
 
-    public function getPayoutMethods()
+    public function linkPaymentPaid(string $paymentLinkId, string $paymentMethod)
     {
-        $user = auth('sanctum')->user();
+        try {
+            // Get the invoice
+            $invoice = $this->getInvoiceByReferenceNumber($paymentLinkId);
 
-        return $user->payoutMethods()
-            ->with('payoutMethodDetail')
-            ->orderByDesc('created_at')
-            ->get();
+            // Get the booking
+            $booking = $invoice->booking;
+
+            // Return any error messages
+            if (isset($invoice['error'])) {
+                return response($invoice['error'], 200);
+            }
+
+            // Update the invoice payment status
+            $invoice->update([
+                'payment_method' => $paymentMethod,
+                'payment_status' => 'paid',
+            ]);
+
+            // Update additional payments
+            $this->updateAdditionalPayments($invoice);
+
+            // Add unavailable dates for the booking
+            if ($booking->listing->is_entire_place) {
+                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $booking->listing->id, $booking->date_start, $booking->date_end);
+            } else {
+                foreach ($booking->rooms as $room) {
+                    $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+                }
+            }
+
+            // Update the booking status
+            if (Carbon::today()->betweenIncluded($booking->date_start, $booking->date_end)) {
+                $booking->update(['status' => 'ongoing']);
+            } else {
+                $booking->update(['status' => 'upcoming']);
+            }
+
+            \Log::info('Invoice marked as paid', [
+                'invoice_id' => $invoice->id,
+                'reference_number' => $paymentLinkId,
+            ]);
+
+            broadcast(new PaymentSuccessful($invoice));
+
+            return response()->noContent();
+        } catch (\Exception $e) {
+            \Log::error('Payment processing failed', [
+                'reference_number' => $paymentLinkId,
+                'message' => $e->getMessage(),
+            ]);
+
+            broadcast(new PaymentFailed(
+                $paymentLinkId,
+                $e->getMessage()
+            ));
+
+            return response('Payment processing failed', 200);
+        }
+    }
+
+    public function sourceChargeable(string $type, int $amount, string $sourceId)
+    {
+        try {
+            // Get the invoice
+            $invoice = $this->getInvoiceByReferenceNumber($sourceId);
+
+            // Return any error messages
+            if (isset($invoice['error'])) {
+                return response($invoice['error'], 200);
+            }
+
+            // Create payment using the source
+            $this->createSourcePayment($type, $amount, $sourceId);
+
+            // Update the invoice payment status
+            $invoice->update([
+                'payment_status' => 'paid',
+            ]);
+
+            \Log::info('Invoice marked as paid', [
+                'invoice_id' => $invoice->id,
+                'reference_number' => $sourceId,
+            ]);
+
+            broadcast(new PaymentSuccessful($invoice));
+
+            return response()->noContent();
+        } catch (\Exception $e) {
+            \Log::error('Payment processing failed', [
+                'reference_number' => $sourceId,
+                'message' => $e->getMessage(),
+            ]);
+
+            broadcast(new PaymentFailed(
+                $sourceId,
+                $e->getMessage()
+            ));
+
+            return response('Payment processing failed', 200);
+        }
+    }
+
+    public function getPaymentLink(string $paymentLinkId)
+    {
+        return Paymongo::link()->find($paymentLinkId)->getData();
+    }
+
+    public function getPaymentSource(string $paymentSourceId)
+    {
+        return Paymongo::source()->find($paymentSourceId)->getData();
+    }
+
+    public function getPaymentIntent(string $paymentIntentId)
+    {
+        return Paymongo::paymentIntent()->find($paymentIntentId)->getData();
     }
 
     /**
@@ -59,7 +183,7 @@ class PaymentService
      */
     public function getPaymentMethods()
     {
-        $user = auth('sanctum')->user();
+        $user = auth()->user();
 
         return $this->getCustomer($user)->paymentMethods();
     }
@@ -74,7 +198,7 @@ class PaymentService
         }
 
         // Try to search for the customer first, if not found, create a new one
-        $customer = $this->searchCustomer($user);
+        $customer = $this->searchCustomer($user->email);
 
         if ($customer['data']) {
             // Get the first customer found
@@ -93,11 +217,11 @@ class PaymentService
     /**
      * @throws GuzzleException
      */
-    public function searchCustomer(User $user)
+    public function searchCustomer(string $email)
     {
         $client = new Client;
 
-        $response = $client->request('GET', "https://api.paymongo.com/v1/customers?email=$user->email", [
+        $response = $client->request('GET', "https://api.paymongo.com/v1/customers?email=$email", [
             'headers' => [
                 'accept' => 'application/json',
                 'authorization' => 'Basic '.base64_encode(config('paymongo.secret_key')),
@@ -152,9 +276,44 @@ class PaymentService
         return $customer;
     }
 
+    private function createLink(float $amount, string $description)
+    {
+        return Paymongo::link()->create([
+            'amount' => $amount,
+            'description' => $description,
+            'remarks' => 'Suitescape PH',
+        ]);
+    }
+
+    private function createSource(string $type, float $amount, string $bookingId)
+    {
+        return Paymongo::source()->create([
+            'type' => $type,
+            'amount' => $amount,
+            'currency' => 'PHP',
+            'redirect' => [
+                'success' => route('payment.success-status', ['booking_id' => $bookingId]),
+                'failed' => route('payment.failed-status', ['booking_id' => $bookingId]),
+            ],
+        ]);
+    }
+
+    private function createSourcePayment(string $type, int $amount, string $sourceId)
+    {
+        return Paymongo::payment()->create([
+            'amount' => $amount,
+            'source' => [
+                'id' => $sourceId,
+                'type' => 'source',
+            ],
+            'currency' => 'PHP',
+            'description' => "Payment for $type",
+        ]);
+    }
+
     private function createPaymentIntent(float $amount, string $description)
     {
-        //        $user = auth('sanctum')->user();
+        //        $user = auth()->user();
         //        $customer = $this->getCustomer($user);
 
         return Paymongo::paymentIntent()->create([
@@ -168,7 +327,7 @@ class PaymentService
             'description' => $description,
             'statement_descriptor' => 'Suitescape PH',
             'currency' => 'PHP',
-            'capture_type' => 'manual',
+            //            'capture_type' => 'manual',
             //            'setup_future_usage' => [
             //                'session_type' => 'on_session',
             //                'customer_id' => $customer->getData()['id'],
@@ -189,5 +348,55 @@ class PaymentService
                 'address' => $billingAddress,
             ]),
         ]);
+    }
+
+    private function getInvoiceByReferenceNumber(string $referenceNumber)
+    {
+        $invoice = Invoice::where('reference_number', $referenceNumber)->first();
+
+        // Check if the invoice exists
+        if (! $invoice) {
+            \Log::warning('Payment received for non-existent invoice', [
+                'reference_number' => $referenceNumber,
+            ]);
+
+            return [
+                'error' => 'Invoice not found',
+            ];
+        }
+
+        // Check if the invoice is already paid
+        //        if ($invoice->payment_status === 'paid') {
+        //            \Log::info('Duplicate payment notification received', [
+        //                'invoice_id' => $invoice->id,
+        //                'reference_number' => $referenceNumber,
+        //            ]);
+        //
+        //            return [
+        //                'error' => 'Invoice already paid',
+        //            ];
+        //        }
+
+        return $invoice;
+    }
+
+    private function updateAdditionalPayments($invoice)
+    {
+        $pendingAdditionalPayments = collect($invoice->pending_additional_payments);
+        $paidAdditionalPayments = collect($invoice->paid_additional_payments);
+
+        // Update the additional payment status
+        if ($pendingAdditionalPayments->isNotEmpty()) {
+            $currentPendingPayment = $pendingAdditionalPayments->last();
+            $pendingPaymentIndex = $pendingAdditionalPayments->keys()->last();
+
+            $invoice->update([
+                // Remove the last pending payment
+                'pending_additional_payments' => $pendingAdditionalPayments->forget($pendingPaymentIndex)->toArray(),
+
+                // Add the last pending payment to the paid additional payments
+                'paid_additional_payments' => $paidAdditionalPayments->push($currentPendingPayment)->toArray(),
+            ]);
+        }
     }
 }
