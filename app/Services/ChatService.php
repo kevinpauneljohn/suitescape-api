@@ -6,11 +6,21 @@ use App\Events\ChatRead;
 use App\Events\MessageSent;
 use App\Models\Chat;
 use App\Models\Message;
+use App\Models\MessageResponseTime;
 use App\Models\User;
+use Carbon\CarbonInterval;
 use Exception;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class ChatService
 {
+    private const SECONDS_PER_DAY = 86400; // 24 * 3600
+
+    private const DAYS_TO_TRACK = 30;
+
+    private const MAX_RESPONSE_DAYS = 7;
+
     public function getAllChats()
     {
         $user = auth()->user();
@@ -21,6 +31,28 @@ class ChatService
             },
             'latestMessage',
         ])->withCount('unreadMessages')->orderByLatestMessage()->get();
+    }
+
+    public function searchChats(?string $searchQuery, ?int $limit = 20)
+    {
+        $user = auth()->user();
+
+        return $user->chats()
+            ->where(function ($query) use ($searchQuery) {
+                $query->whereHas('messages', function ($subQuery) use ($searchQuery) {
+                    $subQuery->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
+                })->orWhereHas('users', function ($subQuery) use ($searchQuery) {
+                    $subQuery->whereRaw('MATCH(firstname, lastname, email) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
+                });
+            })->with([
+                'users' => function ($query) use ($user) {
+                    $query->where('users.id', '!=', $user->id);
+                },
+                'latestMessage',
+            ])
+            ->orderByLatestMessage()
+            ->limit($limit)
+            ->get();
     }
 
     public function getChat(string $senderId, string $receiverId)
@@ -74,6 +106,8 @@ class ChatService
             'content' => $content,
         ]);
 
+        $this->trackResponseTime($chat, $message);
+
         broadcast(new MessageSent($message))->toOthers();
 
         return $message;
@@ -98,5 +132,77 @@ class ChatService
         $chat->users()->attach([$senderId, $receiverId]);
 
         return $chat;
+    }
+
+    private function trackResponseTime(Chat $chat, Message $message): void
+    {
+        $lastMessage = Message::where('chat_id', $chat->id)
+            ->where('sender_id', $message->receiver_id)
+            ->where('created_at', '<', $message->created_at)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($lastMessage) {
+            $responseTime = $message->created_at->diffInSeconds($lastMessage->created_at);
+
+            // Only track responses within MAX_RESPONSE_DAYS
+            if ($responseTime <= self::MAX_RESPONSE_DAYS * self::SECONDS_PER_DAY) {
+                MessageResponseTime::create([
+                    'chat_id' => $chat->id,
+                    'message_id' => $message->id,
+                    'user_id' => $message->sender_id,
+                    'response_time_seconds' => $responseTime,
+                ]);
+            }
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getHostResponseRate(string $userId): array
+    {
+        $startDate = Carbon::now()->subDays(self::DAYS_TO_TRACK);
+
+        $responseTimes = MessageResponseTime::where('user_id', $userId)
+            ->where('created_at', '>=', $startDate)
+            ->get();
+
+        if ($responseTimes->isEmpty()) {
+            return [
+                'average_response_time' => null,
+                'overall_response_rate' => null,
+            ];
+        }
+
+        return [
+            'average_response_time' => $this->formatAverageResponseTime($responseTimes),
+            'overall_response_rate' => $this->calculateResponseRate($userId, $startDate, $responseTimes),
+        ];
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function formatAverageResponseTime(Collection $responseTimes): string
+    {
+        $averageSeconds = $responseTimes->avg('response_time_seconds');
+
+        if (! $averageSeconds) {
+            return 'No responses yet';
+        }
+
+        return CarbonInterval::seconds($averageSeconds)
+            ->cascade()
+            ->forHumans(['short' => true, 'parts' => 1]);
+    }
+
+    private function calculateResponseRate(int $userId, Carbon $startDate, Collection $responseTimes): float
+    {
+        $totalMessages = Message::where('receiver_id', $userId)
+            ->where('created_at', '>=', $startDate)
+            ->count();
+
+        return $totalMessages > 0 ? ($responseTimes->count() / $totalMessages) * 100 : 0;
     }
 }
