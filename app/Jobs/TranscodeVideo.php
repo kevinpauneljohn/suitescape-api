@@ -26,6 +26,8 @@ class TranscodeVideo implements ShouldQueue
 
     protected string $tempPath;
 
+    private const FILE_EXTENSION = '.mp4';
+
     /**
      * Create a new job instance.
      */
@@ -33,7 +35,7 @@ class TranscodeVideo implements ShouldQueue
     {
         $this->video = $video;
         $this->directory = $directory;
-        $this->filename = $filename;
+        $this->filename = $filename . self::FILE_EXTENSION; // Append the file extension
         $this->tempPath = $tempPath;
     }
 
