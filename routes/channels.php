@@ -19,11 +19,19 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return $user->id === $id;
 });
 
+Broadcast::channel('private-notification.{id}', function ($user, $id) {
+    return $user->id === $id;
+});
+
 Broadcast::channel('private-chat.{id}', function ($user, $id) {
     return $user->id === $id;
 });
 
 Broadcast::channel('private-active-status.{id}', function ($user) {
+    return (bool) $user;
+});
+
+Broadcast::channel('private-payment.{id}', function ($user) {
     return (bool) $user;
 });
 
