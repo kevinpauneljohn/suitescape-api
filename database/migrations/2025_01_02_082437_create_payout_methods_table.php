@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('payout_methods', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
+            $table->uuidMorphs('payoutable');
+            $table->boolean('is_default')->default(false);
+            $table->string('status')->default('active');
             $table->timestamps();
         });
     }
