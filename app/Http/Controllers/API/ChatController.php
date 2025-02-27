@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SearchRequest;
 use App\Http\Requests\SendMessageRequest;
 use App\Http\Resources\ChatResource;
 use App\Http\Resources\MessageResource;
@@ -33,11 +34,25 @@ class ChatController extends Controller
     }
 
     /**
+     * Search Chats
+     *
+     * Retrieves a collection of chats for the authenticated user that match the specified search term.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function searchChats(SearchRequest $request)
+    {
+        return ChatResource::collection($this->chatService->searchChats(
+            $request->validated('search_query'),
+            $request->validated('limit')
+        ));
+    }
+
+    /**
      * Get All Messages
      *
      * Retrieves all messages between the authenticated user and the specified receiver.
      *
-     * @param string $receiverId
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|JsonResource
      */
     public function getAllMessages(string $receiverId)
@@ -59,16 +74,16 @@ class ChatController extends Controller
      *
      * Sends a new message from the authenticated user to the specified receiver.
      *
-     * @param SendMessageRequest $request
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws \Exception
      */
     public function sendMessage(SendMessageRequest $request)
     {
         $message = $this->chatService->sendMessage(
             auth()->id(),
-            $request->validated()['receiver_id'],
-            $request->validated()['content'],
+            $request->validated('receiver_id'),
+            $request->validated('content'),
         );
 
         return response()->json([
