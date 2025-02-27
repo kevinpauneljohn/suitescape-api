@@ -6,6 +6,8 @@ use App\Models\Listing;
 
 class ListingRetrievalService
 {
+    protected ChatService $chatService;
+
     protected ConstantService $constantService;
 
     protected FilterService $filterService;
@@ -16,8 +18,9 @@ class ListingRetrievalService
 
     protected ?Listing $currentListing = null;
 
-    public function __construct(ConstantService $constantService, FilterService $filterService, PriceCalculatorService $priceCalculatorService, UnavailableDateService $unavailableDateService)
+    public function __construct(ChatService $chatService, ConstantService $constantService, FilterService $filterService, PriceCalculatorService $priceCalculatorService, UnavailableDateService $unavailableDateService)
     {
+        $this->chatService = $chatService;
         $this->constantService = $constantService;
         $this->filterService = $filterService;
         $this->priceCalculatorService = $priceCalculatorService;
@@ -41,9 +44,13 @@ class ListingRetrievalService
             ->get();
     }
 
-    public function searchListings(?string $query, ?int $limit = 10)
+    public function searchListings(?string $searchQuery, ?int $limit = 10)
     {
-        return Listing::whereRaw('MATCH(name, location) AGAINST(? IN NATURAL LANGUAGE MODE)', [$query])
+        return Listing::whereRaw('MATCH(name, location) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery])
+            ->uniqueByLocation()
+            ->whereHas('videos', function ($query) {
+                $query->isApproved();
+            })
             ->limit($limit)
             ->get();
     }
@@ -57,6 +64,9 @@ class ListingRetrievalService
         return $this->currentListing;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function getListingDetails(string $id, array $filters = [])
     {
         $startDate = $filters['start_date'] ?? null;
@@ -85,12 +95,19 @@ class ListingRetrievalService
             ->loadCount(['likes', 'saves', 'views', 'reviews'])
             ->loadAggregate('reviews', 'rating', 'avg');
 
+        // Add the host response rate
+        $hostResponseRate = $this->chatService->getHostResponseRate($listing->host->id);
+        foreach ($hostResponseRate as $key => $value) {
+            $listing->host->setAttribute($key, $value);
+        }
+
         // Get current entire place price
         $listing->entire_place_price = $listing->getCurrentPrice($startDate, $endDate);
 
         // Get minimum price from room categories
         $listing->lowest_room_price = $this->priceCalculatorService->getMinRoomPriceForListing($id, $startDate, $endDate);
 
+        // Add the suitescape cancellation policy
         $listing->cancellation_policy = $suitescapeCancellationPolicy;
 
         return $listing;
