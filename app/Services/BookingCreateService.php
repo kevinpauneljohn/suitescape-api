@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Mail\BookingCompletedHost;
-use App\Mail\BookingCompletedUser;
 use App\Models\Addon;
 use App\Models\Booking;
 use App\Models\Coupon;
@@ -12,17 +10,19 @@ use App\Models\Room;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
 
 class BookingCreateService
 {
     protected ConstantService $constantService;
 
+    protected MailService $mailService;
+
     protected UnavailableDateService $unavailableDateService;
 
-    public function __construct(ConstantService $constantService, UnavailableDateService $unavailableDateService)
+    public function __construct(ConstantService $constantService, MailService $mailService, UnavailableDateService $unavailableDateService)
     {
         $this->constantService = $constantService;
+        $this->mailService = $mailService;
         $this->unavailableDateService = $unavailableDateService;
     }
 
@@ -34,7 +34,7 @@ class BookingCreateService
         $listing = Listing::findOrFail($bookingData['listing_id']);
 
         $coupon = null;
-        if ($bookingData['coupon_code']) {
+        if (isset($bookingData['coupon_code'])) {
             $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
         }
 
@@ -46,28 +46,27 @@ class BookingCreateService
         $this->addBookingRooms($booking, $rooms);
         $this->addBookingAddons($booking, $addons);
 
-        if ($listing->is_entire_place) {
-            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
-        } else {
-            foreach ($rooms as $room) {
-                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
-            }
-        }
+        //        if ($listing->is_entire_place) {
+        //            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
+        //        } else {
+        //            foreach ($rooms as $room) {
+        //                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+        //            }
+        //        }
 
-        $this->sendBookingEmails($booking);
+        $this->mailService->sendBookingCompletedEmails($booking);
 
         return $booking;
     }
 
-    public function createBookingInvoice(string $bookingId)
+    public function createBookingInvoice(Booking $booking, string $referenceNumber, string $paymentStatus = 'pending')
     {
-        $booking = Booking::findOrFail($bookingId);
-
         return $booking->invoice()->create([
             'user_id' => $booking->user_id,
             'coupon_id' => $booking->coupon_id,
             'coupon_discount_amount' => $booking->coupon->discount_amount ?? 0,
-            'payment_status' => 'paid',
+            'reference_number' => $referenceNumber,
+            'payment_status' => $paymentStatus,
         ]);
     }
 
@@ -206,14 +205,5 @@ class BookingCreateService
     private function getAddonAmount($addon): float
     {
         return $addon->price * $addon->quantity;
-    }
-
-    private function sendBookingEmails($booking)
-    {
-        // Send email to the host
-        Mail::to($booking->listing->user->email)->send(new BookingCompletedHost($booking));
-
-        // Send email to the user
-        Mail::to($booking->user->email)->send(new BookingCompletedUser($booking));
     }
 }
