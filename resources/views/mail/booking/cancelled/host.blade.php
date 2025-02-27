@@ -1,18 +1,27 @@
 <x-mail::message>
-# Booking Confirmation
+# Booking Cancellation Notice
 
-Dear {{ $booking->user->full_name }},
+Dear {{ $booking->listing->user->full_name }},
 
-Your booking for "{{ $booking->listing->name }}" has been confirmed!
+A booking for "{{ $booking->listing->name }}" has been cancelled.
+
+## Guest Information:
+- Name: {{ $booking->user->full_name }}
+- Email: {{ $booking->user->email }}
 
 ## Booking Details:
-- Host: {{ $booking->listing->user->full_name }}
 - Check-in: {{ $booking->date_start->format('F d, Y') }} ({{ $booking->listing->check_in_time->format('g:i A') }})
 - Check-out: {{ $booking->date_end->format('F d, Y') }} ({{ $booking->listing->check_out_time->format('g:i A') }})
-- Total price: ₱{{ number_format($booking->amount, 2) }}
+@if(isset($cancellationFee))
+- Cancellation fee (to be charged): ₱{{ number_format($cancellationFee, 2) }}
+@endif
+@if(isset($suitescapeCancellationFee))
+- Platform fee: ₱{{ number_format($suitescapeCancellationFee, 2) }}
+@endif
+- Amount: ₱{{ number_format($booking->amount, 2) }}
 
 @if(!$booking->listing->is_entire_place)
-## Booked Rooms:
+## Cancelled Rooms:
 @foreach($booking->bookingRooms as $bookingRoom)
 - {{ $bookingRoom->room->roomCategory->name }}
 - Quantity: {{ $bookingRoom->quantity }}
@@ -28,16 +37,20 @@ Your booking for "{{ $booking->listing->name }}" has been confirmed!
 ## Property Details:
 - Type: {{ ucfirst($booking->listing->facility_type) }}
 - Location: {{ $booking->listing->location }}
-@if($booking->listing->parking_lot)
-- Parking available
+
+@if($booking->cancellation_reason)
+## Cancellation Reason:
+{{ $booking->cancellation_reason }}
 @endif
-@if($booking->listing->is_pet_allowed)
-- Pets allowed
+
+@if($cancellationPolicy)
+## Applied Cancellation Policy:
+{{ $cancellationPolicy }}
 @endif
 
 ---
 
-We hope you enjoy your stay!
+<br>The dates for this booking are now available again in your calendar. You may want to review your availability settings if needed.
 
 Best regards,<br>
 {{ config('app.name') }} Team

@@ -1,18 +1,24 @@
 <x-mail::message>
-# Booking Confirmation
+# Booking Cancellation
 
 Dear {{ $booking->user->full_name }},
 
-Your booking for "{{ $booking->listing->name }}" has been confirmed!
+Your booking for "{{ $booking->listing->name }}" has been cancelled.
 
 ## Booking Details:
 - Host: {{ $booking->listing->user->full_name }}
 - Check-in: {{ $booking->date_start->format('F d, Y') }} ({{ $booking->listing->check_in_time->format('g:i A') }})
 - Check-out: {{ $booking->date_end->format('F d, Y') }} ({{ $booking->listing->check_out_time->format('g:i A') }})
-- Total price: ₱{{ number_format($booking->amount, 2) }}
+@if(isset($cancellationFee))
+- Cancellation fee: ₱{{ number_format($cancellationFee, 2) }}
+@endif
+@if(isset($suitescapeCancellationFee))
+- Platform fee: ₱{{ number_format($suitescapeCancellationFee, 2) }}
+@endif
+- Amount: ₱{{ number_format($booking->amount, 2) }}
 
 @if(!$booking->listing->is_entire_place)
-## Booked Rooms:
+## Cancelled Rooms:
 @foreach($booking->bookingRooms as $bookingRoom)
 - {{ $bookingRoom->room->roomCategory->name }}
 - Quantity: {{ $bookingRoom->quantity }}
@@ -35,9 +41,17 @@ Your booking for "{{ $booking->listing->name }}" has been confirmed!
 - Pets allowed
 @endif
 
----
+@if($booking->cancellation_reason)
+## Cancellation Reason:
+{{ $booking->cancellation_reason }}
+@endif
 
-We hope you enjoy your stay!
+@if($cancellationPolicy)
+## Cancellation Policy:
+{{ $cancellationPolicy}}
+@endif
+
+---
 
 Best regards,<br>
 {{ config('app.name') }} Team
