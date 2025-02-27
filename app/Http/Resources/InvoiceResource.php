@@ -16,8 +16,10 @@ class InvoiceResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
-            'booking_id' => $this->booking_id,
+            $this->mergeUnless($this->relationLoaded('user'), ['user_id' => $this->user_id]),
+            $this->mergeUnless($this->relationLoaded('booking'), ['booking_id' => $this->booking_id]),
+            'user' => new UserResource($this->whenLoaded('user')),
+            'booking' => new BookingResource($this->whenLoaded('booking')),
             'payment_status' => $this->payment_status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
