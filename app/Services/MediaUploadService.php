@@ -13,9 +13,10 @@ class MediaUploadService
         $this->fileNameService = $fileNameService;
     }
 
-    public function upload(UploadedFile $media, string $directory, bool $temp = false): string|array
+    public function upload(UploadedFile $media, string $directory, bool $temp = false, bool $withoutExtension = false): string|array
     {
-        $filename = $this->fileNameService->generateFileName($media->extension());
+        // Generate a unique filename
+        $filename = $withoutExtension ? $this->fileNameService->generateUniqueName() : $this->fileNameService->generateFileName($media->extension());
 
         // Upload temp media to the storage
         if ($temp) {
