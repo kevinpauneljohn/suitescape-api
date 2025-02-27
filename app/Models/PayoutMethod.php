@@ -12,15 +12,17 @@ class PayoutMethod extends Model
 
     protected $fillable = [
         'user_id',
+        'is_default',
+        'status'
     ];
+
+    public function payoutable()
+    {
+        return $this->morphTo();
+    }
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function payoutMethodDetail()
-    {
-        return $this->hasOne(PayoutMethodDetail::class);
     }
 }
