@@ -66,6 +66,31 @@ class ListingSeeder extends Seeder
                 'location' => 'Laiya, San Juan, Batangas, Philippines',
                 'description' => 'A charming beach house in Batangas, ideal for a relaxing seaside vacation.',
             ],
+            [
+                'name' => 'Siargao Surf Lodge',
+                'location' => 'General Luna, Siargao Island, Surigao del Norte, Philippines',
+                'description' => 'A surfer\'s paradise lodge steps away from the famous Cloud 9 surf spot.',
+            ],
+            [
+                'name' => 'Vigan Heritage House',
+                'location' => 'Calle Crisologo, Vigan City, Ilocos Sur, Philippines',
+                'description' => 'A restored colonial mansion in the historic district of Vigan, offering a glimpse into Philippine history.',
+            ],
+            [
+                'name' => 'Coron Island Villa',
+                'location' => 'Coron, Palawan, Philippines',
+                'description' => 'A luxurious villa overlooking the pristine waters of Coron, perfect for island hopping adventures.',
+            ],
+            [
+                'name' => 'Clark Pampanga Resort',
+                'location' => 'Clark Freeport Zone, Pampanga, Philippines',
+                'description' => 'A modern resort near Clark International Airport, featuring golf courses and entertainment facilities.',
+            ],
+            [
+                'name' => 'Camiguin Island Retreat',
+                'location' => 'Mambajao, Camiguin, Philippines',
+                'description' => 'A peaceful retreat on the volcanic island of Camiguin, surrounded by hot springs and waterfalls.',
+            ],
         ];
 
         // Create listings based on the number of videos
