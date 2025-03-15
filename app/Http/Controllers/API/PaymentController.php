@@ -25,7 +25,7 @@ class PaymentController extends Controller
 
     public function __construct(BookingCreateService $bookingCreateService, BookingUpdateService $bookingUpdateService, PaymentService $paymentService)
     {
-        $this->middleware('auth:sanctum')->except(['linkPaymentPaid', 'sourceChargeable', 'paymentSuccess', 'paymentFailed']);
+        $this->middleware('auth:sanctum')->except(['linkPaymentPaid', 'sourceChargeable', 'paymentSuccessStatus', 'paymentFailedStatus']);
 
         $this->bookingCreateService = $bookingCreateService;
         $this->bookingUpdateService = $bookingUpdateService;
