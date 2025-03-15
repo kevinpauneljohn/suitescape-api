@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('chat_id');
             $table->foreignUuid('sender_id')->constrained('users');
             $table->foreignUuid('receiver_id')->constrained('users');
+            $table->foreignUuid('listing_id')->nullable();
             $table->text('content');
             $table->dateTime('read_at')->nullable();
             $table->fullText(['content']);
