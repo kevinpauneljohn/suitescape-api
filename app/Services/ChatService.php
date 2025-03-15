@@ -8,6 +8,7 @@ use App\Models\Chat;
 use App\Models\Message;
 use App\Models\MessageResponseTime;
 use App\Models\User;
+use Blaspsoft\Blasp\Facades\Blasp;
 use Carbon\CarbonInterval;
 use Exception;
 use Illuminate\Support\Carbon;
@@ -72,19 +73,20 @@ class ChatService
 
     public function getMessages(string $senderId, string $receiverId)
     {
-        return Message::where(function ($query) use ($senderId, $receiverId) {
-            $query->where('sender_id', $senderId)
-                ->where('receiver_id', $receiverId);
-        })->orWhere(function ($query) use ($senderId, $receiverId) {
-            $query->where('sender_id', $receiverId)
-                ->where('receiver_id', $senderId);
-        })->orderByDesc('created_at')->get();
+        return Message::with('listing.images')
+            ->where(function ($query) use ($senderId, $receiverId) {
+                $query->where('sender_id', $senderId)
+                    ->where('receiver_id', $receiverId);
+            })->orWhere(function ($query) use ($senderId, $receiverId) {
+                $query->where('sender_id', $receiverId)
+                    ->where('receiver_id', $senderId);
+            })->orderByDesc('created_at')->get();
     }
 
     /**
      * @throws Exception
      */
-    public function sendMessage(string $senderId, string $receiverId, string $content)
+    public function sendMessage(string $senderId, string $receiverId, string $content, ?string $listingId = null)
     {
         // Check if sender and receiver are the same
         if ($senderId === $receiverId) {
@@ -99,11 +101,19 @@ class ChatService
             $chat = $this->startChat($senderId, $receiverId);
         }
 
+        // Filter the message content from links, email, numbers, etc.
+        $filteredContent = $this->filterMessageContent($content);
+
+        // Get the last message with a listing
+        $lastMessage = $chat->messages()->whereNotNull('listing_id')->latest()->first();
+
         $message = Message::create([
             'chat_id' => $chat->id,
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
-            'content' => $content,
+            // Check if the listing id exists on the last message with listing
+            'listing_id' => optional($lastMessage)->listing_id === $listingId ? null : $listingId,
+            'content' => $filteredContent,
         ]);
 
         $this->trackResponseTime($chat, $message);
@@ -132,6 +142,21 @@ class ChatService
         $chat->users()->attach([$senderId, $receiverId]);
 
         return $chat;
+    }
+
+    private function filterMessageContent(string $content): string
+    {
+        // Filter emails
+        $content = preg_replace('/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/', '[email removed]', $content);
+
+        // Filter phone numbers (various formats)
+        $content = preg_replace('/(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4,6}/', '[phone removed]', $content);
+
+        // Filter profanity
+        $content = Blasp::check($content)->getCleanString();
+
+        // Remove excess whitespace
+        return trim(preg_replace('/\s+/', ' ', $content));
     }
 
     private function trackResponseTime(Chat $chat, Message $message): void
@@ -197,7 +222,7 @@ class ChatService
             ->forHumans(['short' => true, 'parts' => 1]);
     }
 
-    private function calculateResponseRate(int $userId, Carbon $startDate, Collection $responseTimes): float
+    private function calculateResponseRate(string $userId, Carbon $startDate, Collection $responseTimes): float
     {
         $totalMessages = Message::where('receiver_id', $userId)
             ->where('created_at', '>=', $startDate)
