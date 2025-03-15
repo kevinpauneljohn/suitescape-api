@@ -84,6 +84,7 @@ class ChatController extends Controller
             auth()->id(),
             $request->validated('receiver_id'),
             $request->validated('content'),
+            $request->validated('listing_id'),
         );
 
         return response()->json([
