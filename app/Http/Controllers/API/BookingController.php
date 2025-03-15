@@ -12,13 +12,16 @@ use App\Models\Booking;
 use App\Services\BookingCreateService;
 use App\Services\BookingRetrievalService;
 use App\Services\BookingUpdateService;
+use App\Services\MailService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Throwable;
 
 class BookingController extends Controller
 {
     private const UPDATE_DATES_KEY = 'update_dates';
+
     private const MINIMUM_PAYMONGO_PRICE = 100;
 
     private BookingRetrievalService $bookingRetrievalService;
@@ -27,13 +30,16 @@ class BookingController extends Controller
 
     private BookingUpdateService $bookingUpdateService;
 
-    public function __construct(BookingRetrievalService $bookingRetrievalService, BookingCreateService $bookingCreateService, BookingUpdateService $bookingUpdateService)
+    private MailService $mailService;
+
+    public function __construct(BookingRetrievalService $bookingRetrievalService, BookingCreateService $bookingCreateService, BookingUpdateService $bookingUpdateService, MailService $mailService)
     {
         $this->middleware('auth:sanctum');
 
         $this->bookingRetrievalService = $bookingRetrievalService;
         $this->bookingCreateService = $bookingCreateService;
         $this->bookingUpdateService = $bookingUpdateService;
+        $this->mailService = $mailService;
     }
 
     /**
@@ -135,13 +141,17 @@ class BookingController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      *
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     public function createBooking(CreateBookingRequest $request)
     {
+        $booking = $this->bookingCreateService->createBooking($request->validated());
+
+        $this->mailService->sendBookingCompletedEmails($booking);
+
         return response()->json([
             'message' => 'Booking created successfully',
-            'booking' => new BookingResource($this->bookingCreateService->createBooking($request->validated())),
+            'booking' => new BookingResource($booking),
         ]);
     }
 
@@ -154,9 +164,13 @@ class BookingController extends Controller
      */
     public function updateBookingStatus(UpdateBookingStatusRequest $request, string $id)
     {
+        $booking = $this->bookingUpdateService->updateBookingStatus($id, $request->validated('booking_status'), $request->validated('message'));
+
+        $this->mailService->sendBookingCancelledEmails($booking);
+
         return response()->json([
             'message' => 'Booking status updated successfully',
-            'booking' => new BookingResource($this->bookingUpdateService->updateBookingStatus($id, $request->validated('booking_status'), $request->validated('message'))),
+            'booking' => new BookingResource($booking),
         ]);
     }
 
@@ -166,6 +180,8 @@ class BookingController extends Controller
      * Updates the start and end dates of a booking.
      *
      * @return \Illuminate\Http\JsonResponse
+     *
+     * @throws Exception
      */
     public function updateBookingDates(FutureDateRangeRequest $request, string $id)
     {
@@ -211,7 +227,7 @@ class BookingController extends Controller
                 // Check if the additional payment is at least the minimum amount
                 if ($amountToPay < self::MINIMUM_PAYMONGO_PRICE) {
                     return response()->json([
-                        'message' => 'Additional payment must be at least ₱' . self::MINIMUM_PAYMONGO_PRICE,
+                        'message' => 'Additional payment must be at least ₱'.self::MINIMUM_PAYMONGO_PRICE,
                     ], 422);
                 }
 
@@ -225,7 +241,7 @@ class BookingController extends Controller
                         'pending_additional_payments' => $additionalPayments->push(self::UPDATE_DATES_KEY)->toArray(),
                     ]);
 
-                    \Log::info('Additional payment requested for booking ' . $booking->id . ' to update dates');
+                    \Log::info('Additional payment requested for booking '.$booking->id.' to update dates');
 
                     return response()->json([
                         'message' => 'You can now update the dates for this booking!',
