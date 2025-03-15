@@ -13,18 +13,15 @@ class BookingUpdateService
 
     protected ConstantService $constantService;
 
-    protected MailService $mailService;
-
     protected PaymentService $paymentService;
 
     protected UnavailableDateService $unavailableDateService;
 
-    public function __construct(BookingCancellationService $bookingCancellationService, BookingCreateService $bookingCreateService, ConstantService $constantService, MailService $mailService, PaymentService $paymentService, UnavailableDateService $unavailableDateService)
+    public function __construct(BookingCancellationService $bookingCancellationService, BookingCreateService $bookingCreateService, ConstantService $constantService, PaymentService $paymentService, UnavailableDateService $unavailableDateService)
     {
         $this->bookingCancellationService = $bookingCancellationService;
         $this->bookingCreateService = $bookingCreateService;
         $this->constantService = $constantService;
-        $this->mailService = $mailService;
         $this->paymentService = $paymentService;
         $this->unavailableDateService = $unavailableDateService;
     }
@@ -49,8 +46,13 @@ class BookingUpdateService
                 'cancellation_reason' => $message,
             ]);
 
-            $this->paymentService->archivePaymentLink($booking->invoice->reference_number);
-            $this->mailService->sendBookingCancelledEmails($booking);
+            if (isset($booking->invoice->reference_number)) {
+                try {
+                    $this->paymentService->archivePaymentLink($booking->invoice->reference_number);
+                } catch (\Exception $e) {
+                    \Log::error('Error archiving payment link', ['message' => $e->getMessage()]);
+                }
+            }
         }
 
         $booking->update([
