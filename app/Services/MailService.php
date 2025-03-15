@@ -38,6 +38,10 @@ class MailService
 
     public function sendBookingCancelledEmails(Booking $booking)
     {
+        if ($booking->status !== 'cancelled') {
+            return;
+        }
+
         // Get cancellation fees and policy
         $cancellationFee = floatval($this->bookingCancellationService->calculateCancellationFee($booking));
         $suitescapeCancellationFee = floatval($this->constantService->getConstant('cancellation_fee')->value);
