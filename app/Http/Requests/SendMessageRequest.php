@@ -23,6 +23,7 @@ class SendMessageRequest extends FormRequest
     {
         return [
             'receiver_id' => ['required', 'uuid', 'exists:users,id'],
+            'listing_id' => ['nullable', 'uuid', 'exists:listings,id'],
             'content' => ['required', 'string'],
         ];
     }
