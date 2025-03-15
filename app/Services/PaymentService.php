@@ -13,10 +13,13 @@ use Luigel\Paymongo\Facades\Paymongo;
 
 class PaymentService
 {
+    protected NotificationService $notificationService;
+
     protected UnavailableDateService $unavailableDateService;
 
-    public function __construct(UnavailableDateService $unavailableDateService)
+    public function __construct(NotificationService $notificationService, UnavailableDateService $unavailableDateService)
     {
+        $this->notificationService = $notificationService;
         $this->unavailableDateService = $unavailableDateService;
     }
 
@@ -97,6 +100,14 @@ class PaymentService
             } else {
                 $booking->update(['status' => 'upcoming']);
             }
+
+            $this->notificationService->createNotification([
+                'user_id' => $booking->user_id,
+                'title' => 'Booking Successfully Paid!',
+                'message' => "Your booking for \"{$booking->listing->name}\" has been paid successfully.",
+                'type' => 'booking',
+                'action_id' => $booking->id,
+            ]);
 
             \Log::info('Invoice marked as paid', [
                 'invoice_id' => $invoice->id,
