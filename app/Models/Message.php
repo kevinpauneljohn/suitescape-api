@@ -14,6 +14,7 @@ class Message extends Model
         'chat_id',
         'sender_id',
         'receiver_id',
+        'listing_id',
         'content',
         'read_at',
     ];
@@ -35,5 +36,10 @@ class Message extends Model
     public function receiver()
     {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function listing()
+    {
+        return $this->belongsTo(Listing::class);
     }
 }

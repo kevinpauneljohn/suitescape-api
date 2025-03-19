@@ -28,9 +28,13 @@ class MessageResource extends JsonResource
             $this->mergeUnless($this->relationLoaded('receiver'), [
                 'receiver_id' => $this->receiver_id,
             ]),
+            $this->mergeUnless($this->relationLoaded('listing'), [
+                'listing_id' => $this->listing_id,
+            ]),
             'chat' => new ChatResource($this->whenLoaded('chat')),
             'sender' => new UserResource($this->whenLoaded('sender')),
             'receiver' => new UserResource($this->whenLoaded('receiver')),
+            'listing' => new ListingResource($this->whenLoaded('listing')),
             'content' => $this->content,
             'read_at' => $this->read_at,
             'created_at' => $this->created_at,

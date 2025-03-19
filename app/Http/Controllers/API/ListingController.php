@@ -25,6 +25,7 @@ use App\Services\ListingRetrievalService;
 use App\Services\ListingSaveService;
 use App\Services\ListingUpdateService;
 use App\Services\ListingViewService;
+use App\Services\NotificationService;
 use Exception;
 use Illuminate\Http\Request;
 
@@ -38,14 +39,17 @@ class ListingController extends Controller
 
     private ListingDeleteService $listingDeleteService;
 
-    public function __construct(ListingRetrievalService $listingRetrievalService, ListingCreateService $listingCreateService, ListingUpdateService $listingUpdateService, ListingDeleteService $listingDeleteService)
+    private NotificationService $notificationService;
+
+    public function __construct(ListingRetrievalService $listingRetrievalService, ListingCreateService $listingCreateService, ListingUpdateService $listingUpdateService, ListingDeleteService $listingDeleteService, NotificationService $notificationService)
     {
-        $this->middleware('auth:sanctum')->only(['createListing', 'uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
+        $this->middleware('auth:sanctum')->only(['createListing', 'updateListing', 'uploadListingImage', 'uploadListingVideo', 'likeListing', 'saveListing']);
 
         $this->listingRetrievalService = $listingRetrievalService;
         $this->listingCreateService = $listingCreateService;
         $this->listingUpdateService = $listingUpdateService;
         $this->listingDeleteService = $listingDeleteService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -92,7 +96,10 @@ class ListingController extends Controller
      */
     public function searchListings(SearchRequest $request)
     {
-        return ListingResource::collection($this->listingRetrievalService->searchListings($request->search_query, $request->limit));
+        return ListingResource::collection($this->listingRetrievalService->searchListings(
+            $request->validated('search_query'),
+            $request->validated('limit')
+        ));
     }
 
     /**
@@ -102,6 +109,7 @@ class ListingController extends Controller
      * The date range is used to calculate the current price of the entire place.
      *
      * @return ListingResource
+     * @throws Exception
      */
     public function getListing(DateRangeRequest $request, string $id)
     {
@@ -171,7 +179,7 @@ class ListingController extends Controller
      */
     public function getUnavailableDates(DateRangeRequest $request, string $id)
     {
-        $unavailableDates = $this->listingRetrievalService->getUnavailableDatesFromRange($id, $request->validated()['start_date'], $request->validated()['end_date']);
+        $unavailableDates = $this->listingRetrievalService->getUnavailableDatesFromRange($id, $request->validated('start_date'), $request->validated('end_date'));
 
         return UnavailableDateResource::collection($unavailableDates);
     }
@@ -188,6 +196,14 @@ class ListingController extends Controller
     public function createListing(CreateListingRequest $request)
     {
         $listing = $this->listingCreateService->createListing($request->validated());
+
+        $this->notificationService->createNotification([
+            'user_id' => $listing->user_id,
+            'title' => 'Listing Created',
+            'message' => "Your listing \"$listing->name\" has been created successfully.",
+            'type' => 'listing',
+            'action_id' => $listing->id,
+        ]);
 
         return response()->json([
             'message' => 'Listing created successfully.',
@@ -207,6 +223,14 @@ class ListingController extends Controller
     public function updateListing(UpdateListingRequest $request, string $id)
     {
         $listing = $this->listingUpdateService->updateListing($id, $request->validated());
+
+        $this->notificationService->createNotification([
+            'user_id' => $listing->user_id,
+            'title' => 'Listing Updated',
+            'message' => "Your listing \"$listing->name\" has been updated successfully.",
+            'type' => 'listing',
+            'action_id' => $listing->id,
+        ]);
 
         return response()->json([
             'message' => 'Listing updated successfully.',

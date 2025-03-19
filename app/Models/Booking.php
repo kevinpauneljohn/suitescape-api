@@ -18,6 +18,7 @@ class Booking extends Model
         'amount',
         'base_amount',
         'message',
+        'cancellation_reason',
         'status',
         'date_start',
         'date_end',

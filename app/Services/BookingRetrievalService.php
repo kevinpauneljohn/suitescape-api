@@ -12,13 +12,16 @@ class BookingRetrievalService
 
     protected PriceCalculatorService $priceCalculatorService;
 
+    protected UnavailableDateService $unavailableDateService;
+
     protected Booking $booking;
 
-    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, PriceCalculatorService $priceCalculatorService, Booking $booking)
+    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, PriceCalculatorService $priceCalculatorService, UnavailableDateService $unavailableDateService, Booking $booking)
     {
         $this->bookingCancellationService = $bookingCancellationService;
         $this->constantService = $constantService;
         $this->priceCalculatorService = $priceCalculatorService;
+        $this->unavailableDateService = $unavailableDateService;
         $this->booking = $booking;
     }
 
@@ -50,17 +53,15 @@ class BookingRetrievalService
             },
             'coupon',
             'invoice',
-            'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
+            'listing' => fn($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'listing.addons',
             'listing.images',
             'listing.bookingPolicies',
         ]);
 
-        // Use the BookingCancellationService to calculate the cancellation fee
-        $cancellationFee = $this->bookingCancellationService->calculateCancellationFee($booking);
-
         // Set booking data properties
-        $booking->cancellation_fee = $cancellationFee;
+        $booking->is_expired = $this->isBookingExpired($booking);
+        $booking->cancellation_fee = $this->bookingCancellationService->calculateCancellationFee($booking);
         $booking->suitescape_cancellation_fee = $this->constantService->getConstant('cancellation_fee')->value;
         $booking->cancellation_policy = $this->constantService->getConstant('cancellation_policy')->value;
 
@@ -74,9 +75,21 @@ class BookingRetrievalService
         return $query->desc()->with([
             'coupon',
             'invoice',
-            'listing' => fn ($query) => $query->withAggregate('reviews', 'rating', 'avg'),
+            'listing' => fn($query) => $query->withAggregate('reviews', 'rating', 'avg'),
             'listing.host',
             'listing.images',
+            'user',
         ]);
+    }
+
+    private function isBookingExpired($booking)
+    {
+        // Check if booking has already passed
+        if ($booking->date_end->isPast() && ! $booking->date_end->isToday()) {
+            return true;
+        }
+
+        // Check if booking dates are blocked
+        return $this->unavailableDateService->getUnavailableDatesForBooking($booking, true)->isNotEmpty();
     }
 }

@@ -200,4 +200,13 @@ class Listing extends Model
     {
         return $query->where('is_entire_place', false);
     }
+
+    public function scopeUniqueByLocation($query)
+    {
+        return $query->whereIn('id', function ($query) {
+            $query->selectRaw('MIN(id)')
+                ->from('listings')
+                ->groupBy('location');
+        });
+    }
 }

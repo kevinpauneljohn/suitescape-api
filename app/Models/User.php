@@ -220,6 +220,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(PayoutMethod::class);
     }
 
+    public function userNotifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function activeSessions()
     {
         return $this->hasMany(ActiveSession::class);

@@ -19,7 +19,8 @@ return new class extends Migration
             $table->decimal('amount', 10, 2, true);
             $table->decimal('base_amount', 10, 2, true);
             $table->text('message')->nullable();
-            $table->enum('status', ['upcoming', 'ongoing', 'cancelled', 'completed', 'to_rate'])->default('upcoming');
+            $table->text('cancellation_reason')->nullable();
+            $table->enum('status', ['to_pay', 'upcoming', 'ongoing', 'cancelled', 'completed', 'to_rate'])->default('to_pay');
             $table->date('date_start');
             $table->date('date_end');
             $table->timestamps();

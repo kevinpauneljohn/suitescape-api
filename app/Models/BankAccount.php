@@ -6,13 +6,11 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PayoutMethodDetail extends Model
+class BankAccount extends Model
 {
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'payout_method_id',
-        'type',
         'account_name',
         'account_number',
         'role',
@@ -21,7 +19,7 @@ class PayoutMethodDetail extends Model
         'swift_code',
         'bank_code',
         'email',
-        'phone',
+        'phone_number',
         'dob',
         'pob',
         'citizenship',
@@ -39,6 +37,6 @@ class PayoutMethodDetail extends Model
 
     public function payoutMethod()
     {
-        return $this->belongsTo(PayoutMethod::class);
+        return $this->morphOne(PayoutMethod::class, 'payoutable');
     }
 }

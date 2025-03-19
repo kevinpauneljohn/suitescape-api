@@ -43,8 +43,6 @@ class RoomController extends Controller
      * Retrieves details for a specific room by ID. This includes room details, availability, and pricing for a given date range.
      * The date range is used to calculate any special rates or adjustments to the standard room price.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return RoomResource
      */
     public function getRoom(DateRangeRequest $request, string $id)
@@ -57,7 +55,6 @@ class RoomController extends Controller
      *
      * Retrieves the listing details associated with a specific room.
      *
-     * @param string $id
      * @return ListingResource
      */
     public function getRoomListing(string $id)
@@ -70,13 +67,11 @@ class RoomController extends Controller
      *
      * Retrieves a collection of dates when the specified room is unavailable within a given date range.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getUnavailableDates(DateRangeRequest $request, string $id)
     {
-        $unavailableDates = $this->roomRetrievalService->getUnavailableDatesFromRange($id, $request->validated()['start_date'], $request->validated()['end_date']);
+        $unavailableDates = $this->roomRetrievalService->getUnavailableDatesFromRange($id, $request->validated('start_date'), $request->validated('end_date'));
 
         return UnavailableDateResource::collection($unavailableDates);
     }
@@ -86,8 +81,6 @@ class RoomController extends Controller
      *
      * Adds a special rate for a room for a specified date range.
      *
-     * @param CreateSpecialRateRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function addSpecialRate(CreateSpecialRateRequest $request, string $id)
@@ -105,8 +98,6 @@ class RoomController extends Controller
      *
      * Updates an existing special rate for a room.
      *
-     * @param CreateSpecialRateRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updateSpecialRate(CreateSpecialRateRequest $request, string $id)
@@ -124,8 +115,6 @@ class RoomController extends Controller
      *
      * Removes a special rate from a room.
      *
-     * @param Request $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function removeSpecialRate(Request $request, string $id)
@@ -143,8 +132,6 @@ class RoomController extends Controller
      *
      * Blocks a range of dates for a room, making it unavailable for booking.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function blockDates(DateRangeRequest $request, string $id)
@@ -162,9 +149,8 @@ class RoomController extends Controller
      *
      * Unblocks a previously blocked range of dates for a room, making it available for booking again.
      *
-     * @param DateRangeRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
+     *
      * @throws \Exception
      */
     public function unblockDates(DateRangeRequest $request, string $id)
@@ -182,8 +168,6 @@ class RoomController extends Controller
      *
      * Updates the pricing for a room.
      *
-     * @param UpdateRoomPriceRequest $request
-     * @param string $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function updatePrices(UpdateRoomPriceRequest $request, string $id)

@@ -15,7 +15,16 @@ class Invoice extends Model
         'booking_id',
         'coupon_id',
         'coupon_discount_amount',
+        'reference_number',
+        'payment_method',
         'payment_status',
+        'pending_additional_payments',
+        'paid_additional_payments',
+    ];
+
+    protected $casts = [
+        'pending_additional_payments' => 'collection',
+        'paid_additional_payments' => 'collection',
     ];
 
     public function user()
@@ -26,5 +35,10 @@ class Invoice extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

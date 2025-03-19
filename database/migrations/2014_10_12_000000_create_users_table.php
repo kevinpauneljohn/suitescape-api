@@ -30,6 +30,7 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->string('profile_image')->nullable();
             $table->string('cover_image')->nullable();
+            $table->fullText(['firstname', 'lastname', 'email']);
             $table->rememberToken();
             $table->timestamps();
         });

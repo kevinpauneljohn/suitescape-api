@@ -11,19 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payout_method_details', function (Blueprint $table) {
+        Schema::create('bank_accounts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('payout_method_id');
-            $table->string('type');
             $table->string('account_name')->nullable();
             $table->string('account_number')->nullable();
             $table->enum('role', ['property_owner', 'property_manager', 'hosting_service_provider', 'other']);
-            $table->string('bank_name');
-            $table->enum('bank_type', ['personal', 'joint', 'business']);
-            $table->string('swift_code');
-            $table->string('bank_code');
+            $table->string('bank_name')->nullable();
+            $table->enum('bank_type', ['personal', 'joint', 'business'])->nullable();
+            $table->string('swift_code')->nullable();
+            $table->string('bank_code')->nullable();
             $table->string('email');
-            $table->string('phone');
+            $table->string('phone_number');
             $table->date('dob');
             $table->string('pob');
             $table->string('citizenship');
@@ -37,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payout_method_details');
+        Schema::dropIfExists('bank_accounts');
     }
 };
