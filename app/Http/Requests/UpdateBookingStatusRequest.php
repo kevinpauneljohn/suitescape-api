@@ -23,6 +23,7 @@ class UpdateBookingStatusRequest extends FormRequest
     {
         return [
             'booking_status' => ['required', 'string', 'in:upcoming,ongoing,cancelled,completed'],
+            'message' => ['nullable', 'string'],
         ];
     }
 }

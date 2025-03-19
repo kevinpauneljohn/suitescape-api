@@ -74,6 +74,10 @@ class Video extends Model
 
     public function scopeIsApproved($query, $isApproved = true)
     {
+        if (is_null($isApproved)) {
+            return $query->whereNull('is_approved');
+        }
+
         return $query->where('is_approved', $isApproved);
     }
 

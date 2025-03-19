@@ -3,14 +3,12 @@
 namespace App\Services;
 
 use App\Http\Resources\UserResource;
-use App\Mail\ResetPassword;
 use App\Models\User;
 use Exception;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 define('WAIT_TIME', '-5 minutes');
@@ -22,6 +20,13 @@ define('MAX_FORGOT_ATTEMPTS', 1);
 
 class RegistrationService
 {
+    protected MailService $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
+
     public function register($registrationData): JsonResponse
     {
         $email = $registrationData['email'];
@@ -151,7 +156,7 @@ class RegistrationService
         $token = $this->createResetToken($email);
 
         // Send the token to the user via email
-        $this->sendResetToken($email, $token);
+        $this->mailService->sendResetToken($email, $token);
 
         return response()->json([
             'message' => 'We have sent a code to your email address.',
@@ -216,11 +221,6 @@ class RegistrationService
         ]);
 
         return $token;
-    }
-
-    public function sendResetToken($email, $token): void
-    {
-        Mail::to($email)->send(new ResetPassword($token));
     }
 
     /**

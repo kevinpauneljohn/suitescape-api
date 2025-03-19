@@ -49,7 +49,7 @@ class RegistrationController extends Controller
      */
     public function login(LoginUserRequest $request)
     {
-        return $this->registrationService->login($request->validated()['email'], $request->validated()['password']);
+        return $this->registrationService->login($request->validated('email'), $request->validated('password'));
     }
 
     /**
@@ -80,7 +80,7 @@ class RegistrationController extends Controller
      */
     public function forgotPassword(PasswordForgotRequest $request)
     {
-        return $this->registrationService->forgotPassword($request->validated()['email']);
+        return $this->registrationService->forgotPassword($request->validated('email'));
     }
 
     /**
@@ -94,7 +94,7 @@ class RegistrationController extends Controller
     public function validateResetToken(TokenValidateRequest $request)
     {
         try {
-            return $this->registrationService->validatePasswordToken($request->validated()['email'], $request->validated()['token']);
+            return $this->registrationService->validatePasswordToken($request->validated('email'), $request->validated('token'));
         } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -114,7 +114,7 @@ class RegistrationController extends Controller
     public function resetPassword(PasswordResetRequest $request)
     {
         try {
-            return $this->registrationService->resetPassword($request->validated()['email'], $request->validated()['token'], $request->validated()['new_password']);
+            return $this->registrationService->resetPassword($request->validated('email'), $request->validated('token'), $request->validated('new_password'));
         } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -128,24 +128,19 @@ class RegistrationController extends Controller
      * Marks the user's email as verified after clicking the verification link sent to their email.
      * Returns a JSON response indicating the email has been successfully verified.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View
      */
     public function verifyEmail(Request $request)
     {
         $user = User::findOrfail($request->id);
+        $isAlreadyVerified = $user->hasVerifiedEmail();
 
-        if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'message' => 'Email already verified',
-            ]);
-        }
-
-        if ($user->markEmailAsVerified()) {
+        if (! $isAlreadyVerified && $user->markEmailAsVerified()) {
             event(new Verified($request->user()));
         }
 
-        return response()->json([
-            'message' => 'Email verified successfully',
+        return view('auth.verify-email', [
+            'isAlreadyVerified' => $isAlreadyVerified,
         ]);
     }
 

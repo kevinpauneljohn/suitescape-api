@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\Request;
 use Spatie\Permission\Exceptions\UnauthorizedException;
@@ -57,14 +58,10 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (NotFoundHttpException $e, Request $request) {
-            $models = ['Video', 'Image', 'Listing', 'Room', 'Setting'];
-
-            foreach ($models as $model) {
-                if (str_contains($e->getMessage(), 'No query results for model [App\Models\\'.$model.']')) {
-                    return response()->json([
-                        'message' => $model.' not found.',
-                    ], 404);
-                }
+            if (preg_match('/No query results for model \[App\\\\Models\\\\([^]]+)]/', $e->getMessage(), $matches)) {
+                return response()->json([
+                    'message' => $matches[1] . ' not found.',
+                ], 404);
             }
 
             if ($request->is('api/*')) {

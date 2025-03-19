@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Mail\BookingCompletedHost;
-use App\Mail\BookingCompletedUser;
 use App\Models\Addon;
 use App\Models\Booking;
 use App\Models\Coupon;
@@ -12,7 +10,8 @@ use App\Models\Room;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class BookingCreateService
 {
@@ -27,47 +26,55 @@ class BookingCreateService
     }
 
     /**
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     public function createBooking(array $bookingData)
     {
-        $listing = Listing::findOrFail($bookingData['listing_id']);
+        try {
+            return DB::transaction(function () use ($bookingData) {
+                $listing = Listing::findOrFail($bookingData['listing_id']);
 
-        $coupon = null;
-        if ($bookingData['coupon_code']) {
-            $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
+                $coupon = null;
+                if (isset($bookingData['coupon_code'])) {
+                    $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
+                }
+
+                $rooms = $this->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
+                $addons = $this->normalizeAddons($bookingData['addons']);
+                $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
+                $booking = $this->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
+
+                $this->addBookingRooms($booking, $rooms);
+                $this->addBookingAddons($booking, $addons);
+
+                //        if ($listing->is_entire_place) {
+                //            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
+                //        } else {
+                //            foreach ($rooms as $room) {
+                //                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+                //            }
+                //        }
+
+                return $booking;
+            });
+        } catch (Exception $e) {
+            \Log::error('Booking creation failed: ' . $e->getMessage(), [
+                'booking_data' => $bookingData,
+                'exception' => $e,
+            ]);
+
+            throw $e;
         }
-
-        $rooms = $this->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
-        $addons = $this->normalizeAddons($bookingData['addons']);
-        $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
-        $booking = $this->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
-
-        $this->addBookingRooms($booking, $rooms);
-        $this->addBookingAddons($booking, $addons);
-
-        if ($listing->is_entire_place) {
-            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
-        } else {
-            foreach ($rooms as $room) {
-                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
-            }
-        }
-
-        $this->sendBookingEmails($booking);
-
-        return $booking;
     }
 
-    public function createBookingInvoice(string $bookingId)
+    public function createBookingInvoice(Booking $booking, string $referenceNumber, string $paymentStatus = 'pending')
     {
-        $booking = Booking::findOrFail($bookingId);
-
         return $booking->invoice()->create([
             'user_id' => $booking->user_id,
             'coupon_id' => $booking->coupon_id,
             'coupon_discount_amount' => $booking->coupon->discount_amount ?? 0,
-            'payment_status' => 'paid',
+            'reference_number' => $referenceNumber,
+            'payment_status' => $paymentStatus,
         ]);
     }
 
@@ -206,14 +213,5 @@ class BookingCreateService
     private function getAddonAmount($addon): float
     {
         return $addon->price * $addon->quantity;
-    }
-
-    private function sendBookingEmails($booking)
-    {
-        // Send email to the host
-        Mail::to($booking->listing->user->email)->send(new BookingCompletedHost($booking));
-
-        // Send email to the user
-        Mail::to($booking->user->email)->send(new BookingCompletedUser($booking));
     }
 }

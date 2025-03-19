@@ -40,6 +40,7 @@ class UnavailableDateService
 
             if (! $existingUnavailableDate) {
                 UnavailableDate::create([
+                    'booking_id' => $booking ? $booking->id : null,
                     $type.'_id' => $id,
                     'type' => $dateType,
                     'date' => $date->format('Y-m-d'),
@@ -54,12 +55,17 @@ class UnavailableDateService
         }
     }
 
-    public function getUnavailableDatesFromRange(string $type, string $id, string $startDate, string $endDate)
+    public function getUnavailableDatesFromRange(string $type, string $id, string $startDate, string $endDate, bool $excludeUser = false)
     {
         $this->validateType($type);
 
         return UnavailableDate::where($type.'_id', $id)
             ->whereBetween('date', [$startDate, $endDate])
+            ->when($excludeUser, function ($query) {
+                return $query->whereHas('booking', function ($query) {
+                    return $query->where('user_id', '!=', auth('sanctum')->id());
+                });
+            })
             ->get();
     }
 
@@ -71,17 +77,6 @@ class UnavailableDateService
         $this->createUnavailableDatesFromRange(null, $type, $id, $startDate, $endDate, 'blocked');
     }
 
-    /**
-     * @throws Exception
-     */
-    public function addUnavailableDatesForBooking($booking, string $type, string $id, string $startDate, string $endDate): void
-    {
-        $this->createUnavailableDatesFromRange($booking, $type, $id, $startDate, $endDate, 'booked');
-    }
-
-    /**
-     * @throws Exception
-     */
     public function removeUnavailableDates(string $type, string $id, string $startDate, string $endDate): void
     {
         $this->validateType($type);
@@ -90,11 +85,45 @@ class UnavailableDateService
             ->where('type', 'blocked')
             ->whereBetween('date', [$startDate, $endDate]);
 
-        if (! $unavailableDates->exists()) {
-            throw new Exception('No dates were found to unblock.');
+        $unavailableDates->delete();
+    }
+
+    public function getUnavailableDatesForBooking($booking, bool $excludeUser = false)
+    {
+        // Get unavailable dates for entire place
+        if ($booking->listing->is_entire_place) {
+            return $this->getUnavailableDatesFromRange(
+                'listing',
+                $booking->listing->id,
+                $booking->date_start,
+                $booking->date_end,
+                $excludeUser
+            );
         }
 
-        $unavailableDates->delete();
+        // Get unavailable dates for each room
+        $unavailableDates = collect();
+        foreach ($booking->rooms as $room) {
+            $unavailableDates = $unavailableDates->merge(
+                $this->getUnavailableDatesFromRange(
+                    'room',
+                    $room->id,
+                    $booking->date_start,
+                    $booking->date_end,
+                    $excludeUser
+                )
+            );
+        }
+
+        return $unavailableDates;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function addUnavailableDatesForBooking($booking, string $type, string $id, string $startDate, string $endDate): void
+    {
+        $this->createUnavailableDatesFromRange($booking, $type, $id, $startDate, $endDate, 'booked');
     }
 
     public function removeUnavailableDatesForBooking($booking): void

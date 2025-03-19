@@ -114,7 +114,7 @@ class ProfileController extends Controller
      */
     public function updatePassword(PasswordUpdateRequest $request)
     {
-        $user = $this->profileUpdateService->updatePassword($request->validated()['new_password']);
+        $user = $this->profileUpdateService->updatePassword($request->validated('new_password'));
 
         return response()->json([
             'message' => 'Password updated successfully',
@@ -134,9 +134,9 @@ class ProfileController extends Controller
     public function updateActiveSession(UpdateActiveStatusRequest $request)
     {
         $user = auth()->user();
-        $deviceId = $request->validated()['device_id'];
-        $deviceName = $request->validated()['device_name'];
-        $active = $request->validated()['active'];
+        $deviceId = $request->validated('device_id');
+        $deviceName = $request->validated('device_name');
+        $active = $request->validated('active');
 
         // If the active status is true, create an active session
         if ($active) {

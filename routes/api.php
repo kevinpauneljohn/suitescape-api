@@ -8,8 +8,10 @@ use App\Http\Controllers\API\EarningsController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
+use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\PackageController;
 use App\Http\Controllers\API\PaymentController;
+use App\Http\Controllers\API\PayoutController;
 use App\Http\Controllers\API\ProfileController;
 use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\ReviewController;
@@ -172,6 +174,10 @@ Route::prefix('packages')->group(function () {
 });
 
 Route::prefix('messages')->group(function () {
+    Route::middleware('throttle:1000,1')->group(function () {
+        Route::get('/search', [ChatController::class, 'searchChats'])->name('chat.search');
+    });
+
     Route::get('/', [ChatController::class, 'getAllChats'])->name('chat.all');
     Route::get('/{id}', [ChatController::class, 'getAllMessages'])->name('chat.get')->whereUuid('id');
     Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
@@ -182,18 +188,36 @@ Route::prefix('earnings')->group(function () {
     Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
 });
 
+Route::middleware('paymongo.signature')->prefix('paymongo')->group(function () {
+    Route::post('/link-paid', [PaymentController::class, 'linkPaymentPaid'])->name('paymongo.link-paid');
+    Route::post('/source-chargeable', [PaymentController::class, 'sourceChargeable'])->name('paymongo.source-chargeable');
+});
+
 Route::prefix('customer')->group(function () {
-    Route::get('/', [PaymentController::class, 'getCustomer'])->name('payments.customer');
-    Route::post('/delete', [PaymentController::class, 'deleteCustomer'])->name('payments.customer.delete');
+    Route::get('/', [PaymentController::class, 'getCustomer'])->name('payment.customer');
+    Route::delete('/', [PaymentController::class, 'deleteCustomer'])->name('payment.customer.delete');
 });
 
-Route::prefix('payments')->group(function () {
-    Route::get('/', [PaymentController::class, 'getPaymentMethods'])->name('payments.methods');
-    Route::post('/', [PaymentController::class, 'createPayment'])->name('payments.create');
-    Route::post('/{id}/capture', [PaymentController::class, 'capturePayment'])->name('payments.capture')->whereUuid('id');
+Route::prefix('payment')->group(function () {
+    Route::get('/link/{id}', [PaymentController::class, 'getPaymentLink'])->name('payment.link');
+    Route::get('/source/{id}', [PaymentController::class, 'getPaymentSource'])->name('payment.source');
+    Route::get('/intent/{id}', [PaymentController::class, 'getPaymentIntent'])->name('payment.intent');
+    Route::get('/methods', [PaymentController::class, 'getPaymentMethods'])->name('payment.methods');
+    Route::get('/success', [PaymentController::class, 'paymentSuccessStatus'])->name('payment.success-status');
+    Route::get('/failed', [PaymentController::class, 'paymentFailedStatus'])->name('payment.failed-status');
+    Route::post('/', [PaymentController::class, 'createPayment'])->name('payment.create');
+    Route::post('/link', [PaymentController::class, 'createPaymentLink'])->name('payment.link.create');
+    Route::post('/source', [PaymentController::class, 'createPaymentSource'])->name('payment.source');
 });
 
-Route::prefix('payouts')->group(function () {
-    Route::get('/', [PaymentController::class, 'getPayoutMethods'])->name('payouts.methods');
-    Route::post('/', [PaymentController::class, 'addPayoutMethod'])->name('payouts.add');
+Route::prefix('payout')->group(function () {
+    Route::get('/methods', [PayoutController::class, 'getPayoutMethods'])->name('payout.methods');
+    Route::post('/', [PayoutController::class, 'addPayoutMethod'])->name('payout.add');
+    Route::post('/{id}', [PayoutController::class, 'updatePayoutMethod'])->name('payout.update')->whereUuid('id');
+    Route::delete('/{id}', [PayoutController::class, 'deletePayoutMethod'])->name('payout.delete')->whereUuid('id');
+});
+
+Route::prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'getUserNotifications'])->name('notifications.user');
+    Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read')->whereUuid('id');
 });

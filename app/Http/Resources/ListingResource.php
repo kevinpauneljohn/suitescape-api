@@ -64,6 +64,7 @@ class ListingResource extends JsonResource
                 'is_liked' => $this->isLikedBy($user),
                 'is_saved' => $this->isSavedBy($user),
                 'is_viewed' => $this->isViewedBy($user),
+                'is_user_host' => $this->user_id === $user->id,
             ]),
         ];
     }

@@ -18,6 +18,7 @@ class ChatRead implements ShouldBroadcast
 
     public Chat $chat;
     public User $user;
+
     /**
      * Create a new event instance.
      */

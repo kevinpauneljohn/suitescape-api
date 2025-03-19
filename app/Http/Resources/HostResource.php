@@ -21,6 +21,8 @@ class HostResource extends JsonResource
             'listings_likes_count' => $this->whenCounted('listingsLikes'),
             'listings_reviews_count' => $this->whenCounted('listingsReviews'),
             'listings_avg_rating' => $this->whenAggregated('listingsReviews', 'rating', 'avg', fn ($value) => round($value, 1)),
+            'average_response_time' => $this->average_response_time,
+            'overall_response_rate' => $this->overall_response_rate,
         ];
 
         return array_merge((new UserResource($this))->resolve(), $hostMetrics);

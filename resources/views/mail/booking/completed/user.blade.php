@@ -12,32 +12,30 @@ Your booking for "{{ $booking->listing->name }}" has been confirmed!
 - Total price: ₱{{ number_format($booking->amount, 2) }}
 
 @if(!$booking->listing->is_entire_place)
-    ## Booked Rooms:
-    @foreach($booking->bookingRooms as $bookingRoom)
-        - {{ $bookingRoom->room->roomCategory->name }}
-            - Quantity: {{ $bookingRoom->quantity }}
-            - Capacity: {{ $bookingRoom->room->roomCategory->pax }} pax
-            - Bed types:
-            @foreach($bookingRoom->room->roomCategory->type_of_beds as $bedType => $count)
-                • {{ ucfirst($bedType) }}: {{ $count }}
-            @endforeach
-            - Floor area: {{ $bookingRoom->room->roomCategory->floor_area }} sqm
-    @endforeach
+## Booked Rooms:
+@foreach($booking->bookingRooms as $bookingRoom)
+- {{ $bookingRoom->room->roomCategory->name }}
+- Quantity: {{ $bookingRoom->quantity }}
+- Capacity: {{ $bookingRoom->room->roomCategory->pax }} pax
+- Bed types:
+@foreach($bookingRoom->room->roomCategory->type_of_beds as $bedType => $count)
+    - {{ ucfirst($bedType) }}: {{ $count }}
+@endforeach
+- Floor area: {{ $bookingRoom->room->roomCategory->floor_area }} sqm
+@endforeach
 @endif
 
 ## Property Details:
 - Type: {{ ucfirst($booking->listing->facility_type) }}
 - Location: {{ $booking->listing->location }}
 @if($booking->listing->parking_lot)
-    - Parking available
+- Parking available
 @endif
 @if($booking->listing->is_pet_allowed)
-    - Pets allowed
+- Pets allowed
 @endif
 
 ---
-
-<br>If you need to contact the host, you can reach them at {{ $booking->listing->user->email }}.
 
 We hope you enjoy your stay!
 

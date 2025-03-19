@@ -8,6 +8,7 @@ use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
 use App\Services\MediaUploadService;
+use App\Services\NotificationService;
 use App\Services\VideoApprovalService;
 use App\Services\VideoRetrievalService;
 use Exception;
@@ -21,13 +22,16 @@ class VideoController extends Controller
 
     private MediaUploadService $mediaUploadService;
 
-    public function __construct(VideoRetrievalService $videoRetrievalService, VideoApprovalService $videoApprovalService, MediaUploadService $mediaUploadService)
+    private NotificationService $notificationService;
+
+    public function __construct(VideoRetrievalService $videoRetrievalService, VideoApprovalService $videoApprovalService, MediaUploadService $mediaUploadService, NotificationService $notificationService)
     {
         $this->middleware('auth:sanctum')->only(['uploadVideo']);
 
         $this->videoRetrievalService = $videoRetrievalService;
         $this->videoApprovalService = $videoApprovalService;
         $this->mediaUploadService = $mediaUploadService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -109,15 +113,24 @@ class VideoController extends Controller
      */
     public function approveVideo(string $id)
     {
-        $result = $this->videoApprovalService->approveVideo($id);
+        $video = Video::findOrFail($id);
+        $result = $this->videoApprovalService->approveVideo($video);
 
         if (! $result) {
             throw new Exception('Failed to approve video.');
         }
 
+        $this->notificationService->createNotification([
+            'user_id' => $video->listing->user_id,
+            'title' => 'Video Approved',
+            'message' => "Your video for the listing \"{$video->listing->name}\" has been approved.",
+            'type' => 'listing',
+            'action_id' => $video->listing->id,
+        ]);
+
         return response()->json([
-            'approved' => true,
             'message' => 'Video approved successfully',
+            'is_approved' => true,
         ]);
     }
 }

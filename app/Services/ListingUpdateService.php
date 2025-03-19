@@ -30,7 +30,7 @@ class ListingUpdateService
     public function updateListing(string $listingId, array $listingData): Listing
     {
         // Add the authenticated user's ID to the listing data
-        $listingData['user_id'] = auth('sanctum')->user()->id;
+        $listingData['user_id'] = auth()->user()->id;
 
         // Find the existing listing and update it
         $listing = Listing::updateOrCreate(['id' => $listingId], $listingData);
@@ -97,9 +97,6 @@ class ListingUpdateService
         return $listing;
     }
 
-    /**
-     * @throws Exception
-     */
     public function unblockDates(string $listingId, array $dates)
     {
         $listing = Listing::findOrFail($listingId);

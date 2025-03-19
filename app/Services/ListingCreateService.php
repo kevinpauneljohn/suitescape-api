@@ -29,7 +29,7 @@ class ListingCreateService
     public function createListing(array $listingData)
     {
         // Add the authenticated user's ID to the listing data
-        $listingData['user_id'] = auth('sanctum')->id();
+        $listingData['user_id'] = auth()->id();
 
         // Create a new listing
         $listing = Listing::create($listingData);
@@ -83,10 +83,10 @@ class ListingCreateService
 
         // Upload as temp video for transcoding
         $directory = 'listings/'.$listingId.'/videos';
-        $tempData = $this->mediaUploadService->upload($file, $directory, true);
+        $tempData = $this->mediaUploadService->upload($file, $directory, true, true);
 
         $video = $listing->videos()->create([
-            'filename' => $tempData['filename'],
+            'filename' => $tempData['filename'].'.'.$file->extension(), // Add the original extension back for reference
             'privacy' => $videoData['privacy'],
         ]);
 

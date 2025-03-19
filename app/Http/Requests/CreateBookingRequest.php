@@ -20,8 +20,8 @@ class CreateBookingRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'rooms' => json_decode($this->rooms, true),
-            'addons' => json_decode($this->addons, true),
+            'rooms' => is_string($this->rooms) ? json_decode($this->rooms, true) : ($this->rooms ?? []),
+            'addons' => is_string($this->addons) ? json_decode($this->addons, true) : ($this->addons ?? []),
         ]);
     }
 
