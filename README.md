@@ -1,67 +1,98 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Suitescape PH (API)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Suitescape Presentation](https://github.com/user-attachments/assets/c991c17c-51c9-4a19-a837-074c22781810)
 
-## About Laravel
+## Introduction
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+SuitescapePH is the first Filipino video-first mobile booking platform that transforms how users discover and book staycations, villas, and unique getaways across the Philippines. Inspired by the TikTok experience, it features an immersive short-form video feed with chapter-based navigation, allowing users to quickly jump to highlights within each listing. It features a seamless in-app chat system for guest-host communication, secure payment integration, a dedicated host dashboard, user authentication with password recovery, and a smooth booking experience. SuitescapePH redefines travel discovery by blending social-style content with powerful booking functionality—all in one mobile-first platform.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## **Clone github repository**
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```
+git clone https://github.com/kevinpauneljohn/suitescape-api.git
+```
 
-## Learning Laravel
+## Requirements
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP:
+    - [XAMPP](https://www.apachefriends.org) or [Laragon](https://laragon.org) (for Windows)
+    - [Homebrew](https://brew.sh) and the [PHP Formulate](https://formulae.brew.sh/formula/php) (for Mac)
+- [Composer](https://getcomposer.org)
+- [Zrok](https://zrok.io) (Optional, free and open-source alternative for ngrok)
+- [Laravel Valet](https://laravel.com/docs/10.x/valet) (Optional for Mac only, allows serving the project in the background and on LAN)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Setup
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Create a database in your preferred database software ([HeidiSQL](https://www.heidisql.com) for Windows, [Sequel Ace](https://sequel-ace.com) for Mac, or [TablePlus](https://tableplus.com) available for both). You can also use the CLI to create a database, open CMD or Terminal then type the commands below:
+    
+    ```
+    mysql -h localhost
+    CREATE DATABASE suitescape_api;
+    SHOW DATABASES;
+    exit;
+    ```
+    
+2. Open the project, then copy the `.env.example` into `.env`. Then modify the following variables to setup the database:
+    
+    ```
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=suitescape_api [MODIFY DATABASE NAME, IF DIFFERENT]
+    DB_USERNAME=root [MODIFY USERNAME, IF DIFFERENT]
+    DB_PASSWORD=[ADD PASSWORD, IF ANY]
+    ```
+    
+3. Setup **Gmail SMTP** for sending email notifications with [Laravel Mail](https://laravel.com/docs/10.x/mail). Use this [tutorial](https://itsupport.umd.edu/itsupport?id=kb_article_view&sysparm_article=KB0015112) to get the app password. After getting the password modify the env file:
+    
+    ```
+    MAIL_MAILER=smtp
+    MAIL_HOST=smtp.gmail.com
+    MAIL_PORT=465
+    MAIL_USERNAME=example@gmail.com [USE YOUR GMAIL HERE]
+    MAIL_PASSWORD="usqk mhnp eqpu mzsa" [ENTER APP PASSWORD HERE]
+    MAIL_ENCRYPTION=tls
+    MAIL_FROM_ADDRESS="example@gmail.com" [USE YOUR GMAIL HERE]
+    MAIL_FROM_NAME="${APP_NAME}"
+    ```
+    
+4. Setup **Pusher** for broadcasting features. Visit the [Pusher](https://pusher.com) website and follow the official instructions. If you have a key already visit the [App Keys](https://dashboard.pusher.com/apps/1831461/keys) tab in the dashboard. After setting up, make sure you modify the env file as well:
+    
+    ```
+    PUSHER_APP_ID=1234567 [ENTER APP ID HERE]
+    PUSHER_APP_KEY="1231231234abcabcabca" [ENTER APP KEY HERE]
+    PUSHER_APP_SECRET="1234567891abcabcabca" [ENTER APP SECRET HERE]
+    PUSHER_HOST=
+    PUSHER_PORT=443
+    PUSHER_SCHEME=https
+    PUSHER_APP_CLUSTER=ap1 [ENTER APP CLUSTER HERE]
+    ```
+    
+5. Setup **Laravel Paymongo** for payment gateway capability. Check the [official documentation](https://paymongo.rigelkentcarbonel.com) to know more about the details. Make sure to modify the env file as well:
+    
+    ```
+    PAYMONGO_SECRET_KEY=sk_test_abcdefghijklmnopqrstuvwxyz
+    PAYMONGO_PUBLIC_KEY=pk_test_abcdefghijklmnopqrstuvwxyz
+    PAYMONGO_WEBHOOK_SIG=whsk_abcdefghijklmnopqrstuvwxyz
+    ```
+    
+## Install
 
-## Laravel Sponsors
+1. `composer update`
+2. `php artisan key:generate`
+3. `php artisan migrate:fresh —seed`
+4. `php artisan storage:link`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+## Run the server
 
-### Premium Partners
+- php artisan serve
+    - Add `--host`  and `--port` to allow mobile devices to access the served IP address locally (e.g. `php artisan serve --host=192.168.1.12 --port=80` then use `http://192.168.1.12/api` in the mobile app)
+    - The **host** IP address can be retrieved through the `ipconfig` command.
+    - The **port** can be any number as long as it is not being used by other programs. (You can check through `netstat -na` command.)
+- If you’re using **Laragon**, you can also use [pretty URLs](https://laragon.org/docs/pretty-urls) to create a readable url for your project that can be reused, even in the background.
+- If you’re using **Laravel Valet**, you can serve sites through [parking directories](https://laravel.com/docs/11.x/valet#the-park-command) or [linking sites](https://laravel.com/docs/11.x/valet#the-link-command), which will also have a readable url for your projects that also works in the background.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+## API Documentation
 
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# suitescape-api
+- Visit `/docs/api` route in the api to visit the documentation of each routes.
+- For more details: [https://scramble.dedoc.co](https://scramble.dedoc.co/)
