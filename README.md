@@ -85,7 +85,7 @@ git clone https://github.com/kevinpauneljohn/suitescape-api.git
 
 ## Run the server
 
-- php artisan serve
+- `php artisan serve`
     - Add `--host`  and `--port` to allow mobile devices to access the served IP address locally (e.g. `php artisan serve --host=192.168.1.12 --port=80` then use `http://192.168.1.12/api` in the mobile app)
     - The **host** IP address can be retrieved through the `ipconfig` command.
     - The **port** can be any number as long as it is not being used by other programs. (You can check through `netstat -na` command.)
