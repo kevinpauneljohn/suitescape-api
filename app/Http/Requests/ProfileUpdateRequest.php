@@ -54,7 +54,7 @@ class ProfileUpdateRequest extends RegisterUserRequest
             'address' => ['required', 'string'],
             'zipcode' => ['nullable', 'string', 'regex:/^\d{4,5}$/'],
             'city' => ['required', 'string'],
-            'state' => ['required', 'string'],
+            'state' => ['nullable', 'string'],
             'region' => ['required', 'string'],
             'date_of_birth' => ['sometimes', 'date', 'before:18 years ago'],
             'profile_image' => ['nullable', 'image'],
