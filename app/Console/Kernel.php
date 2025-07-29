@@ -19,6 +19,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:clean-up-bookings')->daily();
         $schedule->command('sanctum:prune-expired --hours=24')->daily();
         $schedule->command('auth:clear-resets')->everyFifteenMinutes();
+        $schedule->command('app:cancel-expired-bookings')->everyFiveMinutes();
     }
 
     /**

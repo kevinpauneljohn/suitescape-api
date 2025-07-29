@@ -142,9 +142,8 @@ class PaymentService
             if (isset($invoice['error'])) {
                 return response($invoice['error'], 200);
             }
-
             // Create payment using the source
-            $this->createSourcePayment($type, $amount, $sourceId);
+            $createSourcePayment = $this->createSourcePayment($type, $amount, $sourceId);
 
             // Update the invoice payment status
             $invoice->update([
@@ -311,25 +310,71 @@ class PaymentService
 
     private function createSourcePayment(string $type, int $amount, string $sourceId)
     {
-        return Paymongo::payment()->create([
+        // return Paymongo::payment()->create([
+        //     'amount' => $amount,
+        //     'source' => [
+        //         'id' => $sourceId,
+        //         'type' => 'source',
+        //     ],
+        //     'currency' => 'PHP',
+        //     'description' => "Payment for $type",
+        // ]);
+        // $payload = [
+        //     'data' => [
+        //         'attributes' => [
+        //             'amount' => $amount,
+        //             'currency' => 'PHP',
+        //             'description' => "Payment for $type",
+        //             'source' => [
+        //                 'id' => $sourceId,
+        //                 'type' => 'source',
+        //             ],
+        //         ]
+        //     ]
+        // ];
+
+        // \Log::info('Sending to PayMongo payment()', $payload);
+
+        // return Paymongo::payment()->create($payload);
+        // $payment = Paymongo::payment()
+        //     ->create([
+        //         'amount' => 747078,
+        //         'currency' => 'PHP',
+        //         'description' => 'Testing payment',
+        //         'statement_descriptor' => 'Test Paymongo api',
+        //         'source' => [
+        //             'id' => $sourceId,
+        //             'type' => 'source'
+        //         ]
+        //     ]);
+        $payment = Paymongo::payment()
+            ->create([
+                'amount' => 100.00,
+                'currency' => 'PHP',
+                'description' => 'Testing payment',
+                'statement_descriptor' => 'Test Paymongo',
+                'source' => [
+                    'id' => $sourceId,
+                    'type' => 'source'
+                ]
+            ]);
+        
+        \Log::info('Payment created', [
             'amount' => $amount,
-            'source' => [
-                'id' => $sourceId,
-                'type' => 'source',
-            ],
-            'currency' => 'PHP',
-            'description' => "Payment for $type",
+            'source_id' => $sourceId,
+            'payment' => $payment->getData(),
         ]);
+        return $payment;
     }
 
-    private function createPaymentIntent(float $amount, string $description)
+    public function createPaymentIntent(float $amount, string $description)
     {
         //        $user = auth()->user();
         //        $customer = $this->getCustomer($user);
 
         return Paymongo::paymentIntent()->create([
             'amount' => $amount,
-            'payment_method_allowed' => ['card', 'gcash', 'paymaya'],
+            'payment_method_allowed' => ['card', 'gcash', 'grab_pay', 'paymaya'],
             'payment_method_options' => [
                 'card' => [
                     'request_three_d_secure' => 'automatic',
@@ -409,5 +454,33 @@ class PaymentService
                 'paid_additional_payments' => $paidAdditionalPayments->push($currentPendingPayment)->toArray(),
             ]);
         }
+    }
+
+
+    //for testing
+    public function createGcashSource(array $data)
+    {
+        return Paymongo::source()->create([
+            'type' => 'gcash',
+            'amount' => $data['amount'],           // amount in centavos
+            'currency' => 'PHP',
+            'redirect' => [
+                'success' => $data['redirect_success'],
+                'failed' => $data['redirect_failed'],
+            ],
+            'billing' => [
+                'name' => $data['billing']['name'],
+                'email' => $data['billing']['email'],
+                'phone' => $data['billing']['phone'],
+                'address' => [
+                    'line1' => $data['billing_address']['line1'],
+                    'line2' => $data['billing_address']['line2'] ?? '',
+                    'city' => $data['billing_address']['city'],
+                    'state' => $data['billing_address']['state'],
+                    'postal_code' => $data['billing_address']['postal_code'],
+                    'country' => $data['billing_address']['country'],
+                ],
+            ],
+        ]);
     }
 }

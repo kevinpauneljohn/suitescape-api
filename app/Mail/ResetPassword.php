@@ -38,8 +38,11 @@ class ResetPassword extends Mailable
      */
     public function content(): Content
     {
+        // return new Content(
+        //     markdown: 'mail.reset-password',
+        // );
         return new Content(
-            markdown: 'mail.reset-password',
+            view: 'mail.reset-password', // NOT markdown
         );
     }
 
