@@ -58,15 +58,23 @@ class ChatController extends Controller
     public function getAllMessages(string $receiverId)
     {
         $userId = auth()->id();
+        $cursor = request('cursor');
+
         $chat = $this->chatService->getChat($userId, $receiverId);
 
         if (! $chat) {
-            return new JsonResource([]);
+            return response()->json([
+                'data' => [],
+                'next_cursor' => null,
+            ]);
         }
 
         $this->chatService->markMessagesAsRead($chat->id, $userId);
-
-        return MessageResource::collection($this->chatService->getMessages($userId, $receiverId));
+        $messages = $this->chatService->getMessages($userId, $receiverId, $cursor);
+        return response()->json([
+            'data' => MessageResource::collection($messages),
+            'next_cursor' => $messages->nextCursor()?->encode(),
+        ]);
     }
 
     /**

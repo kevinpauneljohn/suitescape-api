@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class CreatePaymentRequest extends FormRequest
 {
@@ -28,7 +30,7 @@ class CreatePaymentRequest extends FormRequest
             'payment_method_type' => [
                 'required',
                 'string',
-                'in:card,gcash,paymaya',
+                'in:card,gcash,grab_pay,paymaya',
             ],
 
             // Payment Method Details
@@ -70,5 +72,20 @@ class CreatePaymentRequest extends FormRequest
             'billing_address.postal_code' => ['sometimes', 'string'],
             'billing_address.country' => ['sometimes', 'string'],
         ];
+    }
+
+    /**
+     * Handle a failed validation attempt.
+     *
+     * @param \Illuminate\Contracts\Validation\Validator $validator
+     * @throws \Illuminate\Http\Exceptions\HttpResponseException
+     */
+    protected function failedValidation(Validator $validator): void 
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => 'Validation failed',
+            'errors' => $validator->errors(),
+            'status' => 'error',
+        ], 422));
     }
 }

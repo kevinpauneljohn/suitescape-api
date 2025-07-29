@@ -23,7 +23,7 @@ class CreatePaymentSourceRequest extends FormRequest
     {
         return [
             'booking_id' => ['required', 'uuid'],
-            'type' => ['required', 'string', 'in:gcash,grab_pay'],
+            'type' => ['required', 'string', 'in:gcash,grab_pay,paymaya'],
             'amount' => ['required', 'numeric'],
         ];
     }
