@@ -17,6 +17,7 @@ use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\RoomController;
 use App\Http\Controllers\API\VideoController;
+use App\Http\Controllers\API\PaymongoWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -176,9 +177,11 @@ Route::prefix('packages')->group(function () {
 Route::prefix('messages')->group(function () {
     Route::middleware('throttle:1000,1')->group(function () {
         Route::get('/search', [ChatController::class, 'searchChats'])->name('chat.search');
+        Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+        Route::get('/', [ChatController::class, 'getAllChats'])->name('chat.all');
     });
 
-    Route::get('/', [ChatController::class, 'getAllChats'])->name('chat.all');
+    
     Route::get('/{id}', [ChatController::class, 'getAllMessages'])->name('chat.get')->whereUuid('id');
     Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.send');
 });
@@ -188,7 +191,8 @@ Route::prefix('earnings')->group(function () {
     Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
 });
 
-Route::middleware('paymongo.signature')->prefix('paymongo')->group(function () {
+// Route::middleware('paymongo.signature')->prefix('paymongo')->group(function () {
+Route::prefix('paymongo')->group(function () {
     Route::post('/link-paid', [PaymentController::class, 'linkPaymentPaid'])->name('paymongo.link-paid');
     Route::post('/source-chargeable', [PaymentController::class, 'sourceChargeable'])->name('paymongo.source-chargeable');
 });
@@ -207,7 +211,10 @@ Route::prefix('payment')->group(function () {
     Route::get('/failed', [PaymentController::class, 'paymentFailedStatus'])->name('payment.failed-status');
     Route::post('/', [PaymentController::class, 'createPayment'])->name('payment.create');
     Route::post('/link', [PaymentController::class, 'createPaymentLink'])->name('payment.link.create');
-    Route::post('/source', [PaymentController::class, 'createPaymentSource'])->name('payment.source');
+    // Route::post('/source', [PaymentController::class, 'createPaymentSource'])->name('payment.source');
+
+    //for testing only
+    Route::post('/pay/gcash', [PaymentController::class, 'payWithGcash']);
 });
 
 Route::prefix('payout')->group(function () {
@@ -220,4 +227,16 @@ Route::prefix('payout')->group(function () {
 Route::prefix('notifications')->group(function () {
     Route::get('/', [NotificationController::class, 'getUserNotifications'])->name('notifications.user');
     Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read')->whereUuid('id');
+});
+
+Route::prefix('booking_payments')->group(function () {
+    Route::post('/', [PaymentController::class, 'cardPayment'])->name('booking.payments.card.payment');
+    Route::post('/epayment', [PaymentController::class, 'ePayment'])->name('booking.payments.e-payment');
+    Route::post('/epayment-chargeable', [PaymentController::class, 'ePaymentChargeable'])->name('booking.payments.e-payment-chargeable');
+    Route::get('/source/{id}', [PaymentController::class, 'getBookingPaymentSource'])->name('booking.payment.source');
+});
+
+//paymentStatusCheck webhook
+Route::prefix('webhook')->group(function () {
+    Route::post('/paymongo/payment-status-check', [PaymongoWebhookController::class, 'ePaymentStatusCheck'])->name('webhook.paymongo.payment-status-check');
 });

@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Throwable;
+use App\Services\BookingPaymentService;
 
 class BookingController extends Controller
 {
@@ -32,14 +33,22 @@ class BookingController extends Controller
 
     private MailService $mailService;
 
-    public function __construct(BookingRetrievalService $bookingRetrievalService, BookingCreateService $bookingCreateService, BookingUpdateService $bookingUpdateService, MailService $mailService)
-    {
+    private BookingPaymentService $bookingPaymentService;
+
+    public function __construct(
+        BookingRetrievalService $bookingRetrievalService, 
+        BookingCreateService $bookingCreateService, 
+        BookingUpdateService $bookingUpdateService, 
+        MailService $mailService,
+        BookingPaymentService $bookingPaymentService
+    ){
         $this->middleware('auth:sanctum');
 
         $this->bookingRetrievalService = $bookingRetrievalService;
         $this->bookingCreateService = $bookingCreateService;
         $this->bookingUpdateService = $bookingUpdateService;
         $this->mailService = $mailService;
+        $this->bookingPaymentService = $bookingPaymentService;
     }
 
     /**
@@ -145,14 +154,56 @@ class BookingController extends Controller
      */
     public function createBooking(CreateBookingRequest $request)
     {
-        $booking = $this->bookingCreateService->createBooking($request->validated());
+        $paymentType = $request->payment_type;
+        $paymentMethod = $request->payment_method;
+        $totalAmount = $request->amount;
+        $cardNumber = $request->card_number;
+        $expMonth = $request->exp_month;
+        $expYear = $request->exp_year;
+        $cvc = $request->cvc;
+        $gcashNumber = $request->gcash_number;
+        $billingDetails = $request->billing_details;
+        $billingAddress = $request->billing_address;
+        $convertedAmount = (int) ($totalAmount * 100);
 
-        $this->mailService->sendBookingCompletedEmails($booking);
+        $paymentData = [
+            'payment_type' => $paymentType,
+            'payment_method' => $paymentMethod,
+            'amount' => $totalAmount,
+            'card_number' => $cardNumber,
+            'exp_month' => $expMonth,
+            'exp_year' => $expYear,
+            'cvc' => $cvc,
+            'gcash_number' => $gcashNumber,
+            'billing_details' => $billingDetails,
+            'billing_address' => $billingAddress,
+        ];
 
-        return response()->json([
-            'message' => 'Booking created successfully',
-            'booking' => new BookingResource($booking),
-        ]);
+        $createBooking = $this->bookingCreateService->createBooking($request->validated(), $paymentData);
+        $bookingStatus = $createBooking['status'];
+        if ($createBooking['status'] === 'success') {
+            $bookingData = $createBooking['booking'];
+            $bookingData->message = $createBooking['message'] ?? null;
+            $bookingData->booking_status = $createBooking['booking_status'] ?? null;
+            $bookingData->status = $createBooking['status'] ?? 'success';
+            $bookingData->code = $createBooking['code'] ?? 200;
+            $bookingData->checkout_url = isset($createBooking['data']['attributes']['redirect']['checkout_url']) ? $createBooking['data']['attributes']['redirect']['checkout_url'] : null;
+            $bookingData->payment_source_epayment = isset($createBooking['data']['id']) ? $createBooking['data']['id'] : null;
+            $bookingData->payment_type_params = isset($createBooking['data']['attributes']['type']) ? $createBooking['data']['attributes']['type'] : null;
+
+            if ($paymentData['payment_type'] === 'credit/debit_card') {
+                $this->mailService->sendBookingCompletedEmails($bookingData);
+            }
+            
+            return $bookingData;
+        } else {
+            $this->logError('Booking Creation Failed', $bookingStatus, $createBooking['message'], $createBooking['code'] ?? 500, $request->all());
+            return response()->json([
+                'status' => 'error',
+                'message' => $createBooking['message'],
+                'code' => $booking['code'] ?? 500,
+            ], $createBooking['code'] ?? 500);
+        }
     }
 
     /**
@@ -265,5 +316,14 @@ class BookingController extends Controller
             'booking' => new BookingResource($booking),
             'is_updated' => true,
         ]);
+    }
+
+    private function logError(string $title, string $status, $message, int $code, array $context = [])
+    {
+        \Log::error($title, array_merge([
+            'status' => $status,
+            'message' => $message,
+            'code' => $code,
+        ], $context));
     }
 }

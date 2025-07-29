@@ -91,3 +91,13 @@ Route::prefix('/clear')->group(function () {
         return 'All cleared!';
     })->name('clear-all');
 });
+
+Route::get('/payment/success', function (\Illuminate\Http\Request $request) {
+    $bookingId = $request->get('booking_id');
+    return redirect()->away("suitescape://payment-success?booking_id={$bookingId}");
+})->name('payment.success');
+
+Route::get('/payment/failed', function (\Illuminate\Http\Request $request) {
+    $bookingId = $request->get('booking_id');
+    return redirect()->away("suitescape://payment-failed?booking_id={$bookingId}");
+})->name('payment.failed');
