@@ -2,71 +2,167 @@
 
 namespace App\Services;
 
-use App\Models\Addon;
 use App\Models\Booking;
 use App\Models\Coupon;
 use App\Models\Listing;
-use App\Models\Room;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Throwable;
+use App\Services\ConstantService;
+use App\Services\BookingPaymentProcessService;
 
 class BookingCreateService
 {
     protected ConstantService $constantService;
 
-    protected UnavailableDateService $unavailableDateService;
+    protected BookingPaymentProcessService $bookingPaymentProcessService;
 
-    public function __construct(ConstantService $constantService, UnavailableDateService $unavailableDateService)
-    {
+    public function __construct(
+        ConstantService $constantService, 
+        BookingPaymentProcessService $bookingPaymentProcessService
+    ){
         $this->constantService = $constantService;
-        $this->unavailableDateService = $unavailableDateService;
+        $this->bookingPaymentProcessService = $bookingPaymentProcessService;
     }
 
-    /**
-     * @throws Exception|Throwable
-     */
-    public function createBooking(array $bookingData)
+    public function createBooking(array $bookingData, array $paymentData = [])
     {
+        DB::beginTransaction();
         try {
-            return DB::transaction(function () use ($bookingData) {
-                $listing = Listing::findOrFail($bookingData['listing_id']);
+            $listing = Listing::findOrFail($bookingData['listing_id']);
 
-                $coupon = null;
-                if (isset($bookingData['coupon_code'])) {
-                    $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
+            $coupon = null;
+            if (isset($bookingData['coupon_code'])) {
+                $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
+            }
+
+            $rooms = $this->bookingPaymentProcessService->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
+            $addons = $this->bookingPaymentProcessService->normalizeAddons($bookingData['addons']);
+            $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
+            $booking = $this->bookingPaymentProcessService->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
+            if ($booking) {
+                $bookingId = $booking->id;
+                $this->bookingPaymentProcessService->addBookingRooms($booking, $rooms);
+                $this->bookingPaymentProcessService->addBookingAddons($booking, $addons);
+
+                if (isset($paymentData['payment_type'])) {
+                    if ($paymentData['payment_type'] === 'credit/debit_card') {
+                        $createBookingPayment = $this->bookingPaymentProcessService->createBookingPayment($paymentData, $bookingId);
+                        if ($createBookingPayment['status'] === 'error') {
+                            DB::rollBack();
+                            return [
+                                'status' => 'error',
+                                'message' => $createBookingPayment['message'],
+                                'code' => $createBookingPayment['code'],
+                            ];
+                        }
+
+                        if (isset($createBookingPayment['data'])) {
+                            $status = $createBookingPayment['data']['data']['data']['attributes']['status'] ?? 'pending';
+                            if ($status === 'succeeded') {
+                                $paymentStatus = 'paid';
+                            } else {
+                                $paymentStatus = 'pending';
+                            }
+
+                            $paymentIntentId = $createBookingPayment['data']['data']['data']['id'] ?? null;
+                            $createInvoice = $this->bookingPaymentProcessService->createBookingInvoice($booking, $paymentIntentId, $paymentStatus);
+                            if (!$createInvoice) {
+                                DB::rollBack();
+                                return [
+                                    'status' => 'error',
+                                    'message' => 'Failed to create booking invoice',
+                                    'code' => 500,
+                                ];
+                            }
+
+                            $paymentMethodValue = $this->bookingPaymentProcessService->convertPaymentMethodValue($paymentData['payment_method']);
+                            $updateBookingPaymentData = $this->bookingPaymentProcessService->updateBookingPaymentData(
+                                $paymentIntentId, $paymentMethodValue, $paymentStatus
+                            );
+
+                            if ($updateBookingPaymentData['status'] === 'error') {
+                                DB::rollBack();
+                                return [
+                                    'status' => 'error',
+                                    'message' => $updateBookingPaymentData['message'],
+                                    'code' => $updateBookingPaymentData['code'],
+                                ];
+                            }
+
+                            $getBookingStatus = $this->bookingPaymentProcessService->getBookingStatus($paymentIntentId);
+                            $bookingStatus = null;
+                            $paymentMethod = null;
+                            if ($getBookingStatus['status'] === 'success') {
+                                $bookingStatus = $getBookingStatus['booking_status'];
+                                $paymentMethod = $getBookingStatus['payment_method'];
+                            } else {
+                                DB::rollBack();
+                                return [
+                                    'status' => 'error',
+                                    'message' => $getBookingStatus['message'],
+                                    'code' => $getBookingStatus['code'],
+                                ];
+                            }
+
+                            DB::commit();
+                            return [
+                                'status' => 'success',
+                                'message' => 'Booking created successfully',
+                                'booking' => $booking,
+                                'booking_id' => $booking->id,
+                                'booking_status' => $bookingStatus,
+                                'payment_method' => $paymentMethod,
+                                'code' => 200,
+                            ];
+                        }
+                    } elseif ($paymentData['payment_type'] === 'gcash') {
+                        $createBookingPayment = $this->bookingPaymentProcessService->createEPayment($paymentData, $bookingId);
+                        if ($createBookingPayment['status'] === 'error') {
+                            DB::rollBack();
+                            return [
+                                'status' => 'error',
+                                'message' => $createBookingPayment['message'],
+                                'code' => $createBookingPayment['code'],
+                            ];
+                        }
+
+                        DB::commit();
+                        return [
+                            'status' => $createBookingPayment['status'],
+                            'message' => 'Booking created successfully',
+                            'booking' => $booking,
+                            'booking_id' => $booking->id,
+                            'data' => $createBookingPayment['booking_source'] ?? null,
+                            'code' => $createBookingPayment['code'],
+                        ];
+                    }
+                } else {
+                    DB::rollBack();
+                    return [
+                        'status' => 'error',
+                        'message' => 'Payment type is required',
+                        'code' => 400,
+                    ];
                 }
-
-                $rooms = $this->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
-                $addons = $this->normalizeAddons($bookingData['addons']);
-                $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
-                $booking = $this->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
-
-                $this->addBookingRooms($booking, $rooms);
-                $this->addBookingAddons($booking, $addons);
-
-                //        if ($listing->is_entire_place) {
-                //            $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $listing->id, $booking->date_start, $booking->date_end);
-                //        } else {
-                //            foreach ($rooms as $room) {
-                //                $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
-                //            }
-                //        }
-
-                return $booking;
-            });
+            } else {
+                DB::rollBack();
+                return [
+                    'status' => 'error',
+                    'message' => 'Failed to create booking',
+                    'code' => 500,
+                ];
+            }
         } catch (Exception $e) {
-            \Log::error('Booking creation failed: ' . $e->getMessage(), [
-                'booking_data' => $bookingData,
-                'exception' => $e,
-            ]);
-
-            throw $e;
+            DB::rollBack();
+            return [
+                'status' => 'error',
+                'message' => 'Failed to create booking: ' . $e->getMessage(),
+                'code' => 500,
+            ];
         }
     }
-
     public function createBookingInvoice(Booking $booking, string $referenceNumber, string $paymentStatus = 'pending')
     {
         return $booking->invoice()->create([
@@ -77,10 +173,10 @@ class BookingCreateService
             'payment_status' => $paymentStatus,
         ]);
     }
-
     public function getBookingNights(string $startDate, $endDate): int
     {
-        return Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate));
+        $nights = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate));
+        return max(1, $nights);
     }
 
     public function calculateAmount(Listing $listing, Collection $rooms, Collection $addons, ?Coupon $coupon, string $startDate, string $endDate): array
@@ -107,6 +203,7 @@ class BookingCreateService
 
         // Multiply by nights
         $nights = $this->getBookingNights($startDate, $endDate);
+
         $amount *= $nights;
 
         // Apply coupon discount
@@ -125,84 +222,6 @@ class BookingCreateService
             'total' => $amount,
             'base' => $base,
         ];
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function normalizeRooms(array $roomsData, bool $isEntirePlace): Collection
-    {
-        // Get rooms by ids
-        $roomIds = array_keys($roomsData);
-        $rooms = Room::whereIn('id', $roomIds)->with('roomCategory')->get();
-
-        // Set room data for each room model
-        foreach ($rooms as $room) {
-            foreach ($roomsData[$room->id] as $key => $value) {
-                $room->$key = $value;
-            }
-        }
-
-        if (! $isEntirePlace && $rooms->isEmpty()) {
-            throw new Exception('No rooms found.');
-        }
-
-        return $rooms;
-    }
-
-    private function normalizeAddons(array $addonsData): Collection
-    {
-        // Get addons by ids
-        $addonIds = array_keys($addonsData);
-        $addons = Addon::whereIn('id', $addonIds)->get();
-
-        // Set addon data for each addon model
-        foreach ($addons as $addon) {
-            foreach ($addonsData[$addon->id] as $key => $value) {
-                $addon->$key = $value;
-            }
-        }
-
-        return $addons;
-    }
-
-    private function createBookingRecord(string $listingId, array $amount, ?string $message, string $startDate, string $endDate, ?string $couponId)
-    {
-        $user = auth()->user();
-
-        return $user->bookings()->create([
-            'listing_id' => $listingId,
-            'coupon_id' => $couponId,
-            'amount' => $amount['total'],
-            'base_amount' => $amount['base'],
-            'message' => $message,
-            'date_start' => $startDate,
-            'date_end' => $endDate,
-        ]);
-    }
-
-    private function addBookingRooms($booking, Collection $rooms): void
-    {
-        foreach ($rooms as $room) {
-            $booking->bookingRooms()->create([
-                'room_id' => $room->id,
-                'name' => $room->name,
-                'quantity' => $room->quantity,
-                'price' => $room->roomCategory->getCurrentPrice($booking->date_start, $booking->date_end),
-            ]);
-        }
-    }
-
-    private function addBookingAddons($booking, Collection $addons): void
-    {
-        foreach ($addons as $addon) {
-            $booking->bookingAddons()->create([
-                'addon_id' => $addon->id,
-                'name' => $addon->name,
-                'quantity' => $addon->quantity,
-                'price' => $addon->price,
-            ]);
-        }
     }
 
     private function getRoomAmount($room, string $startDate, string $endDate): float

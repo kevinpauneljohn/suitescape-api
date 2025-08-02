@@ -71,16 +71,21 @@ class ChatService
         })->first();
     }
 
-    public function getMessages(string $senderId, string $receiverId)
+    public function getMessages(string $senderId, string $receiverId, $cursor = null)
     {
         return Message::with('listing.images')
             ->where(function ($query) use ($senderId, $receiverId) {
-                $query->where('sender_id', $senderId)
+                $query->where(function ($q) use ($senderId, $receiverId) {
+                    $q->where('sender_id', $senderId)
                     ->where('receiver_id', $receiverId);
-            })->orWhere(function ($query) use ($senderId, $receiverId) {
-                $query->where('sender_id', $receiverId)
+                })->orWhere(function ($q) use ($senderId, $receiverId) {
+                    $q->where('sender_id', $receiverId)
                     ->where('receiver_id', $senderId);
-            })->orderByDesc('created_at')->get();
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->cursorPaginate(10, ['*'], 'cursor', $cursor);
     }
 
     /**
