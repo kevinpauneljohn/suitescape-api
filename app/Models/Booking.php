@@ -110,4 +110,9 @@ class Booking extends Model
             $query->where('user_id', $hostId);
         });
     }
+
+    public function cancellations()
+    {
+        return $this->hasMany(Cancellation::class);
+    }
 }

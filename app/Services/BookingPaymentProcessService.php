@@ -44,6 +44,9 @@ class BookingPaymentProcessService
         }
 
         $data['description'] = 'Booking Payment for Booking ID: ' . $bookingId;
+        if ($data['payment_type'] === 'grabpay') {
+            $data['payment_type'] = 'grab_pay';
+        }
         $createBookingSource = $this->createBookingSource($data['payment_type'], $data['amount'], $bookingId);
         if ($createBookingSource['status'] === 'error') {
             return [
@@ -65,7 +68,8 @@ class BookingPaymentProcessService
         $createInvoice = $this->createBookingInvoice(
             Booking::findOrFail($bookingId),
             $sourceId,
-            'pending'
+            'pending',
+            null
         );
 
         if (!$createInvoice) {
@@ -429,7 +433,7 @@ class BookingPaymentProcessService
         }
     }
 
-    public function createBookingInvoice(Booking $booking, string $referenceNumber, string $paymentStatus = 'pending')
+    public function createBookingInvoice(Booking $booking, string $referenceNumber, string $paymentStatus = 'pending', ?string $paymentId = null)
     {
         return $booking->invoice()->create([
             'user_id' => $booking->user_id,
@@ -437,6 +441,7 @@ class BookingPaymentProcessService
             'coupon_discount_amount' => $booking->coupon->discount_amount ?? 0,
             'reference_number' => $referenceNumber,
             'payment_status' => $paymentStatus,
+            'payment_id' => $paymentId
         ]);
     }
 
@@ -553,9 +558,9 @@ class BookingPaymentProcessService
             $bookingId = $invoice->booking_id;
             $createSourcePayment = $this->createBookingSourcePayment($type, $amount, $sourceId, $bookingId);
             if (isset($createSourcePayment['status']) && $createSourcePayment['status'] === 'success') {
-                // $invoice->update([
-                //     'payment_status' => 'paid',
-                // ]);
+                $invoice->update([
+                    'payment_id' => $createSourcePayment['data']['id']
+                ]);
 
                 broadcast(new PaymentSuccessful($invoice));
 
@@ -601,7 +606,7 @@ class BookingPaymentProcessService
                         'attributes' => [
                             'amount' => $amount,
                             'currency' => 'PHP',
-                            'description' => "Payment for $bookingId",
+                            'description' => "Payment for Booking ID: $bookingId",
                             'source' => [
                                 'id' => $sourceId,
                                 'type' => 'source',

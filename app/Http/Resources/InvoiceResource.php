@@ -22,6 +22,7 @@ class InvoiceResource extends JsonResource
             'booking' => new BookingResource($this->whenLoaded('booking')),
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
+            'payment_id' => $this->payment_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
