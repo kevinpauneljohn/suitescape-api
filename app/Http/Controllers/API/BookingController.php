@@ -217,7 +217,7 @@ class BookingController extends Controller
     {
         $booking = $this->bookingUpdateService->updateBookingStatus($id, $request->validated('booking_status'), $request->validated('message'));
 
-        $this->mailService->sendBookingCancelledEmails($booking);
+        // $this->mailService->sendBookingCancelledEmails($booking);
 
         return response()->json([
             'message' => 'Booking status updated successfully',

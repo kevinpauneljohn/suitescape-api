@@ -83,4 +83,21 @@ class PayoutController extends Controller
             'message' => 'Payout method deleted',
         ]);
     }
+
+    public function getUserPayoutMethod(string $id)
+    {
+        $payoutMethod = $this->payoutService->getUserPayoutMethod($id);
+
+        if (!$payoutMethod) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No default payout method found for this user.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => new PayoutMethodResource($payoutMethod->load('payoutable')),
+        ]);
+    }
 }

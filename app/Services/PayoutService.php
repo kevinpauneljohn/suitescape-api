@@ -137,4 +137,12 @@ class PayoutService
             'is_default' => false,
         ]);
     }
+
+    public function getUserPayoutMethod(string $id)
+    {
+        return PayoutMethod::with('payoutable')
+            ->where('user_id', $id)
+            ->where('is_default', 1)
+            ->first();
+    }
 }
