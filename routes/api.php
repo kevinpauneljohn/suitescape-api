@@ -18,6 +18,7 @@ use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\RoomController;
 use App\Http\Controllers\API\VideoController;
 use App\Http\Controllers\API\PaymongoWebhookController;
+use App\Http\Controllers\API\WebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -222,6 +223,7 @@ Route::prefix('payout')->group(function () {
     Route::post('/', [PayoutController::class, 'addPayoutMethod'])->name('payout.add');
     Route::post('/{id}', [PayoutController::class, 'updatePayoutMethod'])->name('payout.update')->whereUuid('id');
     Route::delete('/{id}', [PayoutController::class, 'deletePayoutMethod'])->name('payout.delete')->whereUuid('id');
+    Route::get('/{id}', [PayoutController::class, 'getUserPayoutMethod'])->name('payout.user.info')->whereUuid('id');
 });
 
 Route::prefix('notifications')->group(function () {
@@ -239,4 +241,13 @@ Route::prefix('booking_payments')->group(function () {
 //paymentStatusCheck webhook
 Route::prefix('webhook')->group(function () {
     Route::post('/paymongo/payment-status-check', [PaymongoWebhookController::class, 'ePaymentStatusCheck'])->name('webhook.paymongo.payment-status-check');
+    Route::post('/paymongo/gcash-and-grab', [PaymongoWebhookController::class, 'gcashAndGrabWebhook'])->name('webhook.paymongo.gcash-and-grab');
+    Route::post('/paymongo/refund-payment', [PaymongoWebhookController::class, 'refundPaymentWebhook'])->name('webhook.paymongo.refund');
+    Route::post('/create', [WebhookController::class, 'store'])->name('webhook.create');
+    Route::put('/update', [WebhookController::class, 'update'])->name('webhook.update');
+    Route::get('/all', [WebhookController::class, 'showAllData'])->name('webhook.all');
+    Route::get('/paymongo/all', [WebhookController::class, 'showAllFromPaymongo'])->name('webhook.paymongo.all');
+    Route::get('/paymongo/{id}', [WebhookController::class, 'showApi'])->name('webhook.paymongo.show');
+    Route::delete('/paymongo/{id}', [WebhookController::class, 'destroyApi'])->name('webhook.paymongo.destroy');
+    Route::post('/paymongo/{id}/{status}', [WebhookController::class, 'changeStatus'])->name('webhook.paymongo.change-status');
 });
