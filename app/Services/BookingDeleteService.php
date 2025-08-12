@@ -30,4 +30,20 @@ class BookingDeleteService
             ->where('created_at', '<', $dateLimit)
             ->delete();
     }
+
+    public function cancelExpiredBookings(): void
+    {
+        $bookings = Booking::where('status', 'to_pay')
+            ->where('created_at', '<', now()->subMinutes(30))
+            ->get();
+
+        if ($bookings->isEmpty()) {
+            return;
+        }
+
+        foreach ($bookings as $booking) {
+            $booking->delete();
+            $this->unavailableDateService->removeUnavailableDatesForBooking($booking); //to check if there are any unavailable dates to remove
+        }
+    }
 }

@@ -4,26 +4,36 @@ namespace App\Services;
 
 use App\Models\Booking;
 use Illuminate\Support\Carbon;
+use App\Services\BookingRefundProcessService;
+use App\Services\BookingCreateService;
+use App\Services\BookingCancellationService;
+use App\Services\ConstantService;
+use App\Services\UnavailableDateService;
 
 class BookingUpdateService
 {
-    protected BookingCancellationService $bookingCancellationService;
-
     protected BookingCreateService $bookingCreateService;
-
-    protected ConstantService $constantService;
-
-    protected PaymentService $paymentService;
 
     protected UnavailableDateService $unavailableDateService;
 
-    public function __construct(BookingCancellationService $bookingCancellationService, BookingCreateService $bookingCreateService, ConstantService $constantService, PaymentService $paymentService, UnavailableDateService $unavailableDateService)
-    {
-        $this->bookingCancellationService = $bookingCancellationService;
+    protected BookingRefundProcessService $bookingRefundProcessService;
+
+    protected BookingCancellationService $bookingCancellationService;
+
+    protected ConstantService $constantService;
+
+    public function __construct(
+        BookingCreateService $bookingCreateService,
+        UnavailableDateService $unavailableDateService,
+        BookingRefundProcessService $bookingRefundProcessService,
+        BookingCancellationService $bookingCancellationService,
+        ConstantService $constantService
+    ){
         $this->bookingCreateService = $bookingCreateService;
-        $this->constantService = $constantService;
-        $this->paymentService = $paymentService;
         $this->unavailableDateService = $unavailableDateService;
+        $this->bookingRefundProcessService = $bookingRefundProcessService;
+        $this->bookingCancellationService = $bookingCancellationService;
+        $this->constantService = $constantService;
     }
 
     public function updateBookingInvoice($id, $invoiceData)
@@ -40,24 +50,39 @@ class BookingUpdateService
         $booking = Booking::findOrFail($id);
 
         if ($status === 'cancelled') {
-            $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
+            // $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
 
             $booking->update([
                 'cancellation_reason' => $message,
             ]);
 
-            if (isset($booking->invoice->reference_number)) {
+            if (isset($booking->invoice->payment_id)) {
                 try {
-                    $this->paymentService->archivePaymentLink($booking->invoice->reference_number);
+                    $paymentId = $booking->invoice->payment_id;
+                    $cancellationFee = $this->bookingCancellationService->calculateCancellationFee($booking);
+                    $suitescapeFee = $this->constantService->getConstant('cancellation_fee')->value;
+
+                    $totalCancellationFee = $cancellationFee + $suitescapeFee;
+                    $totalAmount = $booking->amount - $totalCancellationFee;
+                    //convert totalAmount to centavos
+                    $totalAmount = ($booking->amount - $totalCancellationFee) * 100;
+                    $refundResponse = $this->bookingRefundProcessService->refundPayment($paymentId, $totalAmount);
+                    if ($refundResponse['status'] === 'success') {
+                        $createBookingCancellation = $this->bookingRefundProcessService->createBookingCancellation($booking->id, $booking->user_id, $refundResponse['data']);
+                    }
                 } catch (\Exception $e) {
-                    \Log::error('Error archiving payment link', ['message' => $e->getMessage()]);
+                    \Log::error('Error processing booking cancellation', [
+                        'booking_id' => $booking->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    throw $e; // Re-throw the exception to be handled by the caller
                 }
             }
         }
 
-        $booking->update([
-            'status' => $status,
-        ]);
+        // $booking->update([
+        //     'status' => $status,
+        // ]);
 
         return $booking;
     }

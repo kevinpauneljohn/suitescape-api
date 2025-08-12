@@ -67,7 +67,13 @@ class BookingCreateService
                             }
 
                             $paymentIntentId = $createBookingPayment['data']['data']['data']['id'] ?? null;
-                            $createInvoice = $this->bookingPaymentProcessService->createBookingInvoice($booking, $paymentIntentId, $paymentStatus);
+                            $paymentId = $createBookingPayment['data']['data']['data']['attributes']['payments'][0]['id'] ?? null;
+                            $createInvoice = $this->bookingPaymentProcessService->createBookingInvoice(
+                                $booking, 
+                                $paymentIntentId, 
+                                $paymentStatus,
+                                $paymentId
+                            );
                             if (!$createInvoice) {
                                 DB::rollBack();
                                 return [
@@ -117,7 +123,7 @@ class BookingCreateService
                                 'code' => 200,
                             ];
                         }
-                    } elseif ($paymentData['payment_type'] === 'gcash') {
+                    } elseif ($paymentData['payment_type'] === 'gcash' || $paymentData['payment_type'] === 'grabpay') {
                         $createBookingPayment = $this->bookingPaymentProcessService->createEPayment($paymentData, $bookingId);
                         if ($createBookingPayment['status'] === 'error') {
                             DB::rollBack();
