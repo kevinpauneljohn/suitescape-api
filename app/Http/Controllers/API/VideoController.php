@@ -7,12 +7,14 @@ use App\Http\Requests\FilterVideoRequest;
 use App\Http\Requests\UploadVideoRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Video;
+use App\Models\Violation;
 use App\Services\MediaUploadService;
 use App\Services\NotificationService;
 use App\Services\VideoApprovalService;
 use App\Services\VideoRetrievalService;
 use Exception;
 use Spatie\Permission\Exceptions\UnauthorizedException;
+use Illuminate\Http\Request;
 
 class VideoController extends Controller
 {
@@ -131,6 +133,78 @@ class VideoController extends Controller
         return response()->json([
             'message' => 'Video approved successfully',
             'is_approved' => true,
+        ]);
+    }
+
+    public function getContentModeration()
+    {
+        $videos = Video::with([
+            'violations:id,name',
+            'listing' => function ($query) {
+                $query->select('id', 'name', 'user_id', 'description')
+                    ->with([
+                        'user:id,firstname,lastname,email',
+                        'images:id,listing_id,filename,privacy' // include images
+                    ]);
+            },
+        ])->get()->map(function ($video) {
+            return [
+                ...$video->toArray(),
+                'violations' => $video->violations->pluck('id'),
+                'host' => $video->listing?->user,
+                'moderator' => $video->moderated_by,
+            ];
+        });
+
+        return response()->json([
+            'videos' => $videos
+        ]);
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'is_approved'   => 'nullable|in:1,2',
+            'violations'    => 'nullable|array',
+            'violations.*'  => 'integer|exists:violations,id',
+            'moderated_by'  => 'nullable',
+        ]);
+
+        $moderatedBy = $validated['moderated_by'];
+        $video = Video::findOrFail($request->route('id'));
+
+        $isTranscoded = 0;
+        if ($validated['is_approved'] == 1) {
+            $isTranscoded = 1;
+        }
+        $video->update([
+            'is_approved' => $validated['is_approved'],
+            'is_transcoded' => $isTranscoded,
+            'moderated_by' => $moderatedBy,
+            'updated_at' => now(),
+        ]);
+
+        if (isset($validated['violations'])) {
+            $video->violations()->sync($validated['violations']);
+        }
+
+        $video->load('violations:id,name', 'moderator:id,firstname,lastname,email');
+
+        return response()->json([
+            'message' => 'Video status updated successfully',
+            'video' => [
+                ...$video->toArray(),
+                'violations' => $video->violations->pluck('id'),
+                'moderator' => $video->moderator,
+            ]
+        ]);
+    }
+
+    public function violations()
+    {
+        $validations = Violation::all();
+        return response()->json([
+            'violations' => $validations
         ]);
     }
 }

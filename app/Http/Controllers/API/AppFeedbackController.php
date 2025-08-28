@@ -16,23 +16,51 @@ class AppFeedbackController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
+    // public function createAppFeedback(CreateFeedbackRequest $request)
+    // {
+    //     $userId = auth('sanctum')->id();
+
+    //     // Check if there is an AppFeedback with the same user_id
+    //     if ($userId) {
+    //         $existingFeedback = AppFeedback::where('user_id', $userId)->first();
+
+    //         if ($existingFeedback) {
+    //             return response()->json([
+    //                 'message' => 'Feedback already exists for this user',
+    //                 'feedback' => $existingFeedback,
+    //             ], 409);
+    //         }
+    //     }
+
+    //     // Create a new feedback for the user
+    //     $feedback = AppFeedback::create(array_merge($request->validated(), [
+    //         'user_id' => $userId,
+    //     ]));
+
+    //     return response()->json([
+    //         'message' => 'Feedback created successfully',
+    //         'feedback' => $feedback,
+    //     ]);
+    // }
     public function createAppFeedback(CreateFeedbackRequest $request)
     {
         $userId = auth('sanctum')->id();
 
-        // Check if there is an AppFeedback with the same user_id
         if ($userId) {
-            $existingFeedback = AppFeedback::where('user_id', $userId)->first();
+            // Check if the user already submitted today
+            $recent = AppFeedback::where('user_id', $userId)
+                ->whereDate('created_at', today())
+                ->first();
 
-            if ($existingFeedback) {
+            if ($recent) {
                 return response()->json([
-                    'message' => 'Feedback already exists for this user',
-                    'feedback' => $existingFeedback,
+                    'message' => 'You already submitted feedback today',
+                    'feedback' => $recent,
                 ], 409);
             }
         }
 
-        // Create a new feedback for the user
+        // Create feedback
         $feedback = AppFeedback::create(array_merge($request->validated(), [
             'user_id' => $userId,
         ]));

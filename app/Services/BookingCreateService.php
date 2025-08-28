@@ -206,12 +206,12 @@ class BookingCreateService
 
         // The base amount without the nights multiplier and other fees
         $base = $amount;
-
+        \Log::info('Base: ' . $base);
         // Multiply by nights
         $nights = $this->getBookingNights($startDate, $endDate);
-
+        \Log::info('# of Nights: ' . $nights);
         $amount *= $nights;
-
+        \Log::info('Amount: ' . $amount);
         // Apply coupon discount
         //        if ($coupon) {
         //            $amount -= $amount * $coupon->discount_amount / 100;
@@ -222,8 +222,12 @@ class BookingCreateService
 
         // Add suitescape fee
         $suitescapeFee = $this->constantService->getConstant('suitescape_fee')->value;
+        \Log::info('SuitescapeFee: ' . $suitescapeFee);
+        //Calculate Suitescape Fee based on number of nights
+        $suitescapeFee *= $nights;
+        \Log::info('SuitescapeFee with Total Nights: ' . $suitescapeFee);
         $amount += $suitescapeFee;
-
+        \Log::info('Amount after SuitescapeFee: ' . $amount);
         return [
             'total' => $amount,
             'base' => $base,
