@@ -13,6 +13,7 @@ use App\Services\NotificationService;
 use App\Services\UnavailableDateService;
 use App\Events\PaymentFailed;
 use App\Events\PaymentSuccessful;
+use App\Services\MailService;
 
 class BookingPaymentProcessService
 {
@@ -24,13 +25,17 @@ class BookingPaymentProcessService
 
     protected string $paymongoSecretKey;
 
-    public function __construct(NotificationService $notificationService, UnavailableDateService $unavailableDateService)
+    protected MailService $mailService;
+
+    public function __construct(NotificationService $notificationService, UnavailableDateService $unavailableDateService, MailService $mailService)
     {
         $this->notificationService = $notificationService;
         $this->unavailableDateService = $unavailableDateService;
 
         $this->paymongoUrl = config('paymongo.paymongo_api_url');
         $this->paymongoSecretKey = config('paymongo.paymongo_secret_key');
+
+        $this->emailService = $mailService;
     }
 
     public function createEPayment(array $data, $bookingId)
@@ -499,6 +504,8 @@ class BookingPaymentProcessService
                     'type' => 'booking',
                     'action_id' => $booking->id,
                 ]);
+
+                $this->emailService->sendBookingCompletedEmails($booking);
 
                 broadcast(new PaymentSuccessful($invoice));
             } else {
