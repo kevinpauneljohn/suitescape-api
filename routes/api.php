@@ -79,6 +79,9 @@ Route::prefix('videos')->group(function () {
     Route::get('/{id}', [VideoController::class, 'getVideo'])->name('videos.get')->whereUuid('id');
     Route::post('/upload', [VideoController::class, 'uploadVideo'])->name('videos.upload');
     Route::post('/{id}/approve', [VideoController::class, 'approveVideo'])->name('videos.approve')->whereUuid('id');
+    Route::get('/content-moderation', [VideoController::class, 'getContentModeration'])->name('videos.content-moderation');
+    Route::put('/{id}/status', [VideoController::class, 'updateStatus'])->name('videos.update-status')->whereUuid('id');
+    Route::get('/video-violations', [VideoController::class, 'violations'])->name('videos.violations');
 });
 
 Route::prefix('images')->group(function () {

@@ -98,4 +98,14 @@ class Video extends Model
     //        return $query->addSelect(['min_price' => RoomCategory::getMinPriceQuery($this->listing_id)])
     //            ->orderBy('min_price', 'asc');
     //    }
+
+    public function violations()
+    {
+        return $this->belongsToMany(Violation::class, 'video_violations', 'video_id', 'violation_id');
+    }
+
+    public function moderator()
+    {
+        return $this->belongsTo(User::class, 'moderated_by');
+    }
 }
