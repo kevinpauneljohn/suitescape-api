@@ -28,10 +28,10 @@ class BookingCreateService
 
     public function createBooking(array $bookingData, array $paymentData = [])
     {
+        \Log::info("Booking data", ['bookingData' => $bookingData, 'paymentData' => $paymentData]);
         DB::beginTransaction();
         try {
             $listing = Listing::findOrFail($bookingData['listing_id']);
-
             $coupon = null;
             if (isset($bookingData['coupon_code'])) {
                 $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
@@ -188,30 +188,29 @@ class BookingCreateService
     public function calculateAmount(Listing $listing, Collection $rooms, Collection $addons, ?Coupon $coupon, string $startDate, string $endDate): array
     {
         $amount = 0;
-
         if ($listing->is_entire_place) {
-            // Get the price of the listing
             $amount = $listing->getCurrentPrice($startDate, $endDate);
         } else {
-            // Go through each room and calculate the total amount
             foreach ($rooms as $room) {
                 $amount += $this->getRoomAmount($room, $startDate, $endDate);
             }
         }
-
-        // Add the price of addons
+        $addonsTotal = 0;
         foreach ($addons as $addon) {
-            $amount += $this->getAddonAmount($addon);
+            $addonsTotal += $this->getAddonAmount($addon);
         }
 
-        // The base amount without the nights multiplier and other fees
-        $base = $amount;
-        \Log::info('Base: ' . $base);
-        // Multiply by nights
+        $base = $amount + $addonsTotal;
         $nights = $this->getBookingNights($startDate, $endDate);
-        \Log::info('# of Nights: ' . $nights);
+
         $amount *= $nights;
-        \Log::info('Amount: ' . $amount);
+        $getAddonsAmountPerNight = 0;
+        foreach ($addons as $addonprice) {
+            $getAddonsAmountPerNight += $this->getAddonsAmountPerNight($addonprice, $nights);
+        }
+
+        $amount += $getAddonsAmountPerNight;
+
         // Apply coupon discount
         //        if ($coupon) {
         //            $amount -= $amount * $coupon->discount_amount / 100;
@@ -220,14 +219,10 @@ class BookingCreateService
         // Apply 10% discount as example (Make sure to change also in the app)
         $amount -= $amount * 0.1;
 
-        // Add suitescape fee
         $suitescapeFee = $this->constantService->getConstant('suitescape_fee')->value;
-        \Log::info('SuitescapeFee: ' . $suitescapeFee);
-        //Calculate Suitescape Fee based on number of nights
         $suitescapeFee *= $nights;
-        \Log::info('SuitescapeFee with Total Nights: ' . $suitescapeFee);
+
         $amount += $suitescapeFee;
-        \Log::info('Amount after SuitescapeFee: ' . $amount);
         return [
             'total' => $amount,
             'base' => $base,
@@ -242,5 +237,14 @@ class BookingCreateService
     private function getAddonAmount($addon): float
     {
         return $addon->price * $addon->quantity;
+    }
+
+    private function getAddonsAmountPerNight($addon, int $nights): float
+    {
+        $price = (float) $addon['price'];
+        $quantity = (int) $addon['quantity'];
+        $isConsumable = !empty($addon['is_consumable']);
+
+        return $price * $quantity * ($isConsumable ? $nights : 1);
     }
 }

@@ -188,4 +188,7 @@ return [
         'FFMpeg' => ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::class,
     ])->toArray(),
 
+    'discount' => env('DISCOUNT', 0.1),
+    'default_country' => env('DEFAULT_COUNTRY', 'PH'),
+    'all_country' => env('ALL_COUNTRY', 0),
 ];

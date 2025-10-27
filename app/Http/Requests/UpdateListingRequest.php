@@ -60,7 +60,9 @@ class UpdateListingRequest extends FormRequest
             'is_entire_place' => filter_var($this->is_entire_place, FILTER_VALIDATE_BOOLEAN),
             'rooms' => isset($this->rooms) ? json_decode($this->rooms, true) : null,
             'addons' => isset($this->addons) ? json_decode($this->addons, true) : null,
-            'nearby_places' => isset($this->nearby_places) ? json_decode($this->nearby_places, true) : null,
+            'nearby_places' => is_string($this->nearby_places)
+                ? json_decode($this->nearby_places, true)
+                : $this->nearby_places,
             'images' => $images,
             'videos' => $videos,
         ]);
@@ -77,6 +79,8 @@ class UpdateListingRequest extends FormRequest
             'id' => ['nullable', 'uuid', 'exists:listings,id'],
             'name' => ['required', 'string', 'max:255'],
             'location' => ['required', 'string'],
+            'latitude' => ['nullable', 'string', 'max:50'],
+            'longitude' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'facility_type' => ['required', 'string', 'in:house,hotel,apartment,condominium,cabin,villa'],
             'check_in_time' => ['required', 'date_format:g:i A'],

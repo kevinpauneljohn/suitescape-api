@@ -163,14 +163,11 @@ class ListingCreateService
 
     public function createListingNearbyPlaces($listing, $nearbyPlaces): void
     {
-        $listingNearbyPlaces = array_keys(array_filter($nearbyPlaces));
-
-        foreach ($listingNearbyPlaces as $listingNearbyPlace) {
-            $nearbyPlace = NearbyPlace::where('name', $listingNearbyPlace)->first();
+        foreach ($nearbyPlaces as $placeName) {
+            $nearbyPlace = NearbyPlace::where('name', $placeName)->first();
 
             if (! $nearbyPlace) {
-                Log::error("Nearby place $listingNearbyPlace not found.");
-
+                \Log::error("Nearby place {$placeName} not found.");
                 continue;
             }
 
