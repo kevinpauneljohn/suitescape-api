@@ -254,3 +254,14 @@ Route::prefix('webhook')->group(function () {
     Route::delete('/paymongo/{id}', [WebhookController::class, 'destroyApi'])->name('webhook.paymongo.destroy');
     Route::post('/paymongo/{id}/{status}', [WebhookController::class, 'changeStatus'])->name('webhook.paymongo.change-status');
 });
+
+Route::get('/discount', function() {
+    return config('app.discount');
+});
+
+Route::get('/set-country', function() {
+    return [
+        'country' => config('app.default_country'),
+        'allCountry' => config('app.all_country'),
+    ];
+});

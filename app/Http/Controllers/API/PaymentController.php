@@ -160,7 +160,6 @@ class PaymentController extends Controller
      */
     public function createPayment(CreatePaymentRequest $request)
     {
-        dd($request->all());
         $booking = Booking::findOrFail($request->validated('booking_id'));
 
         try {
@@ -736,6 +735,9 @@ class PaymentController extends Controller
             ], $e->getCode());
         }
 
+        \Log::info("response datas:" . json_encode($paymentSource));
+        \Log::info("response datas:" . json_encode($bookingStatus));
+        \Log::info("response datas:" . json_encode($paymentMethod));
         return response()->json([
             'data' => $paymentSource,
             'status' => 'success',

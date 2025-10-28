@@ -29,6 +29,8 @@ class Listing extends Model
         'is_entire_place',
         'entire_place_weekday_price',
         'entire_place_weekend_price',
+        'latitude',
+        'longitude'
     ];
 
     protected $casts = [

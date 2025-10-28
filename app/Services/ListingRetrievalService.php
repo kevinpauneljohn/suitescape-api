@@ -131,6 +131,14 @@ class ListingRetrievalService
                 'roomRule',
                 'unavailableDates',
                 'roomAmenities.amenity',
+                'specialRates' => function ($query) use ($startDate, $endDate) {
+                    if ($startDate && $endDate) {
+                        $query->where(function ($q) use ($startDate, $endDate) {
+                            $q->where('start_date', '<=', $endDate)
+                            ->where('end_date', '>=', $startDate);
+                        });
+                    }
+                },
             ]);
 
         return $this->orderByRoomPrice($query, $startDate, $endDate)->get();

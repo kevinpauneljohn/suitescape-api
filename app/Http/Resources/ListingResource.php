@@ -24,6 +24,8 @@ class ListingResource extends JsonResource
             'host' => new HostResource($this->whenLoaded('host')),
             'name' => $this->name,
             'location' => $this->location,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'description' => $this->description,
             'facility_type' => $this->facility_type,
             'check_in_time' => $this->check_in_time->format('g:i A'),
