@@ -179,18 +179,18 @@ class ListingUpdateService
     public function updateListingRooms($listing, $listingRooms): void
     {
         foreach ($listingRooms as $room) {
+            // Update or create the category first
             if (isset($room['category'])) {
                 $this->updateRoomCategory($listing, $room['category']);
             }
 
-            if (! isset($room['id'])) {
-                Log::error('Room ID not provided.');
-
+            if (! isset($room['id']) || ! $listingRoom = $listing->rooms()->find($room['id'])) {
+                // Room does not exist, create it
+                $this->listingCreateService->createListingRoom($listing, $room);
                 continue;
             }
 
-            $listingRoom = $listing->rooms()->find($room['id']);
-
+            // Room exists, update rule and amenities
             if (isset($room['rule'])) {
                 $this->updateRoomRule($listingRoom, $room['rule']);
             }

@@ -144,14 +144,21 @@ class ListingCreateService
      */
     public function createRoomAmenities($room, $amenities): void
     {
-        $roomAmenities = array_keys(array_filter($amenities));
+        // Map to names if array of objects
+        $roomAmenities = [];
+        foreach ($amenities as $amenity) {
+            if (is_array($amenity) && isset($amenity['name'])) {
+                $roomAmenities[] = $amenity['name'];
+            } elseif (is_string($amenity)) {
+                $roomAmenities[] = $amenity;
+            }
+        }
 
         foreach ($roomAmenities as $roomAmenity) {
             $amenity = Amenity::where('name', $roomAmenity)->first();
 
             if (! $amenity) {
                 Log::error("Amenity $roomAmenity not found.");
-
                 continue;
             }
 

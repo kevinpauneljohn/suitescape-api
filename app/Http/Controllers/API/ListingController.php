@@ -222,6 +222,11 @@ class ListingController extends Controller
      */
     public function updateListing(UpdateListingRequest $request, string $id)
     {
+\Log::info('Raw POST request received', [
+    'input' => $request->all(),
+    'files' => $request->allFiles(),
+    'headers' => $request->headers->all(),
+]);
         $listing = $this->listingUpdateService->updateListing($id, $request->validated());
 
         $this->notificationService->createNotification([
