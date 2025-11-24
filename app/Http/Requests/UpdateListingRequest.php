@@ -20,35 +20,30 @@ class UpdateListingRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $images = null;
-        if (isset($this->images)) {
+        \Log::info('UpdateListingRequest prepareForValidation called', ['request_data' => $this->all()]);
+        $images = [];
+        if (!empty($this->images) && is_array($this->images)) {
             foreach ($this->images as $image) {
-                // If the image is a string, decode it into an array
                 if (is_string($image)) {
-                    $images[] = json_decode($image, true);
-                } else {
-                    // If the image is already an array, set it as is
+                    $decoded = json_decode($image, true);
+                    $images[] = is_array($decoded) ? $decoded : [];
+                } elseif (is_array($image)) {
                     $images[] = $image;
                 }
             }
         }
 
-        $videos = null;
-        if (isset($this->videos)) {
+        $videos = [];
+        if (!empty($this->videos) && is_array($this->videos)) {
             foreach ($this->videos as $video) {
-                // If the video is a string, decode it into an array
                 if (is_string($video)) {
-                    $video = json_decode($video, true);
+                    $video = json_decode($video, true) ?? [];
                 }
 
-                if (isset($video['sections'])) {
-                    // If the sections are a string, decode them into an array
-                    if (is_string($video['sections'])) {
-                        $video['sections'] = json_decode($video['sections'], true);
-                    }
+                if (isset($video['sections']) && is_string($video['sections'])) {
+                    $video['sections'] = json_decode($video['sections'], true) ?? [];
                 }
 
-                // Add the video to the videos array
                 $videos[] = $video;
             }
         }
@@ -58,11 +53,9 @@ class UpdateListingRequest extends FormRequest
             'is_pet_allowed' => filter_var($this->is_pet_allowed, FILTER_VALIDATE_BOOLEAN),
             'parking_lot' => filter_var($this->parking_lot, FILTER_VALIDATE_BOOLEAN),
             'is_entire_place' => filter_var($this->is_entire_place, FILTER_VALIDATE_BOOLEAN),
-            'rooms' => isset($this->rooms) ? json_decode($this->rooms, true) : null,
-            'addons' => isset($this->addons) ? json_decode($this->addons, true) : null,
-            'nearby_places' => is_string($this->nearby_places)
-                ? json_decode($this->nearby_places, true)
-                : $this->nearby_places,
+            'rooms' => is_string($this->rooms) ? json_decode($this->rooms, true) : $this->rooms,
+            'addons' => is_string($this->addons) ? json_decode($this->addons, true) : $this->addons,
+            'nearby_places' => is_string($this->nearby_places) ? json_decode($this->nearby_places, true) : $this->nearby_places,
             'images' => $images,
             'videos' => $videos,
         ]);
