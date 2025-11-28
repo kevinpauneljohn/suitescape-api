@@ -60,6 +60,7 @@ class TranscodeVideo implements ShouldQueue
         $this->video->update([
             'filename' => $this->filename,
             'is_transcoded' => true,
+            'is_approved' => true,
         ]);
 
         // Delete the temp video
