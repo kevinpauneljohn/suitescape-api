@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('video_id')->constrained()->cascadeOnDelete();
             $table->string('label');
             $table->integer('milliseconds');
+            $table->string('thumbnail')->nullable();
             $table->timestamps();
         });
     }

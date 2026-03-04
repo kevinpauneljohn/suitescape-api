@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('privacy', ['public', 'private'])->default('public');
             $table->boolean('is_transcoded')->default(false);
             $table->boolean('is_approved')->nullable();
+            $table->foreignUuid('moderated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

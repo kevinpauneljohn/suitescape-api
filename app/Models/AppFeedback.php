@@ -13,6 +13,11 @@ class AppFeedback extends Model
         'user_id',
         'rating',
         'comment',
+        'media',
+    ];
+
+    protected $casts = [
+        'media' => 'array',
     ];
 
     public function user()

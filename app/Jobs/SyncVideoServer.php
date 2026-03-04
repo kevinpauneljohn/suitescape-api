@@ -23,6 +23,21 @@ class SyncVideoServer implements ShouldQueue
     protected User $user;
 
     /**
+     * The number of times the job may be attempted.
+     */
+    public $tries = 3;
+
+    /**
+     * The number of seconds the job can run before timing out.
+     */
+    public $timeout = 300; // 5 minutes
+
+    /**
+     * Delete the job if its models no longer exist.
+     */
+    public $deleteWhenMissingModels = true;
+
+    /**
      * Create a new job instance.
      */
     public function __construct(Video $video, User $user)
@@ -36,23 +51,33 @@ class SyncVideoServer implements ShouldQueue
      */
     public function handle(): void
     {
-        $client = new Client;
         $videoServerUrl = config('services.video_server.url');
 
         if (! $videoServerUrl) {
-            Log::error("Video server URL is not set. Can't sync video for video ID: {$this->video->id}");
+            Log::info("Video server URL is not set. Skipping sync for video ID: {$this->video->id}");
+            return;
+        }
 
+        // Check if video file exists
+        if (!Storage::disk('public')->exists($this->video->file_path)) {
+            Log::error("Video file not found for video ID: {$this->video->id}, path: {$this->video->file_path}");
             return;
         }
 
         try {
-            $videoFile = Storage::disk('public')->get($this->video->file_path);
+            $client = new Client([
+                'timeout' => 300, // 5 minute timeout for the request (large files)
+                'connect_timeout' => 10, // 10 second connection timeout
+            ]);
+
+            // Use stream instead of loading entire file into memory
+            $videoPath = Storage::disk('public')->path($this->video->file_path);
 
             $client->request('POST', $videoServerUrl, [
                 'multipart' => [
                     [
                         'name' => 'video',
-                        'contents' => $videoFile,
+                        'contents' => fopen($videoPath, 'r'),
                         'filename' => $this->video->filename,
                     ],
                     [
@@ -65,8 +90,20 @@ class SyncVideoServer implements ShouldQueue
                     ],
                 ],
             ]);
+
+            Log::info("Successfully synced video ID: {$this->video->id} to video server");
         } catch (GuzzleException $e) {
             Log::error('Failed to sync video to the video server: '.$e->getMessage());
+            // Don't re-throw - just log the error and mark as complete
+            // This prevents the queue from being blocked by unreachable servers
         }
+    }
+
+    /**
+     * Handle a job failure.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Log::error("SyncVideoServer job failed permanently for video ID: {$this->video->id}. Error: {$exception->getMessage()}");
     }
 }

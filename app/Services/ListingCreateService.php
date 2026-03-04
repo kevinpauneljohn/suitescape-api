@@ -95,7 +95,7 @@ class ListingCreateService
         }
 
         TranscodeVideo::dispatch($video, $directory, $tempData['filename'], $tempData['temp_path']);
-        SyncVideoServer::dispatch($video, $listing->user);
+        // Note: SyncVideoServer is now dispatched from TranscodeVideo after transcoding completes
 
         return $video;
     }
@@ -194,6 +194,7 @@ class ListingCreateService
         foreach ($sections as $section) {
             $video->sections()->create($section);
         }
+        // Note: Thumbnail generation is triggered in TranscodeVideo job after video is transcoded
     }
 
     private function filterBeds($roomCategory): array

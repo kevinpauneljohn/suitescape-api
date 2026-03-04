@@ -20,9 +20,11 @@ class InvoiceResource extends JsonResource
             $this->mergeUnless($this->relationLoaded('booking'), ['booking_id' => $this->booking_id]),
             'user' => new UserResource($this->whenLoaded('user')),
             'booking' => new BookingResource($this->whenLoaded('booking')),
+            'reference_number' => $this->reference_number,
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
             'payment_id' => $this->payment_id,
+            'coupon_discount_amount' => floatval($this->coupon_discount_amount ?? 0),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

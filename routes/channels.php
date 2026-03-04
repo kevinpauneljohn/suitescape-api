@@ -4,31 +4,21 @@ use App\Models\Listing;
 use App\Models\Video;
 use Illuminate\Support\Facades\Broadcast;
 
-/*
-|--------------------------------------------------------------------------
-| Broadcast Channels
-|--------------------------------------------------------------------------
-|
-| Here you may register all of the event broadcasting channels that your
-| application supports. The given channel authorization callbacks are
-| used to check if an authenticated user can listen to the channel.
-|
-*/
-
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return $user->id === $id;
+    return (string) $user->id === (string) $id;
 });
 
 Broadcast::channel('private-notification.{id}', function ($user, $id) {
-    return $user->id === $id;
+    return (string) $user->id === (string) $id;
 });
 
-Broadcast::channel('private-chat.{id}', function ($user, $id) {
-    return $user->id === $id;
+Broadcast::channel('chat.{id}', function ($user, $id) {
+    return (string) $user->id === (string) $id;
 });
 
-Broadcast::channel('private-active-status.{id}', function ($user) {
-    return (bool) $user;
+Broadcast::channel('active-status.{id}', function ($user, $id) {
+    // Any authenticated user can listen to anyone's active status
+    return $user !== null;
 });
 
 Broadcast::channel('private-payment.{id}', function ($user) {
@@ -47,5 +37,5 @@ Broadcast::channel('private-video-transcoding.{id}', function ($user, $id) {
         return $listing->user_id === $user->id;
     }
 
-    return $user->id === $id;
+    return (string) $user->id === (string) $id;
 });

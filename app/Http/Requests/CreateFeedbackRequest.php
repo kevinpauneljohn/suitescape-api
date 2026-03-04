@@ -24,6 +24,8 @@ class CreateFeedbackRequest extends FormRequest
         return [
             'rating' => ['required', 'numeric', 'min:1', 'max:5'],
             'comment' => ['required', 'string'],
+            'media' => ['nullable', 'array', 'max:3'],
+            'media.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,gif,mp4,mov,avi', 'max:51200'], // 50MB max per file
         ];
     }
 }

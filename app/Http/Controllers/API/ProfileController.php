@@ -142,6 +142,7 @@ class ProfileController extends Controller
         if ($active) {
             $activeSession = $user->createActiveSession($deviceId, $deviceName);
 
+            \Log::info('Broadcasting ActiveStatusUpdated (online)', ['user_id' => $user->id, 'active' => true]);
             broadcast(new ActiveStatusUpdated($user, true));
 
             return response()->json([
@@ -155,6 +156,7 @@ class ProfileController extends Controller
         $deleted = $user->deleteActiveSession($deviceId);
 
         if ($deleted) {
+            \Log::info('Broadcasting ActiveStatusUpdated (offline)', ['user_id' => $user->id, 'active' => false]);
             broadcast(new ActiveStatusUpdated($user, false));
 
             return response()->json([

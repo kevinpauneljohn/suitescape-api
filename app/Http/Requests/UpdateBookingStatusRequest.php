@@ -22,7 +22,7 @@ class UpdateBookingStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'booking_status' => ['required', 'string', 'in:upcoming,ongoing,cancelled,completed'],
+            'booking_status' => ['required', 'string', 'in:pending_payment,to_pay,upcoming,ongoing,cancelled,completed'],
             'message' => ['nullable', 'string'],
         ];
     }

@@ -9,6 +9,7 @@ use App\Services\BookingCreateService;
 use App\Services\BookingCancellationService;
 use App\Services\ConstantService;
 use App\Services\UnavailableDateService;
+use App\Services\NotificationService;
 
 class BookingUpdateService
 {
@@ -22,18 +23,22 @@ class BookingUpdateService
 
     protected ConstantService $constantService;
 
+    protected NotificationService $notificationService;
+
     public function __construct(
         BookingCreateService $bookingCreateService,
         UnavailableDateService $unavailableDateService,
         BookingRefundProcessService $bookingRefundProcessService,
         BookingCancellationService $bookingCancellationService,
-        ConstantService $constantService
+        ConstantService $constantService,
+        NotificationService $notificationService
     ){
         $this->bookingCreateService = $bookingCreateService;
         $this->unavailableDateService = $unavailableDateService;
         $this->bookingRefundProcessService = $bookingRefundProcessService;
         $this->bookingCancellationService = $bookingCancellationService;
         $this->constantService = $constantService;
+        $this->notificationService = $notificationService;
     }
 
     public function updateBookingInvoice($id, $invoiceData)
@@ -50,39 +55,74 @@ class BookingUpdateService
         $booking = Booking::findOrFail($id);
 
         if ($status === 'cancelled') {
-            // $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
-
             $booking->update([
                 'cancellation_reason' => $message,
             ]);
+
+            // Notify the guest about the cancellation
+            $this->notificationService->createNotification([
+                'user_id' => $booking->user_id,
+                'title' => 'Booking Cancelled',
+                'message' => "Your booking for \"{$booking->listing->name}\" has been cancelled.",
+                'type' => 'booking_cancelled',
+                'action_id' => $booking->id,
+            ]);
+
+            // Notify the host about the cancellation
+            $hostUserId = $booking->listing->host->user_id;
+            if ($hostUserId && $hostUserId !== $booking->user_id) {
+                $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+                $this->notificationService->createNotification([
+                    'user_id' => $hostUserId,
+                    'title' => 'Booking Cancelled',
+                    'message' => "{$guestName} has cancelled their booking for \"{$booking->listing->name}\" ({$booking->date_start->format('M d, Y')} - {$booking->date_end->format('M d, Y')}).",
+                    'type' => 'host_booking_cancelled',
+                    'action_id' => $booking->id,
+                ]);
+            }
 
             if (isset($booking->invoice->payment_id)) {
                 try {
                     $paymentId = $booking->invoice->payment_id;
                     $cancellationFee = $this->bookingCancellationService->calculateCancellationFee($booking);
-                    $suitescapeFee = $this->constantService->getConstant('cancellation_fee')->value;
+                    $suitescapeFee = $this->constantService->getConstant('cancellation_fee')->value ?? 0;
 
                     $totalCancellationFee = $cancellationFee + $suitescapeFee;
-                    $totalAmount = $booking->amount - $totalCancellationFee;
-                    //convert totalAmount to centavos
-                    $totalAmount = ($booking->amount - $totalCancellationFee) * 100;
-                    $refundResponse = $this->bookingRefundProcessService->refundPayment($paymentId, $totalAmount);
-                    if ($refundResponse['status'] === 'success') {
-                        $createBookingCancellation = $this->bookingRefundProcessService->createBookingCancellation($booking->id, $booking->user_id, $refundResponse['data']);
+                    // Convert totalAmount to centavos for PayMongo
+                    $refundAmount = ($booking->amount - $totalCancellationFee) * 100;
+                    
+                    // Only process refund if there's an amount to refund
+                    if ($refundAmount > 0) {
+                        $refundResponse = $this->bookingRefundProcessService->refundPayment($paymentId, (int) $refundAmount);
+                        if ($refundResponse['status'] === 'success') {
+                            $this->bookingRefundProcessService->createBookingCancellation($booking->id, $booking->user_id, $refundResponse['data']);
+                            \Log::info('Booking refund processed successfully', [
+                                'booking_id' => $booking->id,
+                                'refund_amount' => $refundAmount / 100,
+                            ]);
+                        } else {
+                            \Log::error('Refund failed but continuing with cancellation', [
+                                'booking_id' => $booking->id,
+                                'refund_response' => $refundResponse,
+                            ]);
+                        }
                     }
                 } catch (\Exception $e) {
-                    \Log::error('Error processing booking cancellation', [
+                    // Log the error but don't prevent cancellation
+                    \Log::error('Error processing booking refund', [
                         'booking_id' => $booking->id,
                         'error' => $e->getMessage(),
                     ]);
-                    throw $e; // Re-throw the exception to be handled by the caller
                 }
             }
+
+            // Remove unavailable dates when booking is cancelled
+            $this->unavailableDateService->removeUnavailableDatesForBooking($booking);
         }
 
-        // $booking->update([
-        //     'status' => $status,
-        // ]);
+        $booking->update([
+            'status' => $status,
+        ]);
 
         return $booking;
     }

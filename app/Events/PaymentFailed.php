@@ -16,13 +16,16 @@ class PaymentFailed implements ShouldBroadcast
 
     public string $message;
 
+    public ?string $user_id;
+
     /**
      * Create a new event instance.
      */
-    public function __construct(string $reference_number, string $message)
+    public function __construct(string $reference_number, string $message, ?string $user_id = null)
     {
         $this->reference_number = $reference_number;
         $this->message = $message;
+        $this->user_id = $user_id;
     }
 
     /**
@@ -32,9 +35,16 @@ class PaymentFailed implements ShouldBroadcast
      */
     public function broadcastOn(): array
     {
-        return [
+        $channels = [
             new PrivateChannel('private-payment.'.$this->reference_number),
         ];
+
+        // Also broadcast to user's payment channel if user_id is provided
+        if ($this->user_id) {
+            $channels[] = new PrivateChannel('private-payment.'.$this->user_id);
+        }
+
+        return $channels;
     }
 
     /**

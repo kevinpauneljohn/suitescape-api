@@ -15,7 +15,8 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
 
         $schedule->command('queue:work --stop-when-empty')->withoutOverlapping();
-        $schedule->command('app:update-booking-status')->daily();
+        // Run hourly to catch check-in/check-out times throughout the day
+        $schedule->command('app:update-booking-status')->hourly();
         $schedule->command('app:clean-up-bookings')->daily();
         $schedule->command('sanctum:prune-expired --hours=24')->daily();
         $schedule->command('auth:clear-resets')->everyFifteenMinutes();

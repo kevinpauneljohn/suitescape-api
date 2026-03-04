@@ -135,30 +135,50 @@ class FilterService
         return $query->has('rooms', '>=', $roomCount);
     }
 
+    /**
+     * Apply unavailable date filter for Listings
+     * This should be called when the query context is a Listing
+     */
     public function applyUnavailableDateFilter($query, $startDate, $endDate)
     {
         return $query->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            // Check unavailable_dates table
             $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
-                // Exclude rooms that are unavailable on the user's selected dates
                 $query->whereBetween('date', [$startDate, $endDate]);
             });
+        });
+    }
 
-            //            $query->where(function ($query) use ($startDate, $endDate) {
-            //
-            //                // Criteria for excluding rooms that are unavailable
-            //                $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
-            //                    // Exclude rooms that are unavailable on the user's selected dates
-            //                    $query->whereBetween('start_date', [$startDate, $endDate])
-            //                        ->orWhereBetween('end_date', [$startDate, $endDate])
-            //
-            //                        // Exclude rooms that are unavailable during the entire range of the user's selected dates
-            //                        ->orWhere(function ($query) use ($startDate, $endDate) {
-            //                            // Checks if the unavailability range overlaps with the user's selected range
-            //                            $query->where('start_date', '<=', $endDate)
-            //                                ->where('end_date', '>=', $startDate);
-            //                        });
-            //                });
-            //            });
+    /**
+     * Apply unavailable date filter for Rooms
+     * This should be called when the query context is a Room (inside whereHas('rooms', ...))
+     */
+    public function applyRoomUnavailableDateFilter($query, $startDate, $endDate)
+    {
+        return $query->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            // Check room's unavailable_dates
+            $query->whereDoesntHave('unavailableDates', function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            });
+        });
+    }
+
+    /**
+     * Apply booking availability filter for Listings
+     * Checks if listing has overlapping bookings
+     */
+    public function applyBookingAvailabilityFilter($query, $startDate, $endDate)
+    {
+        return $query->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            // Exclude listings with active bookings that overlap with selected dates
+            $query->whereDoesntHave('bookings', function ($query) use ($startDate, $endDate) {
+                $query->whereIn('status', ['pending', 'confirmed', 'checked_in'])
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        // Check if booking dates overlap with selected dates
+                        $q->where('date_start', '<=', $endDate)
+                          ->where('date_end', '>=', $startDate);
+                    });
+            });
         });
     }
 }

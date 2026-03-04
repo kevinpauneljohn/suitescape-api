@@ -52,21 +52,34 @@ class VideoRetrievalService
         //        $children = $filters['children'] ?? 0;
         //        $pax = $adults + $children;
 
+        // Get the current authenticated user (if any)
+        $currentUser = auth('sanctum')->user();
+
         return Video::public()
             ->isTranscoded()
             ->isApproved()
-            ->whereHas('listing', function ($query) use ($filters) {
-                // Apply date filter
+            ->whereHas('listing', function ($query) use ($filters, $currentUser) {
+                // Exclude listings owned by the current user
+                if ($currentUser) {
+                    $query->where('user_id', '!=', $currentUser->id);
+                }
+
+                // Apply date filter - different logic for entire place vs room-based
                 $query->where(function ($query) use ($filters) {
+                    // For entire place listings, check listing-level availability
                     $query->where('is_entire_place', true)
                         ->where(function ($query) use ($filters) {
-                            $this->applyDateFilter($query, $filters);
+                            $this->applyListingDateFilter($query, $filters);
                         });
+                    // For room-based listings, check room-level availability
                     $query->orWhere('is_entire_place', false)
                         ->whereHas('rooms', function ($query) use ($filters) {
-                            $this->applyDateFilter($query, $filters);
+                            $this->applyRoomDateFilter($query, $filters);
                         });
                 });
+
+                // Apply booking availability filter at listing level (works for both types)
+                $this->applyBookingFilter($query, $filters);
 
                 // Apply main filters
                 $this->applyMainFilters($query, $filters);
@@ -151,12 +164,57 @@ class VideoRetrievalService
         }
     }
 
-    private function applyDateFilter($query, $filters): void
+        /**
+     * Apply date filter for entire place listings (query context is Listing)
+     */
+    private function applyListingDateFilter($query, $filters): void
     {
-        if (isset($filters['check_in']) && isset($filters['check_out'])) {
-            $this->filterService->applyUnavailableDateFilter($query, $filters['check_in'], $filters['check_out']);
-        } else {
-            $this->filterService->applyUnavailableDateFilter($query, today(), today()->addDay());
+        $checkIn = $filters['check_in'] ?? null;
+        $checkOut = $filters['check_out'] ?? null;
+
+        // If no dates specified, use today + 1 day as default for availability check
+        if (!$checkIn || !$checkOut) {
+            $checkIn = today();
+            $checkOut = today()->addDay();
         }
+
+        // Apply the unavailable date filter for listings
+        $this->filterService->applyUnavailableDateFilter($query, $checkIn, $checkOut);
+    }
+
+    /**
+     * Apply date filter for room-based listings (query context is Room)
+     */
+    private function applyRoomDateFilter($query, $filters): void
+    {
+        $checkIn = $filters['check_in'] ?? null;
+        $checkOut = $filters['check_out'] ?? null;
+
+        // If no dates specified, use today + 1 day as default for availability check
+        if (!$checkIn || !$checkOut) {
+            $checkIn = today();
+            $checkOut = today()->addDay();
+        }
+
+        // Apply the unavailable date filter for rooms
+        $this->filterService->applyRoomUnavailableDateFilter($query, $checkIn, $checkOut);
+    }
+
+    /**
+     * Apply booking availability filter (query context is Listing)
+     */
+    private function applyBookingFilter($query, $filters): void
+    {
+        $checkIn = $filters['check_in'] ?? null;
+        $checkOut = $filters['check_out'] ?? null;
+
+        // If no dates specified, use today + 1 day as default
+        if (!$checkIn || !$checkOut) {
+            $checkIn = today();
+            $checkOut = today()->addDay();
+        }
+
+        // Apply the booking availability filter
+        $this->filterService->applyBookingAvailabilityFilter($query, $checkIn, $checkOut);
     }
 }

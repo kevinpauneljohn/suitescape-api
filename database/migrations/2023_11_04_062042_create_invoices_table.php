@@ -18,8 +18,9 @@ return new class extends Migration
             $table->foreignUuid('coupon_id')->nullable();
             $table->decimal('coupon_discount_amount', 10, 2, true);
             $table->string('reference_number')->nullable();
+            $table->string('payment_id', 255)->nullable();
             $table->string('payment_method')->nullable();
-            $table->enum('payment_status', ['pending', 'paid', 'refunded']);
+            $table->enum('payment_status', ['pending', 'paid', 'fully_refunded', 'partially_refunded']);
             $table->json('pending_additional_payments')->nullable();
             $table->json('paid_additional_payments')->nullable();
             $table->timestamps();
