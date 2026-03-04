@@ -19,7 +19,7 @@ class UpdateBookingStatus extends Command
      *
      * @var string
      */
-    protected $description = 'Manages booking statuses based on the current date';
+    protected $description = 'Updates booking statuses based on check-in/check-out times';
 
     protected BookingStatusService $bookingStatusService;
 

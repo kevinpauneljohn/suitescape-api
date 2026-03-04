@@ -55,6 +55,8 @@ class PaymentSuccessful implements ShouldBroadcast
         return [
             'invoice' => (new InvoiceResource($this->invoice))->resolve(),
             'message' => 'Payment successful',
+            'booking_status' => $this->invoice->booking?->status,
+            'booking_id' => $this->invoice->booking?->id,
         ];
     }
 }

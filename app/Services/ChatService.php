@@ -28,7 +28,7 @@ class ChatService
 
         return $user->chats()->with([
             'users' => function ($query) use ($user) {
-                $query->where('users.id', '!=', $user->id);
+                $query->where('users.id', '!=', $user->id)->with('activeSessions');
             },
             'latestMessage',
         ])->withCount('unreadMessages')->orderByLatestMessage()->get();
@@ -47,7 +47,7 @@ class ChatService
                 });
             })->with([
                 'users' => function ($query) use ($user) {
-                    $query->where('users.id', '!=', $user->id);
+                    $query->where('users.id', '!=', $user->id)->with('activeSessions');
                 },
                 'latestMessage',
             ])

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->nullable();
             $table->float('rating');
             $table->text('comment');
+            $table->json('media')->nullable(); // Array of media file paths (images/videos)
             $table->timestamps();
         });
     }

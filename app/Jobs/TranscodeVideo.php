@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Events\VideoTranscodingProgress;
+use App\Jobs\GenerateSectionThumbnail;
+use App\Jobs\SyncVideoServer;
 use App\Models\Video;
 use FFMpeg\Format\Video\X264;
 use Illuminate\Bus\Queueable;
@@ -65,5 +67,18 @@ class TranscodeVideo implements ShouldQueue
 
         // Delete the temp video
         Storage::disk('public')->delete($this->tempPath);
+
+        // Load the listing to get the user for SyncVideoServer
+        $this->video->load(['sections', 'listing.user']);
+
+        // Generate thumbnails for all sections of this video
+        foreach ($this->video->sections as $section) {
+            GenerateSectionThumbnail::dispatch($section);
+        }
+
+        // Now sync with video server (after transcoding is complete)
+        if ($this->video->listing && $this->video->listing->user) {
+            SyncVideoServer::dispatch($this->video, $this->video->listing->user);
+        }
     }
 }

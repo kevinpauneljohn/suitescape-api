@@ -40,7 +40,16 @@ class BookingCreateService
             $rooms = $this->bookingPaymentProcessService->normalizeRooms($bookingData['rooms'], $listing->is_entire_place);
             $addons = $this->bookingPaymentProcessService->normalizeAddons($bookingData['addons']);
             $amount = $this->calculateAmount($listing, $rooms, $addons, $coupon, $bookingData['start_date'], $bookingData['end_date']);
-            $booking = $this->bookingPaymentProcessService->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null);
+            
+            // Determine initial booking status based on payment type
+            // GCash/GrabPay payments require webhook confirmation, so use 'pending_payment'
+            // Card payments are processed immediately, so use default 'to_pay' (will be updated after payment)
+            $initialStatus = 'to_pay';
+            if (isset($paymentData['payment_type']) && in_array($paymentData['payment_type'], ['gcash', 'grabpay'])) {
+                $initialStatus = 'pending_payment';
+            }
+            
+            $booking = $this->bookingPaymentProcessService->createBookingRecord($listing->id, $amount, $bookingData['message'] ?? null, $bookingData['start_date'], $bookingData['end_date'], $coupon->id ?? null, $initialStatus);
             if ($booking) {
                 $bookingId = $booking->id;
                 $this->bookingPaymentProcessService->addBookingRooms($booking, $rooms);

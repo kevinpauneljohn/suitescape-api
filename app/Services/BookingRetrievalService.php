@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use Carbon\Carbon;
 
 class BookingRetrievalService
 {
     protected BookingCancellationService $bookingCancellationService;
+
+    protected BookingStatusService $bookingStatusService;
 
     protected ConstantService $constantService;
 
@@ -16,9 +19,16 @@ class BookingRetrievalService
 
     protected Booking $booking;
 
-    public function __construct(BookingCancellationService $bookingCancellationService, ConstantService $constantService, PriceCalculatorService $priceCalculatorService, UnavailableDateService $unavailableDateService, Booking $booking)
-    {
+    public function __construct(
+        BookingCancellationService $bookingCancellationService,
+        BookingStatusService $bookingStatusService,
+        ConstantService $constantService,
+        PriceCalculatorService $priceCalculatorService,
+        UnavailableDateService $unavailableDateService,
+        Booking $booking
+    ) {
         $this->bookingCancellationService = $bookingCancellationService;
+        $this->bookingStatusService = $bookingStatusService;
         $this->constantService = $constantService;
         $this->priceCalculatorService = $priceCalculatorService;
         $this->unavailableDateService = $unavailableDateService;
@@ -27,16 +37,19 @@ class BookingRetrievalService
 
     public function getAllBookings()
     {
+        $this->bookingStatusService->updateBookingStatuses();
         return $this->getBookingsQuery()->get();
     }
 
     public function getUserBookings($userId)
     {
+        $this->bookingStatusService->updateBookingStatusesForUser($userId);
         return $this->getBookingsQuery()->where('user_id', $userId)->get();
     }
 
     public function getHostBookings($hostId)
     {
+        $this->bookingStatusService->updateBookingStatusesForHost($hostId);
         $scopedQuery = Booking::findByHostId($hostId);
 
         return $this->getBookingsQuery($scopedQuery)->get();

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,6 +15,14 @@ class BookingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Check if user has reviewed this listing
+        $hasReviewed = false;
+        if ($this->status === 'completed' && $this->user_id && $this->listing_id) {
+            $hasReviewed = Review::where('user_id', $this->user_id)
+                ->where('listing_id', $this->listing_id)
+                ->exists();
+        }
+
         return [
             'id' => $this->id,
             $this->mergeUnless($this->relationLoaded('user'), ['user_id' => $this->user_id]),
@@ -31,6 +40,7 @@ class BookingResource extends JsonResource
             'status' => $this->status,
             'date_start' => $this->date_start,
             'date_end' => $this->date_end,
+            'has_reviewed' => $hasReviewed,
 
             $this->mergeWhen(gettype($this->is_expired) === 'boolean', fn () => [
                 'is_expired' => boolval($this->is_expired),

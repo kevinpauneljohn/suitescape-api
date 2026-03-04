@@ -19,6 +19,7 @@ class SectionResource extends JsonResource
             'video_id' => $this->video_id,
             'label' => $this->label,
             'milliseconds' => $this->milliseconds,
+            'thumbnail_url' => $this->thumbnail_url,
         ];
     }
 }

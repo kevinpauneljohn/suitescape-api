@@ -450,7 +450,7 @@ class BookingPaymentProcessService
         ]);
     }
 
-    public function createBookingRecord(string $listingId, array $amount, ?string $message, string $startDate, string $endDate, ?string $couponId)
+    public function createBookingRecord(string $listingId, array $amount, ?string $message, string $startDate, string $endDate, ?string $couponId, string $status = 'to_pay')
     {
         $user = auth()->user();
 
@@ -462,6 +462,7 @@ class BookingPaymentProcessService
             'message' => $message,
             'date_start' => $startDate,
             'date_end' => $endDate,
+            'status' => $status,
         ]);
     }
 
@@ -478,6 +479,21 @@ class BookingPaymentProcessService
                 ];
             }
 
+            // Skip if already paid to prevent duplicate processing
+            if ($invoice->payment_status === 'paid') {
+                \Log::info('Payment already processed, skipping updateBookingPaymentData', [
+                    'paymentLinkId' => $paymentLinkId,
+                    'current_status' => $invoice->payment_status,
+                ]);
+                return [
+                    'status' => 'success',
+                    'message' => 'Payment already processed',
+                    'code' => 200,
+                    'booking_status' => $booking->status,
+                    'payment_status' => $invoice->payment_status,
+                ];
+            }
+
             $bookingStatus = 'upcoming';
             if (Carbon::today()->betweenIncluded($booking->date_start, $booking->date_end)) {
                 $bookingStatus = 'ongoing';
@@ -485,7 +501,8 @@ class BookingPaymentProcessService
 
             $booking->update(['status' => $bookingStatus]);
 
-            if (!empty($isSuccess) && $isSuccess === 'paid' || $isSuccess === 'success') {
+            // Fix operator precedence: use parentheses for clarity
+            if (!empty($isSuccess) && ($isSuccess === 'paid' || $isSuccess === 'success')) {
                 $paymentStatus = 'paid';
                 $this->updateAdditionalPayments($invoice);
 
@@ -507,13 +524,20 @@ class BookingPaymentProcessService
 
                 $this->emailService->sendBookingCompletedEmails($booking);
 
+                // Note: PaymentSuccessful is already broadcast in ePaymentChargeable()
+                // Only broadcast here if this method is called directly (not via webhook)
                 broadcast(new PaymentSuccessful($invoice));
             } else {
                 $paymentStatus = 'pending';
-                broadcast(new PaymentFailed(
-                    $paymentLinkId,
-                    'Payment failed'
-                ));
+                // Only broadcast PaymentFailed if isSuccess explicitly indicates failure
+                // Don't broadcast if isSuccess is null (just updating payment method)
+                if ($isSuccess !== null && $isSuccess !== 'success' && $isSuccess !== 'paid') {
+                    broadcast(new PaymentFailed(
+                        $paymentLinkId,
+                        'Payment failed',
+                        $booking->user_id
+                    ));
+                }
             }
 
             $invoice->update([
@@ -531,7 +555,8 @@ class BookingPaymentProcessService
         } catch (\Exception $e) {
             broadcast(new PaymentFailed(
                 $paymentLinkId,
-                $e->getMessage()
+                $e->getMessage(),
+                $booking->user_id ?? null
             ));
 
             return [
@@ -563,13 +588,51 @@ class BookingPaymentProcessService
             }
 
             $bookingId = $invoice->booking_id;
+            $booking = $invoice->booking;
             $createSourcePayment = $this->createBookingSourcePayment($type, $amount, $sourceId, $bookingId);
             if (isset($createSourcePayment['status']) && $createSourcePayment['status'] === 'success') {
+                // Update invoice with payment_id, payment_status, and payment_method
                 $invoice->update([
-                    'payment_id' => $createSourcePayment['data']['id']
+                    'payment_id' => $createSourcePayment['data']['id'],
+                    'payment_status' => 'paid',
+                    'payment_method' => $type,
                 ]);
 
+                // Update booking status from pending_payment to upcoming/ongoing
+                $bookingStatus = 'upcoming';
+                if (Carbon::today()->betweenIncluded($booking->date_start, $booking->date_end)) {
+                    $bookingStatus = 'ongoing';
+                }
+                $booking->update(['status' => $bookingStatus]);
+
+                // Add unavailable dates for the booking
+                if ($booking->listing->is_entire_place) {
+                    $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'listing', $booking->listing->id, $booking->date_start, $booking->date_end);
+                } else {
+                    foreach ($booking->rooms as $room) {
+                        $this->unavailableDateService->addUnavailableDatesForBooking($booking, 'room', $room->id, $booking->date_start, $booking->date_end);
+                    }
+                }
+
+                // Create notification for the user
+                $this->notificationService->createNotification([
+                    'user_id' => $booking->user_id,
+                    'title' => 'Booking Successfully Paid!',
+                    'message' => "Your booking for \"{$booking->listing->name}\" has been paid successfully.",
+                    'type' => 'booking',
+                    'action_id' => $booking->id,
+                ]);
+
+                // Send booking confirmation emails
+                $this->emailService->sendBookingCompletedEmails($booking);
+
                 broadcast(new PaymentSuccessful($invoice));
+
+                \Log::info('ePaymentChargeable: Payment successful, booking updated', [
+                    'booking_id' => $bookingId,
+                    'new_status' => $bookingStatus,
+                    'invoice_status' => 'paid',
+                ]);
 
                 return [
                     'message' => 'Payment source charged successfully',
@@ -585,9 +648,13 @@ class BookingPaymentProcessService
                 ];
             }
         } catch (\Exception $e) {
+            // Try to get user_id from invoice if available
+            $userId = isset($invoice) && !isset($invoice['error']) ? $invoice->user_id : null;
+            
             broadcast(new PaymentFailed(
                 $sourceId,
-                $e->getMessage()
+                $e->getMessage(),
+                $userId
             ));
 
             return [
@@ -666,9 +733,16 @@ class BookingPaymentProcessService
                 'payment_status' => 'failed',
             ]);
 
+            // Also update the booking status back to cancelled or failed state
+            $booking = $invoice->booking;
+            if ($booking && $booking->status === 'pending_payment') {
+                $booking->update(['status' => 'cancelled']);
+            }
+
             broadcast(new PaymentFailed(
                 $sourceId,
-                'Payment failed'
+                'Payment failed',
+                $invoice->user_id
             ));
 
             return response()->noContent();

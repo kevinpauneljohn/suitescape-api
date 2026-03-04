@@ -29,6 +29,8 @@ return new class extends Migration
             $table->boolean('is_entire_place');
             $table->decimal('entire_place_weekday_price', 10, 2, true)->nullable();
             $table->decimal('entire_place_weekend_price', 10, 2, true)->nullable();
+            $table->string('latitude', 50)->nullable();
+            $table->string('longitude', 50)->nullable();
             $table->fullText(['name', 'location']);
             $table->timestamps();
             $table->softDeletes();

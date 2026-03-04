@@ -48,7 +48,13 @@ Route::post('/validate-reset-token', [RegistrationController::class, 'validateRe
 Route::post('/reset-password', [RegistrationController::class, 'resetPassword'])->name('password.reset');
 Route::post('/logout', [RegistrationController::class, 'logout'])->name('logout');
 
-Route::post('/app-feedback', [AppFeedbackController::class, 'createAppFeedback'])->name('app.feedback');
+Route::prefix('app-feedback')->group(function () {
+    Route::get('/can-submit', [AppFeedbackController::class, 'canSubmitFeedback'])->name('app.feedback.canSubmit');
+    Route::get('/my-feedbacks', [AppFeedbackController::class, 'getUserFeedbacks'])->name('app.feedback.myFeedbacks');
+    Route::post('/', [AppFeedbackController::class, 'createAppFeedback'])->name('app.feedback.create');
+    Route::match(['put', 'post'], '/{id}', [AppFeedbackController::class, 'updateAppFeedback'])->name('app.feedback.update');
+    Route::delete('/{id}', [AppFeedbackController::class, 'deleteAppFeedback'])->name('app.feedback.delete');
+});
 
 Route::prefix('email')->group(function () {
     Route::get('/verify', [RegistrationController::class, 'verifyEmail'])->name('verification.verify');
@@ -178,6 +184,15 @@ Route::prefix('packages')->group(function () {
     Route::get('/{id}', [PackageController::class, 'getPackage'])->name('packages.get')->whereUuid('id');
 });
 
+// Package Inquiries
+Route::prefix('package-inquiries')->group(function () {
+    Route::post('/', [\App\Http\Controllers\API\PackageInquiryController::class, 'store'])->name('package-inquiries.store');
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/my-inquiries', [\App\Http\Controllers\API\PackageInquiryController::class, 'userInquiries'])->name('package-inquiries.user');
+    });
+});
+
 Route::prefix('messages')->group(function () {
     Route::middleware('throttle:1000,1')->group(function () {
         Route::get('/search', [ChatController::class, 'searchChats'])->name('chat.search');
@@ -191,8 +206,8 @@ Route::prefix('messages')->group(function () {
 });
 
 Route::prefix('earnings')->group(function () {
-    Route::get('/{year}', [EarningsController::class, 'getYearlyEarnings'])->name('earnings.yearly')->whereNumber('year');
     Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
+    Route::get('/{year}', [EarningsController::class, 'getYearlyEarnings'])->name('earnings.yearly')->whereNumber('year');
 });
 
 // Route::middleware('paymongo.signature')->prefix('paymongo')->group(function () {
