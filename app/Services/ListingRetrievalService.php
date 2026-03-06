@@ -176,7 +176,7 @@ class ListingRetrievalService
 
     public function getListingVideos(string $id)
     {
-        return $this->getListing($id)->videos;
+        return $this->getListing($id)->videos()->with('sections')->get();
     }
 
     public function getListingReviews(string $id)

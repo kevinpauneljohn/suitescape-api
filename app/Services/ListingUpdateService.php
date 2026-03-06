@@ -163,6 +163,15 @@ class ListingUpdateService
 
             // If the video exists in the new data, update it and remove it from the map
             $video->update($newVideosMap[$video->id]);
+
+            // Handle sections update
+            if (isset($newVideosMap[$video->id]['sections'])) {
+                // Delete existing sections
+                $video->sections()->delete();
+                // Create new sections
+                $this->listingCreateService->createVideoSections($video, $newVideosMap[$video->id]['sections']);
+            }
+
             unset($newVideosMap[$video->id]);
         }
 

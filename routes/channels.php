@@ -8,7 +8,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
 });
 
-Broadcast::channel('private-notification.{id}', function ($user, $id) {
+Broadcast::channel('notification.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
 });
 
@@ -21,11 +21,11 @@ Broadcast::channel('active-status.{id}', function ($user, $id) {
     return $user !== null;
 });
 
-Broadcast::channel('private-payment.{id}', function ($user) {
+Broadcast::channel('payment.{id}', function ($user) {
     return (bool) $user;
 });
 
-Broadcast::channel('private-video-transcoding.{id}', function ($user, $id) {
+Broadcast::channel('video-transcoding.{id}', function ($user, $id) {
     $video = Video::find($id);
     $listing = Listing::find($id);
 
@@ -37,5 +37,9 @@ Broadcast::channel('private-video-transcoding.{id}', function ($user, $id) {
         return $listing->user_id === $user->id;
     }
 
+    return (string) $user->id === (string) $id;
+});
+
+Broadcast::channel('profile-updates.{id}', function ($user, $id) {
     return (string) $user->id === (string) $id;
 });

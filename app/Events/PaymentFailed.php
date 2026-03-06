@@ -36,12 +36,12 @@ class PaymentFailed implements ShouldBroadcast
     public function broadcastOn(): array
     {
         $channels = [
-            new PrivateChannel('private-payment.'.$this->reference_number),
+            new PrivateChannel('payment.'.$this->reference_number),
         ];
 
         // Also broadcast to user's payment channel if user_id is provided
         if ($this->user_id) {
-            $channels[] = new PrivateChannel('private-payment.'.$this->user_id);
+            $channels[] = new PrivateChannel('payment.'.$this->user_id);
         }
 
         return $channels;

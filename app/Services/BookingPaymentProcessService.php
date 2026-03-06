@@ -522,6 +522,18 @@ class BookingPaymentProcessService
                     'action_id' => $booking->id,
                 ]);
 
+                // Create notification for the host
+                $hostUserId = $booking->listing->user_id;
+                if ($hostUserId && $hostUserId !== $booking->user_id) {
+                    $this->notificationService->createNotification([
+                        'user_id' => $hostUserId,
+                        'title' => 'New Booking Received!',
+                        'message' => "You have a new booking for \"{$booking->listing->name}\" from {$booking->user->firstname} {$booking->user->lastname}.",
+                        'type' => 'host_booking',
+                        'action_id' => $booking->id,
+                    ]);
+                }
+
                 $this->emailService->sendBookingCompletedEmails($booking);
 
                 // Note: PaymentSuccessful is already broadcast in ePaymentChargeable()
@@ -622,6 +634,18 @@ class BookingPaymentProcessService
                     'type' => 'booking',
                     'action_id' => $booking->id,
                 ]);
+
+                // Create notification for the host
+                $hostUserId = $booking->listing->user_id;
+                if ($hostUserId && $hostUserId !== $booking->user_id) {
+                    $this->notificationService->createNotification([
+                        'user_id' => $hostUserId,
+                        'title' => 'New Booking Received!',
+                        'message' => "You have a new booking for \"{$booking->listing->name}\" from {$booking->user->firstname} {$booking->user->lastname}.",
+                        'type' => 'host_booking',
+                        'action_id' => $booking->id,
+                    ]);
+                }
 
                 // Send booking confirmation emails
                 $this->emailService->sendBookingCompletedEmails($booking);

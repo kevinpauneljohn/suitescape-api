@@ -220,18 +220,9 @@ class BookingCreateService
 
         $amount += $getAddonsAmountPerNight;
 
-        // Apply coupon discount
-        //        if ($coupon) {
-        //            $amount -= $amount * $coupon->discount_amount / 100;
-        //        }
+        // Note: Discount and Suitescape fee removed from guest charges
+        // Suitescape fee will be charged to hosts in the future
 
-        // Apply 10% discount as example (Make sure to change also in the app)
-        $amount -= $amount * 0.1;
-
-        $suitescapeFee = $this->constantService->getConstant('suitescape_fee')->value;
-        $suitescapeFee *= $nights;
-
-        $amount += $suitescapeFee;
         return [
             'total' => $amount,
             'base' => $base,

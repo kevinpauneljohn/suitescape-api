@@ -33,7 +33,7 @@ class ProfileUpdated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('private-profile-updates.'.$this->user->id),
+            new PrivateChannel('profile-updates.'.$this->user->id),
             new Channel('public-profile-updates'),
         ];
     }

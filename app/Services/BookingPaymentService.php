@@ -324,6 +324,19 @@ class BookingPaymentService
                     'action_id' => $booking->id,
                 ]);
 
+                // Notify the host about the new booking
+                $hostUserId = $booking->listing->user_id;
+                if ($hostUserId && $hostUserId !== $booking->user_id) {
+                    $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+                    $this->notificationService->createNotification([
+                        'user_id' => $hostUserId,
+                        'title' => 'New Booking Received!',
+                        'message' => "{$guestName} has booked \"{$booking->listing->name}\" from {$booking->date_start->format('M d, Y')} to {$booking->date_end->format('M d, Y')}.",
+                        'type' => 'host_booking',
+                        'action_id' => $booking->id,
+                    ]);
+                }
+
                 broadcast(new PaymentSuccessful($invoice));
             } else {
                 $invoice->update([
@@ -497,6 +510,19 @@ class BookingPaymentService
                     'type' => 'booking',
                     'action_id' => $booking->id,
                 ]);
+
+                // Notify the host about the new booking
+                $hostUserId = $booking->listing->user_id;
+                if ($hostUserId && $hostUserId !== $booking->user_id) {
+                    $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+                    $this->notificationService->createNotification([
+                        'user_id' => $hostUserId,
+                        'title' => 'New Booking Received!',
+                        'message' => "{$guestName} has booked \"{$booking->listing->name}\" from {$booking->date_start->format('M d, Y')} to {$booking->date_end->format('M d, Y')}.",
+                        'type' => 'host_booking',
+                        'action_id' => $booking->id,
+                    ]);
+                }
 
                 // Send booking confirmation emails to user and host
                 $this->mailService->sendBookingCompletedEmails($booking);
@@ -735,6 +761,19 @@ class BookingPaymentService
                 'type' => 'booking',
                 'action_id' => $booking->id,
             ]);
+
+            // Notify the host about the new booking
+            $hostUserId = $booking->listing->user_id;
+            if ($hostUserId && $hostUserId !== $booking->user_id) {
+                $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+                $this->notificationService->createNotification([
+                    'user_id' => $hostUserId,
+                    'title' => 'New Booking Received!',
+                    'message' => "{$guestName} has booked \"{$booking->listing->name}\" from {$booking->date_start->format('M d, Y')} to {$booking->date_end->format('M d, Y')}.",
+                    'type' => 'host_booking',
+                    'action_id' => $booking->id,
+                ]);
+            }
 
             broadcast(new PaymentSuccessful($invoice));
 

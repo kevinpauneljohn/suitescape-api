@@ -32,8 +32,8 @@ class PaymentSuccessful implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('private-payment.'.$this->invoice->user_id),
-            new PrivateChannel('private-payment.'.$this->invoice->reference_number),
+            new PrivateChannel('payment.'.$this->invoice->user_id),
+            new PrivateChannel('payment.'.$this->invoice->reference_number),
         ];
     }
 

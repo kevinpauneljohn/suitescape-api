@@ -69,7 +69,7 @@ class BookingUpdateService
             ]);
 
             // Notify the host about the cancellation
-            $hostUserId = $booking->listing->host->user_id;
+            $hostUserId = $booking->listing->user_id;
             if ($hostUserId && $hostUserId !== $booking->user_id) {
                 $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
                 $this->notificationService->createNotification([
