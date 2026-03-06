@@ -18,6 +18,13 @@ class NotificationService
     {
         $notification = Notification::create($notificationData);
 
+        \Log::info('📬 Broadcasting NewNotification', [
+            'notification_id' => $notification->id,
+            'user_id' => $notification->user_id,
+            'type' => $notification->type,
+            'title' => $notification->title,
+        ]);
+
         broadcast(new NewNotification($notification));
 
         return $notification;

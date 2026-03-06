@@ -41,9 +41,9 @@ class VideoTranscodingProgress implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('private-video-transcoding.'.$this->video->id),
-            new PrivateChannel('private-video-transcoding.'.$this->video->listing_id),
-            new PrivateChannel('private-video-transcoding.'.$this->video->listing->user_id),
+            new PrivateChannel('video-transcoding.'.$this->video->id),
+            new PrivateChannel('video-transcoding.'.$this->video->listing_id),
+            new PrivateChannel('video-transcoding.'.$this->video->listing->user_id),
         ];
     }
 

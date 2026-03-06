@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Email Verification - Suitescape PH</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    @vite('resources/css/status-pages.css')
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .container { text-align: center; max-width: 400px; width: 100%; }
+        .logo-container { margin-bottom: 30px; }
+        .logo { max-width: 200px; height: auto; }
+        .card { background: white; border-radius: 20px; padding: 40px 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .icon-container { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; }
+        .icon-container.success { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .icon-container.error { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .icon { width: 40px; height: 40px; color: white; }
+        .title { font-size: 24px; color: #333; margin-bottom: 15px; font-weight: 600; }
+        .description { color: #666; line-height: 1.6; font-size: 16px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+    </style>
 </head>
 <body>
 <div class="container animate-fade-in">

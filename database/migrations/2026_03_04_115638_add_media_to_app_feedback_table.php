@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('app_feedback', function (Blueprint $table) {
-            $table->json('media')->nullable()->after('comment'); // Array of media file paths (images/videos)
+            if (!Schema::hasColumn('app_feedback', 'media')) {
+                $table->json('media')->nullable()->after('comment');
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('app_feedback', function (Blueprint $table) {
-            $table->dropColumn('media');
+            if (Schema::hasColumn('app_feedback', 'media')) {
+                $table->dropColumn('media');
+            }
         });
     }
 };

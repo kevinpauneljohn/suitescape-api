@@ -23,7 +23,7 @@ class VideoResource extends JsonResource
             //            'listing_id' => $this->whenNotNull($this->whenLoaded('listing', null, $this->listing_id)),
             $this->mergeUnless($this->relationLoaded('listing'), ['listing_id' => $this->listing_id]),
             'listing' => new ListingResource($this->whenLoaded('listing')),
-            'sections' => SectionResource::collection($this->whenLoaded('sections')),
+            'sections' => SectionResource::collection($this->sections),
             'url' => $this->url,
         ];
     }
