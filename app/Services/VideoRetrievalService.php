@@ -97,7 +97,11 @@ class VideoRetrievalService
                 return $this->priceCalculatorService->getEntirePriceForListingsToQuery($query, $checkIn, $checkOut);
             }, 'sections'])
             ->when(empty($filters), function ($query) {
-                return $query->orderByDesc();
+                // Use pre-computed random_order column for randomized feed
+                // This column is shuffled daily via scheduled task (videos:shuffle-order)
+                // On pull-to-refresh, frontend clears videos and fetches fresh - 
+                // combined with daily shuffle, this provides variety
+                return $query->orderBy('videos.random_order')->orderBy('videos.id');
             }, function ($query) {
                 return $this->orderByListingType($query);
             })
