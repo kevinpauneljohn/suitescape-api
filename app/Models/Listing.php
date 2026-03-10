@@ -150,7 +150,7 @@ class Listing extends Model
 
     public function publicVideos()
     {
-        return $this->videos()->where('privacy', 'public');
+        return $this->videos()->where('privacy', 'public')->where('is_transcoded', true)->where('is_approved', true);
     }
 
     public function reviews()

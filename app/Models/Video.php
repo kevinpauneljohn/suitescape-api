@@ -23,12 +23,8 @@ class Video extends Model
 
     public function getUrlAttribute()
     {
-        // If the video is currently transcoding, return null
-        if (! $this->is_transcoded) {
-            return null;
-        }
-
-        //        return route('api.videos.get', ['id' => $this->id], false);
+        // Return the URL even if not transcoded - let the frontend handle the state
+        // The is_transcoded flag will indicate if the video is ready to play
         return Storage::url($this->file_path);
     }
 

@@ -61,20 +61,20 @@ class RegistrationService
 
     public function login($email, $password): JsonResponse
     {
-        // Check if the user has reached the maximum number of attempts
-        if (RateLimiter::tooManyAttempts('login:'.$email, MAX_LOGIN_ATTEMPTS)) {
-            return response()->json([
-                'message' => 'Too many attempts. Please try again later.',
-            ], 429);
-        }
-
-        // Increase the rate limiter for the login
-        RateLimiter::increment('login:'.$email, WAIT_TIME_IN_SECONDS);
-
         $user = $this->getUserByEmail($email);
 
-        // Check if user exists
+        // Check if user exists first (before rate limiting)
         if (! $user) {
+            // Still apply rate limiting for non-existent users to prevent enumeration
+            if (RateLimiter::tooManyAttempts('login:'.$email, MAX_LOGIN_ATTEMPTS)) {
+                $seconds = RateLimiter::availableIn('login:'.$email);
+                return response()->json([
+                    'message' => 'Too many attempts. Please try again in ' . $this->formatWaitTime($seconds) . '.',
+                    'retry_after' => $seconds,
+                ], 429);
+            }
+            RateLimiter::increment('login:'.$email, WAIT_TIME_IN_SECONDS);
+
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
                 'errors' => [
@@ -83,8 +83,47 @@ class RegistrationService
             ], 401);
         }
 
+        // Check if email is verified
+        // Use separate rate limiter for unverified users to prevent DDOS while not affecting post-verification attempts
+        if (! $user->hasVerifiedEmail()) {
+            $unverifiedKey = 'login-unverified:'.$email;
+            
+            // Check rate limit for unverified user attempts
+            if (RateLimiter::tooManyAttempts($unverifiedKey, MAX_LOGIN_ATTEMPTS)) {
+                $seconds = RateLimiter::availableIn($unverifiedKey);
+                return response()->json([
+                    'message' => 'Too many attempts. Please try again in ' . $this->formatWaitTime($seconds) . '.',
+                    'retry_after' => $seconds,
+                    'requires_verification' => true,
+                ], 429);
+            }
+            
+            // Increment rate limiter for unverified attempts
+            RateLimiter::increment($unverifiedKey, WAIT_TIME_IN_SECONDS);
+
+            return response()->json([
+                'message' => 'Please verify your email address before logging in. Check your inbox for the verification link.',
+                'errors' => [
+                    'email' => ['Please verify your email address before logging in.'],
+                ],
+                'requires_verification' => true,
+            ], 403);
+        }
+
+        // Now check rate limiting for verified users only
+        if (RateLimiter::tooManyAttempts('login:'.$email, MAX_LOGIN_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn('login:'.$email);
+            return response()->json([
+                'message' => 'Too many attempts. Please try again in ' . $this->formatWaitTime($seconds) . '.',
+                'retry_after' => $seconds,
+            ], 429);
+        }
+
         // Check if password is correct
         if (! $this->checkIfPasswordIsCorrect($password, $user->password)) {
+            // Only increment rate limiter for wrong password attempts on verified accounts
+            RateLimiter::increment('login:'.$email, WAIT_TIME_IN_SECONDS);
+
             return response()->json([
                 'message' => 'The provided password is incorrect.',
                 'errors' => [
@@ -104,6 +143,18 @@ class RegistrationService
             'token' => $token,
             'user' => new UserResource($user),
         ]);
+    }
+
+    /**
+     * Format wait time in human-readable format
+     */
+    private function formatWaitTime(int $seconds): string
+    {
+        if ($seconds >= 60) {
+            $minutes = ceil($seconds / 60);
+            return $minutes . ' ' . ($minutes === 1 ? 'minute' : 'minutes');
+        }
+        return $seconds . ' ' . ($seconds === 1 ? 'second' : 'seconds');
     }
 
     public function logout(): void

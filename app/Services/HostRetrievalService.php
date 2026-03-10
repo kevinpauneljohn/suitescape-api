@@ -32,7 +32,13 @@ class HostRetrievalService
 
     public function getHostListings(string $id)
     {
-        return $this->getHost($id)->listings;
+        return $this->getHost($id)->listings()
+            ->with([
+                'images',
+                'videos.sections',
+            ])
+            ->withAggregate('reviews', 'rating', 'avg')
+            ->get();
     }
 
     public function getHostReviews(string $id)

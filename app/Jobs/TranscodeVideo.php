@@ -46,6 +46,12 @@ class TranscodeVideo implements ShouldQueue
      */
     public function handle(): void
     {
+        // Check if video still exists (it might have been deleted before job ran)
+        if (!$this->video || !$this->video->exists) {
+            Log::warning("TranscodeVideo job - Video no longer exists. Skipping job for video ID: " . ($this->video->id ?? 'unknown'));
+            return;
+        }
+
         FFMpeg::fromDisk('public')
             ->open($this->tempPath)
             ->export()

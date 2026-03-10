@@ -60,6 +60,11 @@ class VideoController extends Controller
     {
         $validated = $request->validated();
 
+        // If shuffle requested (pull-to-refresh), reshuffle the random_order for all public videos
+        if ($request->boolean('shuffle') && empty($validated)) {
+            \DB::statement('UPDATE videos SET random_order = FLOOR(RAND() * 1000000000) WHERE privacy = "public" AND is_transcoded = 1 AND is_approved = 1');
+        }
+
         return VideoResource::collection($this->videoRetrievalService->getVideoFeed($validated))
             ->additional(['order' => empty($validated) ? 'default' : 'filtered']);
     }
