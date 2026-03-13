@@ -207,4 +207,65 @@ class ProfileController extends Controller
     {
         return ListingMetricResource::collection($this->profileRetrievalService->getViewedListings());
     }
+
+    /**
+     * Update Profile Image
+     *
+     * Updates only the profile image or cover image of the currently authenticated user.
+     * This endpoint does not require other profile fields.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateProfileImage(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'profile_image' => ['nullable', 'image', 'max:5120'], // 5MB max
+            'cover_image' => ['nullable', 'image', 'max:10240'], // 10MB max
+        ]);
+
+        if (!$request->hasFile('profile_image') && !$request->hasFile('cover_image')) {
+            return response()->json([
+                'message' => 'No image file provided',
+            ], 422);
+        }
+
+        $user = auth()->user();
+        $updated = false;
+
+        if ($request->hasFile('profile_image')) {
+            // Generate a unique filename for the profile image
+            $filename = $this->fileNameService->generateFileName($request->file('profile_image')->extension());
+
+            // Store the profile image in the public disk
+            $request->file('profile_image')->storeAs('avatars', $filename, 'public');
+
+            // Update user's profile image
+            $user->profile_image = $filename;
+            $updated = true;
+        }
+
+        if ($request->hasFile('cover_image')) {
+            // Generate a unique filename for the cover image
+            $filename = $this->fileNameService->generateFileName($request->file('cover_image')->extension());
+
+            // Store the cover image in the public disk
+            $request->file('cover_image')->storeAs('covers', $filename, 'public');
+
+            // Update user's cover image
+            $user->cover_image = $filename;
+            $updated = true;
+        }
+
+        if ($updated) {
+            $user->save();
+            broadcast(new ProfileUpdated($user));
+        }
+
+        return response()->json([
+            'updated' => $updated,
+            'message' => $updated ? 'Image updated successfully' : 'No changes were made',
+            'data' => new UserResource($user),
+        ]);
+    }
 }

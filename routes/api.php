@@ -69,6 +69,7 @@ Route::prefix('profile')->group(function () {
 
     Route::post('/validate', [ProfileController::class, 'validateProfile'])->name('profile.validate');
     Route::post('/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/update-image', [ProfileController::class, 'updateProfileImage'])->name('profile.update-image');
     Route::post('/update-password', [ProfileController::class, 'updatePassword'])->name('profile.update-password');
     Route::post('/update-active-session', [ProfileController::class, 'updateActiveSession'])->name('profile.update-active-session');
 });
