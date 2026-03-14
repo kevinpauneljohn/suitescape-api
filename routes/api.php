@@ -59,7 +59,11 @@ Route::prefix('app-feedback')->group(function () {
 Route::prefix('email')->group(function () {
     Route::get('/verify', [RegistrationController::class, 'verifyEmail'])->name('verification.verify');
     Route::post('/resend', [RegistrationController::class, 'resendEmail'])->name('verification.resend');
+    Route::post('/resend', [RegistrationController::class, 'resendEmailPublic']);
 });
+
+// Public resend verification endpoint (for users who can't log in yet)
+Route::post('/email/resend-public', [RegistrationController::class, 'resendEmailPublic']);
 
 Route::prefix('profile')->group(function () {
     Route::get('/', [ProfileController::class, 'getProfile'])->name('profile.get');

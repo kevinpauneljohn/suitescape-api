@@ -160,4 +160,25 @@ class RegistrationController extends Controller
             'message' => 'Verification email sent successfully',
         ]);
     }
+
+    /**
+     * Public resend verification email by email address (for unverified users who can't log in)
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resendEmailPublic(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'No user found with that email address.'], 404);
+        }
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'This email is already verified.'], 400);
+        }
+        $user->sendEmailVerificationNotification();
+        return response()->json(['message' => 'Verification email sent successfully.']);
+    }
 }
