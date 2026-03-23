@@ -123,6 +123,9 @@ class ChatService
 
         $this->trackResponseTime($chat, $message);
 
+        // Load sender relationship before broadcasting
+        $message->load('sender');
+
         broadcast(new MessageSent($message))->toOthers();
 
         return $message;

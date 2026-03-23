@@ -13,6 +13,7 @@ use App\Http\Resources\UserResource;
 use App\Services\FileNameService;
 use App\Services\ProfileRetrievalService;
 use App\Services\ProfileUpdateService;
+use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
