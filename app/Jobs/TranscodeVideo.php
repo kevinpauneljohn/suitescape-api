@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\VideoTranscodingComplete;
 use App\Events\VideoTranscodingProgress;
 use App\Jobs\GenerateSectionThumbnail;
 use App\Jobs\SyncVideoServer;
@@ -91,6 +92,9 @@ class TranscodeVideo implements ShouldQueue
 
         // Load the listing to get the user for SyncVideoServer
         $this->video->load(['sections', 'listing.user']);
+
+        // Broadcast transcoding complete to all users viewing this listing
+        broadcast(new VideoTranscodingComplete($this->video));
 
         // Generate thumbnails for all sections of this video
         foreach ($this->video->sections as $section) {

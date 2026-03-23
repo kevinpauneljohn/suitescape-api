@@ -2,26 +2,45 @@
 
 namespace App\Events;
 
-use App\Http\Resources\MessageResource;
 use App\Models\Message;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class MessageSent implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets;
 
-    public Message $message;
+    public array $messageData;
 
     /**
      * Create a new event instance.
      */
     public function __construct(Message $message)
     {
-        $this->message = $message->load('sender');
+        // Ensure sender is loaded
+        if (!$message->relationLoaded('sender')) {
+            $message->load('sender');
+        }
+        
+        $sender = $message->sender;
+        
+        // Store the data immediately to avoid serialization issues
+        $this->messageData = [
+            'id' => $message->id,
+            'content' => $message->content,
+            'sender_id' => $message->sender_id,
+            'receiver_id' => $message->receiver_id,
+            'created_at' => $message->created_at?->toISOString(),
+            'sender' => $sender ? [
+                'id' => $sender->id,
+                'fullname' => $sender->full_name,
+                'firstname' => $sender->firstname,
+                'lastname' => $sender->lastname,
+                'profile_image_url' => $sender->profile_image_url,
+            ] : null,
+        ];
     }
 
     /**
@@ -32,7 +51,7 @@ class MessageSent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('chat.'.$this->message->receiver_id),
+            new PrivateChannel('chat.' . $this->messageData['receiver_id']),
         ];
     }
 
@@ -51,6 +70,6 @@ class MessageSent implements ShouldBroadcast
      */
     public function broadcastWith(): array
     {
-        return (new MessageResource($this->message))->resolve();
+        return $this->messageData;
     }
 }
