@@ -68,10 +68,23 @@ class TranscodeVideo implements ShouldQueue
             return;
         }
 
+        // Create X264 format with 8-bit color for maximum device compatibility
+        $format = new X264();
+        $format->setKiloBitrate(1500);
+        
+        // Force 8-bit color (yuv420p) and Main profile for maximum compatibility
+        // High 10 profile (10-bit) causes black screen on many Android devices
+        $format->setAdditionalParameters([
+            '-pix_fmt', 'yuv420p',      // Force 8-bit color
+            '-profile:v', 'main',        // Use Main profile (most compatible)
+            '-level', '4.0',             // H.264 Level 4.0 (supports 1080p)
+            '-movflags', '+faststart',   // Enable fast start for web streaming
+        ]);
+
         FFMpeg::fromDisk('public')
             ->open($this->tempPath)
             ->export()
-            ->inFormat(new X264)
+            ->inFormat($format)
             ->resize(1080, 1920)
             ->onProgress(function ($percentage, $remaining, $rate) {
                 Log::info("Transcoding video: $percentage% done");
