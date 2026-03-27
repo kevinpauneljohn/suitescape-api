@@ -17,6 +17,8 @@ class Booking extends Model
         'coupon_id',
         'amount',
         'base_amount',
+        'suitescape_fee',
+        'host_earnings',
         'message',
         'cancellation_reason',
         'status',

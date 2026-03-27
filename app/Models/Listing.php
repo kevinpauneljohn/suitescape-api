@@ -30,7 +30,10 @@ class Listing extends Model
         'entire_place_weekday_price',
         'entire_place_weekend_price',
         'latitude',
-        'longitude'
+        'longitude',
+        'custom_suitescape_fee',
+        'is_partner',
+        'partner_notes',
     ];
 
     protected $casts = [
