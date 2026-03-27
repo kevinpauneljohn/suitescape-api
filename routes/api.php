@@ -8,6 +8,7 @@ use App\Http\Controllers\API\EarningsController;
 use App\Http\Controllers\API\HostController;
 use App\Http\Controllers\API\ImageController;
 use App\Http\Controllers\API\ListingController;
+use App\Http\Controllers\API\ListingFeeController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\PackageController;
 use App\Http\Controllers\API\PaymentController;
@@ -82,6 +83,14 @@ Route::prefix('constants')->group(function () {
     Route::get('/', [ConstantController::class, 'getAllConstants'])->name('constants.all');
     Route::get('/{key}', [ConstantController::class, 'getConstant'])->name('constants.get');
     Route::post('/{key}', [ConstantController::class, 'updateConstant'])->name('constants.update');
+});
+
+// Listing Fee Management (Admin only)
+Route::prefix('listing-fees')->group(function () {
+    Route::get('/partners', [ListingFeeController::class, 'getPartnerListings'])->name('listing-fees.partners');
+    Route::get('/{listingId}', [ListingFeeController::class, 'getFeeSettings'])->name('listing-fees.get');
+    Route::put('/{listingId}', [ListingFeeController::class, 'updateFeeSettings'])->name('listing-fees.update');
+    Route::delete('/{listingId}', [ListingFeeController::class, 'removeCustomFee'])->name('listing-fees.remove');
 });
 
 Route::prefix('videos')->group(function () {

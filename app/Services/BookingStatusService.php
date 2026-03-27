@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\Constant;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -89,7 +90,7 @@ class BookingStatusService
         $count = 0;
         foreach ($bookings as $booking) {
             if ($this->shouldBeCompleted($booking, $now)) {
-                $booking->update(['status' => 'completed']);
+                $this->completeBookingWithFee($booking);
                 $count++;
             }
         }
@@ -111,7 +112,7 @@ class BookingStatusService
 
         $count = 0;
         foreach ($bookings as $booking) {
-            $booking->update(['status' => 'completed']);
+            $this->completeBookingWithFee($booking);
             $count++;
         }
 
@@ -151,7 +152,7 @@ class BookingStatusService
 
         foreach ($bookings as $booking) {
             if ($this->shouldBeCompleted($booking, $now)) {
-                $booking->update(['status' => 'completed']);
+                $this->completeBookingWithFee($booking);
             }
         }
     }
@@ -161,10 +162,15 @@ class BookingStatusService
      */
     private function updateUserMissedBookings($userId, Carbon $now): void
     {
-        Booking::where('user_id', $userId)
+        $bookings = Booking::with('listing')
+            ->where('user_id', $userId)
             ->where('status', 'upcoming')
             ->whereDate('date_end', '<', $now->toDateString())
-            ->update(['status' => 'completed']);
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $this->completeBookingWithFee($booking);
+        }
     }
 
     /**
@@ -198,7 +204,7 @@ class BookingStatusService
 
         foreach ($bookings as $booking) {
             if ($this->shouldBeCompleted($booking, $now)) {
-                $booking->update(['status' => 'completed']);
+                $this->completeBookingWithFee($booking);
             }
         }
     }
@@ -208,10 +214,15 @@ class BookingStatusService
      */
     private function updateHostMissedBookings($listingIds, Carbon $now): void
     {
-        Booking::whereIn('listing_id', $listingIds)
+        $bookings = Booking::with('listing')
+            ->whereIn('listing_id', $listingIds)
             ->where('status', 'upcoming')
             ->whereDate('date_end', '<', $now->toDateString())
-            ->update(['status' => 'completed']);
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $this->completeBookingWithFee($booking);
+        }
     }
 
     /**
@@ -248,5 +259,56 @@ class BookingStatusService
             ->setTime($checkOutTime->hour, $checkOutTime->minute, 0);
 
         return $checkOutDateTime->lte($now);
+    }
+
+    /**
+     * Complete a booking and apply Suitescape platform fee
+     * The fee is deducted from the booking amount to calculate host earnings
+     * 
+     * Fee priority:
+     * 1. Listing's custom_suitescape_fee (if set) - for partners/affiliates
+     * 2. Global suitescape_fee from constants table (default)
+     */
+    private function completeBookingWithFee(Booking $booking): void
+    {
+        $suitescapeFee = $this->getSuitescapeFeeForBooking($booking);
+
+        // Calculate host earnings (booking amount minus platform fee)
+        $hostEarnings = max(0, $booking->amount - $suitescapeFee);
+
+        $booking->update([
+            'status' => 'completed',
+            'suitescape_fee' => $suitescapeFee,
+            'host_earnings' => $hostEarnings,
+        ]);
+
+        $isCustomFee = $booking->listing && $booking->listing->custom_suitescape_fee !== null;
+        $feeType = $isCustomFee ? 'custom' : 'default';
+        
+        Log::info("Booking {$booking->id} completed. Amount: {$booking->amount}, Suitescape Fee: {$suitescapeFee} ({$feeType}), Host Earnings: {$hostEarnings}");
+    }
+
+    /**
+     * Get the applicable Suitescape fee for a booking
+     * Checks listing's custom fee first, then falls back to global default
+     */
+    private function getSuitescapeFeeForBooking(Booking $booking): float
+    {
+        // First, check if the listing has a custom fee set (for partners/affiliates)
+        if ($booking->listing && $booking->listing->custom_suitescape_fee !== null) {
+            return (float) $booking->listing->custom_suitescape_fee;
+        }
+
+        // Fall back to global default from constants table
+        try {
+            $feeConstant = Constant::where('key', 'suitescape_fee')->first();
+            if ($feeConstant) {
+                return (float) $feeConstant->value;
+            }
+        } catch (\Exception $e) {
+            Log::warning("Could not retrieve suitescape_fee constant: " . $e->getMessage());
+        }
+
+        return 0;
     }
 }

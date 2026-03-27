@@ -68,6 +68,16 @@ class TranscodeVideo implements ShouldQueue
             return;
         }
 
+        // Check if temp file exists
+        if (!Storage::disk('public')->exists($this->tempPath)) {
+            Log::error("TranscodeVideo job - Temp file not found: {$this->tempPath}");
+            return;
+        }
+
+        // Log the temp file size for debugging
+        $tempFileSize = Storage::disk('public')->size($this->tempPath);
+        Log::info("TranscodeVideo job - Starting transcoding for video ID: {$this->video->id}, temp file size: " . number_format($tempFileSize / 1024 / 1024, 2) . " MB");
+
         // Create X264 format with settings for maximum device compatibility
         $format = new X264('aac', 'libx264');
         $format->setKiloBitrate(1500);
@@ -84,17 +94,40 @@ class TranscodeVideo implements ShouldQueue
             '-preset', 'fast',            // Faster encoding with good quality
         ]);
 
-        FFMpeg::fromDisk('public')
-            ->open($this->tempPath)
-            ->export()
-            ->inFormat($format)
-            ->resize(1080, 1920)
-            ->onProgress(function ($percentage, $remaining, $rate) {
-                Log::info("Transcoding video: $percentage% done");
-                broadcast(new VideoTranscodingProgress($this->video, $percentage, $remaining, $rate));
-            })
-            ->toDisk('public')
-            ->save($this->directory.'/'.$this->filename);
+        try {
+            FFMpeg::fromDisk('public')
+                ->open($this->tempPath)
+                ->export()
+                ->inFormat($format)
+                ->resize(1080, 1920)
+                ->onProgress(function ($percentage, $remaining, $rate) {
+                    Log::info("Transcoding video: $percentage% done");
+                    broadcast(new VideoTranscodingProgress($this->video, $percentage, $remaining, $rate));
+                })
+                ->toDisk('public')
+                ->save($this->directory.'/'.$this->filename);
+
+            Log::info("TranscodeVideo job - Transcoding completed successfully for video ID: {$this->video->id}");
+        } catch (\Exception $e) {
+            Log::error("TranscodeVideo job - FFmpeg failed for video ID: {$this->video->id}. Error: " . $e->getMessage());
+            throw $e; // Re-throw to mark job as failed
+        }
+
+        // Verify output file exists and has content
+        $outputPath = $this->directory.'/'.$this->filename;
+        if (!Storage::disk('public')->exists($outputPath)) {
+            Log::error("TranscodeVideo job - Output file not created: {$outputPath}");
+            throw new \Exception("Transcoding failed: output file not created");
+        }
+
+        $outputSize = Storage::disk('public')->size($outputPath);
+        Log::info("TranscodeVideo job - Output file size: " . number_format($outputSize / 1024 / 1024, 2) . " MB");
+
+        if ($outputSize < 1000) { // Less than 1KB means something went wrong
+            Log::error("TranscodeVideo job - Output file too small ({$outputSize} bytes), likely corrupted");
+            Storage::disk('public')->delete($outputPath);
+            throw new \Exception("Transcoding failed: output file too small");
+        }
 
         // Update the video's transcoded status
         $this->video->update([
