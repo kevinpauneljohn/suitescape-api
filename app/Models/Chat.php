@@ -10,9 +10,18 @@ class Chat extends Model
 {
     use HasFactory, HasUuids;
 
+    protected $fillable = [
+        'listing_id',
+    ];
+
     public function users()
     {
         return $this->belongsToMany(User::class);
+    }
+
+    public function listing()
+    {
+        return $this->belongsTo(Listing::class);
     }
 
     public function messages()

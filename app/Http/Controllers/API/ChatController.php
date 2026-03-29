@@ -7,6 +7,7 @@ use App\Http\Requests\SearchRequest;
 use App\Http\Requests\SendMessageRequest;
 use App\Http\Resources\ChatResource;
 use App\Http\Resources\MessageResource;
+use App\Models\Message;
 use App\Services\ChatService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,12 +26,14 @@ class ChatController extends Controller
      * Get All Chats
      *
      * Retrieves a collection of all chats for the authenticated user.
+     * Optionally filter by mode: 'host' (conversations about your listings) or 'guest' (conversations about others' listings)
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function getAllChats()
     {
-        return ChatResource::collection($this->chatService->getAllChats());
+        $mode = request('mode'); // 'host', 'guest', or null for all
+        return ChatResource::collection($this->chatService->getAllChats($mode));
     }
 
     /**
@@ -52,6 +55,7 @@ class ChatController extends Controller
      * Get All Messages
      *
      * Retrieves all messages between the authenticated user and the specified receiver.
+     * Optionally filter by listing_id for listing-specific conversations.
      *
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|JsonResource
      */
@@ -59,8 +63,9 @@ class ChatController extends Controller
     {
         $userId = auth()->id();
         $cursor = request('cursor');
+        $listingId = request('listing_id');
 
-        $chat = $this->chatService->getChat($userId, $receiverId);
+        $chat = $this->chatService->getChat($userId, $receiverId, $listingId);
 
         if (! $chat) {
             return response()->json([
@@ -70,7 +75,14 @@ class ChatController extends Controller
         }
 
         $this->chatService->markMessagesAsRead($chat->id, $userId);
-        $messages = $this->chatService->getMessages($userId, $receiverId, $cursor);
+        
+        // Get messages directly by chat_id for efficiency
+        $messages = Message::with('listing.images')
+            ->where('chat_id', $chat->id)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->cursorPaginate(10, ['*'], 'cursor', $cursor);
+            
         return response()->json([
             'data' => MessageResource::collection($messages),
             'next_cursor' => $messages->nextCursor()?->encode(),
