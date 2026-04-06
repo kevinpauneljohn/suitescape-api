@@ -11,19 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Duplicate migration — guest_reviews table was already created in
+        // 2026_04_06_012228_create_guest_reviews_table. This is a no-op.
+        if (Schema::hasTable('guest_reviews')) {
+            return;
+        }
+
         Schema::create('guest_reviews', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(\Illuminate\Support\Facades\DB::raw('(UUID())'));
-            // The booking this review is for
             $table->foreignUuid('booking_id')->constrained('bookings')->cascadeOnDelete();
-            // The guest being reviewed
             $table->foreignUuid('guest_id')->constrained('users')->cascadeOnDelete();
-            // The host who wrote the review
             $table->foreignUuid('host_id')->constrained('users')->cascadeOnDelete();
-            $table->integer('rating');           // 1–5
-            $table->text('content')->nullable(); // written review
+            $table->tinyInteger('rating');
+            $table->text('content')->nullable();
             $table->timestamps();
-
-            // One host review per guest per booking
             $table->unique(['booking_id', 'host_id']);
         });
     }
@@ -33,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('guest_reviews');
+        // Intentionally left blank — owned by 2026_04_06_012228
     }
 };
