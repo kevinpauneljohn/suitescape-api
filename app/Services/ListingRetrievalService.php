@@ -85,7 +85,7 @@ class ListingRetrievalService
         $listing->load([
             'host',
             'serviceRatings',
-            'reviews' => fn ($query) => $query->with('user')->take(10),
+            'reviews' => fn ($query) => $query->with(['user', 'booking.guestReview'])->take(10),
             'bookingPolicies',
             'listingNearbyPlaces.nearbyPlace',
             'specialRates',
@@ -181,7 +181,7 @@ class ListingRetrievalService
 
     public function getListingReviews(string $id)
     {
-        return $this->getListing($id)->reviews->load(['user', 'listing.images']);
+        return $this->getListing($id)->reviews->load(['user', 'listing.images', 'booking.guestReview']);
     }
 
     public function getUnavailableDatesFromRange(string $id, string $startDate, string $endDate)

@@ -14,6 +14,7 @@ use App\Http\Controllers\API\PackageController;
 use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\PayoutController;
 use App\Http\Controllers\API\ProfileController;
+use App\Http\Controllers\API\RebookRequestController;
 use App\Http\Controllers\API\RegistrationController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\RoomController;
@@ -180,17 +181,43 @@ Route::prefix('bookings')->group(function () {
     Route::get('/', [BookingController::class, 'getAllBookings'])->name('bookings.all');
     Route::get('/user', [BookingController::class, 'getUserBookings'])->name('bookings.user');
     Route::get('/host', [BookingController::class, 'getHostBookings'])->name('bookings.host');
+    Route::get('/check-availability', [BookingController::class, 'checkAvailability'])->name('bookings.check-availability');
+    Route::get('/availability-summary', [BookingController::class, 'getAvailabilitySummary'])->name('bookings.availability-summary');
     Route::get('/{id}', [BookingController::class, 'getBooking'])->name('bookings.get')->whereUuid('id');
     Route::get('/{id}/amount', [BookingController::class, 'getBookingAmount'])->name('bookings.amount')->whereUuid('id');
     Route::post('/', [BookingController::class, 'createBooking'])->name('bookings.create');
+    Route::post('/hold', [BookingController::class, 'createHold'])->name('bookings.hold');
+    Route::post('/hold/{id}/confirm', [BookingController::class, 'confirmHold'])->name('bookings.hold.confirm')->whereUuid('id');
+    Route::delete('/hold/{id}', [BookingController::class, 'cancelHold'])->name('bookings.hold.cancel')->whereUuid('id');
     Route::post('/{id}/update-status', [BookingController::class, 'updateBookingStatus'])->name('bookings.update-status')->whereUuid('id');
     Route::post('/{id}/update-dates', [BookingController::class, 'updateBookingDates'])->name('bookings.update-dates')->whereUuid('id');
+    Route::post('/{id}/rebook-preview', [BookingController::class, 'rebookPreview'])->name('bookings.rebook-preview')->whereUuid('id');
+    Route::post('/{id}/rebook-confirm', [BookingController::class, 'confirmRebook'])->name('bookings.rebook-confirm')->whereUuid('id');
+    // Rebook-with-approval flow
+    Route::post('/{id}/rebook-request', [RebookRequestController::class, 'submit'])->name('bookings.rebook-request')->whereUuid('id');
+    Route::get('/{id}/rebook-requests', [RebookRequestController::class, 'bookingRequests'])->name('bookings.rebook-requests.list')->whereUuid('id');
+});
+
+// Rebook request: guest pays after host approval, host responds
+Route::prefix('rebook-requests')->group(function () {
+    Route::post('/{id}/pay', [RebookRequestController::class, 'guestPay'])->name('rebook-requests.pay');
+    Route::post('/{id}/verify-payment', [RebookRequestController::class, 'verifyPayment'])->name('rebook-requests.verify-payment');
+});
+
+// Host-facing rebook request management
+Route::prefix('host/rebook-requests')->group(function () {
+    Route::get('/', [RebookRequestController::class, 'hostIndex'])->name('host.rebook-requests.index');
+    Route::post('/{id}/approve', [RebookRequestController::class, 'approve'])->name('host.rebook-requests.approve');
+    Route::post('/{id}/reject', [RebookRequestController::class, 'reject'])->name('host.rebook-requests.reject');
 });
 
 Route::prefix('reviews')->group(function () {
     Route::get('/', [ReviewController::class, 'getAllReviews'])->name('reviews.all');
+    Route::get('/host-reviews', [ReviewController::class, 'getMyListingReviews'])->name('reviews.host');
+    Route::get('/guest-review/{bookingId}', [ReviewController::class, 'getGuestReview'])->name('reviews.guest')->whereUuid('bookingId');
     Route::get('/{id}', [ReviewController::class, 'getReview'])->name('reviews.get')->whereUuid('id');
     Route::post('/', [ReviewController::class, 'createReview'])->name('reviews.create');
+    Route::post('/rate-guest', [ReviewController::class, 'rateGuest'])->name('reviews.rate-guest');
 });
 
 Route::prefix('packages')->group(function () {
@@ -222,6 +249,7 @@ Route::prefix('messages')->group(function () {
 Route::prefix('earnings')->group(function () {
     Route::get('/years', [EarningsController::class, 'getAvailableYears'])->name('earnings.available-years');
     Route::get('/{year}', [EarningsController::class, 'getYearlyEarnings'])->name('earnings.yearly')->whereNumber('year');
+    Route::get('/listing/{listingId}/{year}', [EarningsController::class, 'getListingEarningsDetails'])->name('earnings.listing-details')->whereNumber('year');
 });
 
 // Route::middleware('paymongo.signature')->prefix('paymongo')->group(function () {

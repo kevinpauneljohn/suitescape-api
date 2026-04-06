@@ -262,19 +262,28 @@ class BookingStatusService
     }
 
     /**
-     * Complete a booking and apply Suitescape platform fee
-     * The fee is deducted from the booking amount to calculate host earnings
+     * Complete a booking and apply Suitescape platform fee (host fee)
+     * The fee is a percentage deducted from the booking subtotal (amount minus guest service fee and VAT)
      * 
      * Fee priority:
-     * 1. Listing's custom_suitescape_fee (if set) - for partners/affiliates
-     * 2. Global suitescape_fee from constants table (default)
+     * 1. Listing's custom_suitescape_fee (percentage, if set) - for partners/affiliates
+     * 2. Global suitescape_fee from constants table (default 3%)
      */
     private function completeBookingWithFee(Booking $booking): void
     {
-        $suitescapeFee = $this->getSuitescapeFeeForBooking($booking);
+        $feePercentage = $this->getHostFeePercentageForBooking($booking);
 
-        // Calculate host earnings (booking amount minus platform fee)
-        $hostEarnings = max(0, $booking->amount - $suitescapeFee);
+        // Host gross = total paid by guest minus platform charges (service fee + VAT)
+        // These are Suitescape's, not the host's revenue
+        $hostGross = $booking->amount
+            - ($booking->guest_service_fee ?? 0)
+            - ($booking->vat ?? 0);
+
+        // Calculate the platform fee as a percentage of the host's gross
+        $suitescapeFee = round($hostGross * ($feePercentage / 100), 2);
+
+        // Calculate host earnings (host gross minus platform fee)
+        $hostEarnings = max(0, round($hostGross - $suitescapeFee, 2));
 
         $booking->update([
             'status' => 'completed',
@@ -284,17 +293,19 @@ class BookingStatusService
 
         $isCustomFee = $booking->listing && $booking->listing->custom_suitescape_fee !== null;
         $feeType = $isCustomFee ? 'custom' : 'default';
-        
-        Log::info("Booking {$booking->id} completed. Amount: {$booking->amount}, Suitescape Fee: {$suitescapeFee} ({$feeType}), Host Earnings: {$hostEarnings}");
+
+        Log::info("Booking {$booking->id} completed. Amount: {$booking->amount}, Guest Fee: {$booking->guest_service_fee}, VAT: {$booking->vat}, Host Gross: {$hostGross}, Suitescape Fee: {$suitescapeFee} ({$feePercentage}% {$feeType}), Host Earnings: {$hostEarnings}");
     }
 
     /**
-     * Get the applicable Suitescape fee for a booking
-     * Checks listing's custom fee first, then falls back to global default
+     * Get the applicable host fee percentage for a booking.
+     * Checks listing's custom fee first, then falls back to global default.
+     * 
+     * @return float Percentage (e.g., 3 for 3%)
      */
-    private function getSuitescapeFeeForBooking(Booking $booking): float
+    private function getHostFeePercentageForBooking(Booking $booking): float
     {
-        // First, check if the listing has a custom fee set (for partners/affiliates)
+        // First, check if the listing has a custom fee percentage set (for partners/affiliates)
         if ($booking->listing && $booking->listing->custom_suitescape_fee !== null) {
             return (float) $booking->listing->custom_suitescape_fee;
         }
@@ -309,6 +320,6 @@ class BookingStatusService
             Log::warning("Could not retrieve suitescape_fee constant: " . $e->getMessage());
         }
 
-        return 0;
+        return 3; // Default 3%
     }
 }

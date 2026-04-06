@@ -59,59 +59,115 @@ class BookingUpdateService
                 'cancellation_reason' => $message,
             ]);
 
-            // Notify the guest about the cancellation
-            $this->notificationService->createNotification([
-                'user_id' => $booking->user_id,
-                'title' => 'Booking Cancelled',
-                'message' => "Your booking for \"{$booking->listing->name}\" has been cancelled.",
-                'type' => 'booking_cancelled',
-                'action_id' => $booking->id,
-            ]);
-
-            // Notify the host about the cancellation
             $hostUserId = $booking->listing->user_id;
-            if ($hostUserId && $hostUserId !== $booking->user_id) {
-                $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+            $authUserId = auth()->id();
+            $cancelledByHost = $hostUserId && $authUserId === $hostUserId;
+            $reasonSuffix = $message ? " Reason: \"{$message}\"." : '';
+
+            if ($cancelledByHost) {
+                // Host cancelled the guest's booking — notify the guest
                 $this->notificationService->createNotification([
-                    'user_id' => $hostUserId,
-                    'title' => 'Booking Cancelled',
-                    'message' => "{$guestName} has cancelled their booking for \"{$booking->listing->name}\" ({$booking->date_start->format('M d, Y')} - {$booking->date_end->format('M d, Y')}).",
-                    'type' => 'host_booking_cancelled',
+                    'user_id' => $booking->user_id,
+                    'title' => 'Your Booking Was Cancelled by the Host',
+                    'message' => "Your booking for \"{$booking->listing->name}\" ({$booking->date_start->format('M d, Y')} - {$booking->date_end->format('M d, Y')}) was cancelled by the host.{$reasonSuffix}",
+                    'type' => 'booking_cancelled',
                     'action_id' => $booking->id,
                 ]);
+            } else {
+                // Guest cancelled — notify the guest
+                $this->notificationService->createNotification([
+                    'user_id' => $booking->user_id,
+                    'title' => 'Booking Cancelled',
+                    'message' => "Your booking for \"{$booking->listing->name}\" has been cancelled.",
+                    'type' => 'booking_cancelled',
+                    'action_id' => $booking->id,
+                ]);
+
+                // Notify the host
+                if ($hostUserId && $hostUserId !== $booking->user_id) {
+                    $guestName = $booking->user->firstname . ' ' . $booking->user->lastname;
+                    $this->notificationService->createNotification([
+                        'user_id' => $hostUserId,
+                        'title' => 'Booking Cancelled',
+                        'message' => "{$guestName} has cancelled their booking for \"{$booking->listing->name}\" ({$booking->date_start->format('M d, Y')} - {$booking->date_end->format('M d, Y')}).",
+                        'type' => 'host_booking_cancelled',
+                        'action_id' => $booking->id,
+                    ]);
+                }
             }
 
             if (isset($booking->invoice->payment_id)) {
                 try {
                     $paymentId = $booking->invoice->payment_id;
-                    $cancellationFee = $this->bookingCancellationService->calculateCancellationFee($booking);
-                    $suitescapeFee = $this->constantService->getConstant('cancellation_fee')->value ?? 0;
 
-                    $totalCancellationFee = $cancellationFee + $suitescapeFee;
-                    // Convert totalAmount to centavos for PayMongo
-                    $refundAmount = ($booking->amount - $totalCancellationFee) * 100;
-                    
-                    // Only process refund if there's an amount to refund
-                    if ($refundAmount > 0) {
-                        $refundResponse = $this->bookingRefundProcessService->refundPayment($paymentId, (int) $refundAmount);
+                    // calculateCancellationFee() returns ONLY the per-day portion.
+                    // We add the platform fee (cancellation_fee constant) once here.
+                    // Within the free cancellation window: per-day = 0, platform fee still applies.
+                    $perDayFee = $this->bookingCancellationService->calculateCancellationFee($booking);
+                    $platformFee = (float) ($this->constantService->getConstant('cancellation_fee')->value ?? 0);
+                    $totalCancellationFee = $perDayFee + $platformFee;
+                    $cancellationFeeCentavos = (int) round($totalCancellationFee * 100);
+
+                    // ── Refund original booking payment ───────────────────────────────
+                    // Fetch the actual amount charged on the original PayMongo payment.
+                    // booking->amount may have been updated after a rebook (higher new amount),
+                    // so using it directly would exceed what was actually charged and cause
+                    // PayMongo to reject the refund with "parameter_above_maximum".
+                    $chargedCentavos = $this->bookingRefundProcessService->getPaymentAmount($paymentId)
+                        ?? (int) round($booking->amount * 100);
+
+                    // Apply cancellation fee only to the original payment; the rebook
+                    // additional payment is always refunded in full.
+                    $originalRefund = max(0, $chargedCentavos - $cancellationFeeCentavos);
+
+                    if ($originalRefund > 0) {
+                        $refundResponse = $this->bookingRefundProcessService->refundPayment($paymentId, $originalRefund);
                         if ($refundResponse['status'] === 'success') {
                             $this->bookingRefundProcessService->createBookingCancellation($booking->id, $booking->user_id, $refundResponse['data']);
-                            \Log::info('Booking refund processed successfully', [
-                                'booking_id' => $booking->id,
-                                'refund_amount' => $refundAmount / 100,
+                            \Log::info('Booking original payment refunded', [
+                                'booking_id'    => $booking->id,
+                                'refund_amount' => $originalRefund / 100,
                             ]);
                         } else {
                             \Log::error('Refund failed but continuing with cancellation', [
-                                'booking_id' => $booking->id,
+                                'booking_id'      => $booking->id,
                                 'refund_response' => $refundResponse,
                             ]);
                         }
                     }
+
+                    // ── Refund rebook additional payment (if any) ─────────────────────
+                    $rebookRequest = $booking->rebookRequests()
+                        ->where('payment_status', 'paid')
+                        ->whereNotNull('rebook_payment_id')
+                        ->latest()
+                        ->first();
+
+                    if ($rebookRequest && $rebookRequest->rebook_payment_id) {
+                        $rebookChargedCentavos = $this->bookingRefundProcessService->getPaymentAmount($rebookRequest->rebook_payment_id)
+                            ?? (int) round($rebookRequest->difference * 100);
+
+                        if ($rebookChargedCentavos > 0) {
+                            $rebookRefundResponse = $this->bookingRefundProcessService->refundPayment($rebookRequest->rebook_payment_id, $rebookChargedCentavos);
+                            if ($rebookRefundResponse['status'] === 'success') {
+                                \Log::info('Rebook additional payment refunded', [
+                                    'booking_id'         => $booking->id,
+                                    'rebook_request_id'  => $rebookRequest->id,
+                                    'refund_amount'      => $rebookChargedCentavos / 100,
+                                ]);
+                            } else {
+                                \Log::error('Rebook additional payment refund failed', [
+                                    'booking_id'         => $booking->id,
+                                    'rebook_request_id'  => $rebookRequest->id,
+                                    'refund_response'    => $rebookRefundResponse,
+                                ]);
+                            }
+                        }
+                    }
                 } catch (\Exception $e) {
-                    // Log the error but don't prevent cancellation
                     \Log::error('Error processing booking refund', [
                         'booking_id' => $booking->id,
-                        'error' => $e->getMessage(),
+                        'error'      => $e->getMessage(),
                     ]);
                 }
             }

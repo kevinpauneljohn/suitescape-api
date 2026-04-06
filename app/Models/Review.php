@@ -11,14 +11,21 @@ class Review extends Model
 
     protected $fillable = [
         'listing_id',
+        'booking_id',
         'user_id',
         'content',
         'rating',
+        'reviewed_at',
     ];
 
     public function listing()
     {
         return $this->belongsTo(Listing::class);
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 
     public function user()

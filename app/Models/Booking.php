@@ -17,6 +17,8 @@ class Booking extends Model
         'coupon_id',
         'amount',
         'base_amount',
+        'guest_service_fee',
+        'vat',
         'suitescape_fee',
         'host_earnings',
         'message',
@@ -24,12 +26,72 @@ class Booking extends Model
         'status',
         'date_start',
         'date_end',
+        'hold_expires_at',
+        'idempotency_key',
+        'payment_intent_id',
+        'upcoming_reminder_sent_at',
+        'review_deadline_passed',
     ];
 
     protected $casts = [
         'date_start' => 'date',
         'date_end' => 'date',
+        'hold_expires_at' => 'datetime',
+        'upcoming_reminder_sent_at' => 'datetime',
+        'review_deadline_passed' => 'boolean',
     ];
+
+    /**
+     * Check if this booking is a hold that has expired.
+     */
+    public function isHoldExpired(): bool
+    {
+        return $this->status === 'held' && $this->hold_expires_at && $this->hold_expires_at->isPast();
+    }
+
+    /**
+     * Check if this booking is an active hold.
+     */
+    public function isActiveHold(): bool
+    {
+        return $this->status === 'held' && $this->hold_expires_at && $this->hold_expires_at->isFuture();
+    }
+
+    /**
+     * Scope to get only active holds (not expired).
+     */
+    public function scopeActiveHolds($query)
+    {
+        return $query->where('status', 'held')
+            ->where('hold_expires_at', '>', now());
+    }
+
+    /**
+     * Scope to get expired holds.
+     */
+    public function scopeExpiredHolds($query)
+    {
+        return $query->where('status', 'held')
+            ->where('hold_expires_at', '<=', now());
+    }
+
+    /**
+     * Scope to get bookings that block availability (active holds + confirmed bookings).
+     */
+    public function scopeBlockingAvailability($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereIn('status', ['held', 'to_pay', 'pending_payment', 'upcoming', 'ongoing'])
+              ->where(function ($q2) {
+                  // For held status, only count if not expired
+                  $q2->where('status', '!=', 'held')
+                     ->orWhere(function ($q3) {
+                         $q3->where('status', 'held')
+                            ->where('hold_expires_at', '>', now());
+                     });
+              });
+        });
+    }
 
     public function user()
     {
@@ -116,5 +178,25 @@ class Booking extends Model
     public function cancellations()
     {
         return $this->hasMany(Cancellation::class);
+    }
+
+    public function rebookRequests()
+    {
+        return $this->hasMany(RebookRequest::class);
+    }
+
+    public function pendingRebookRequest()
+    {
+        return $this->hasOne(RebookRequest::class)->where('status', 'pending')->latestOfMany();
+    }
+
+    public function review()
+    {
+        return $this->hasOne(Review::class);
+    }
+
+    public function guestReview()
+    {
+        return $this->hasOne(GuestReview::class);
     }
 }

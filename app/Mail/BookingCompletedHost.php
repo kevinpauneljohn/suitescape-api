@@ -30,7 +30,7 @@ class BookingCompletedHost extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Booking Completed Host',
+            subject: 'New Booking Confirmed — ' . $this->booking->listing->name,
         );
     }
 

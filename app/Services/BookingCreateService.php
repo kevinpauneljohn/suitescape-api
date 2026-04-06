@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Services\ConstantService;
 use App\Services\BookingPaymentProcessService;
+use App\Services\BookingAvailabilityService;
 
 class BookingCreateService
 {
@@ -18,12 +19,16 @@ class BookingCreateService
 
     protected BookingPaymentProcessService $bookingPaymentProcessService;
 
+    protected BookingAvailabilityService $bookingAvailabilityService;
+
     public function __construct(
         ConstantService $constantService, 
-        BookingPaymentProcessService $bookingPaymentProcessService
+        BookingPaymentProcessService $bookingPaymentProcessService,
+        BookingAvailabilityService $bookingAvailabilityService
     ){
         $this->constantService = $constantService;
         $this->bookingPaymentProcessService = $bookingPaymentProcessService;
+        $this->bookingAvailabilityService = $bookingAvailabilityService;
     }
 
     public function createBooking(array $bookingData, array $paymentData = [])
@@ -32,6 +37,33 @@ class BookingCreateService
         DB::beginTransaction();
         try {
             $listing = Listing::findOrFail($bookingData['listing_id']);
+
+            // Availability guard: prevent double bookings even through direct API calls.
+            // Lock existing blocking bookings to prevent race conditions, then check.
+            Booking::blockingAvailability()
+                ->where('listing_id', $listing->id)
+                ->where('date_start', '<', $bookingData['end_date'])
+                ->where('date_end', '>', $bookingData['start_date'])
+                ->lockForUpdate()
+                ->get();
+
+            $requestedRooms = is_array($bookingData['rooms']) ? $bookingData['rooms'] : [];
+            $availability = $this->bookingAvailabilityService->checkAvailability(
+                $listing->id,
+                $bookingData['start_date'],
+                $bookingData['end_date'],
+                $requestedRooms
+            );
+
+            if (!$availability['available']) {
+                DB::rollBack();
+                return [
+                    'status' => 'error',
+                    'message' => $availability['message'],
+                    'code' => 409,
+                ];
+            }
+
             $coupon = null;
             if (isset($bookingData['coupon_code'])) {
                 $coupon = Coupon::where('code', $bookingData['coupon_code'])->firstOrFail();
@@ -196,42 +228,108 @@ class BookingCreateService
 
     public function calculateAmount(Listing $listing, Collection $rooms, Collection $addons, ?Coupon $coupon, string $startDate, string $endDate): array
     {
-        $amount = 0;
-        if ($listing->is_entire_place) {
-            $amount = $listing->getCurrentPrice($startDate, $endDate);
-        } else {
-            foreach ($rooms as $room) {
-                $amount += $this->getRoomAmount($room, $startDate, $endDate);
-            }
-        }
-        $addonsTotal = 0;
-        foreach ($addons as $addon) {
-            $addonsTotal += $this->getAddonAmount($addon);
-        }
-
-        $base = $amount + $addonsTotal;
         $nights = $this->getBookingNights($startDate, $endDate);
 
-        $amount *= $nights;
-        $getAddonsAmountPerNight = 0;
-        foreach ($addons as $addonprice) {
-            $getAddonsAmountPerNight += $this->getAddonsAmountPerNight($addonprice, $nights);
+        // Calculate accommodation total using per-night pricing.
+        // This iterates each night and applies the correct price (special rate > weekend/weekday).
+        // Matches the mobile's calculateEntirePlacePrice / useAggregated per-night logic.
+        $accommodationTotal = 0;
+        if ($listing->is_entire_place) {
+            $accommodationTotal = $listing->calculateTotalForDateRange($startDate, $endDate);
+        } else {
+            foreach ($rooms as $room) {
+                $accommodationTotal += $this->getRoomAmountForDateRange($room, $startDate, $endDate);
+            }
         }
 
-        $amount += $getAddonsAmountPerNight;
+        // Calculate addons total (consumable addons are per-night, non-consumable are one-time)
+        $addonsTotal = 0;
+        foreach ($addons as $addon) {
+            $addonsTotal += $this->getAddonsAmountPerNight($addon, $nights);
+        }
 
-        // Note: Discount and Suitescape fee removed from guest charges
-        // Suitescape fee will be charged to hosts in the future
+        // Base = per-night accommodation rate + one-time addon total (used for display reference)
+        $perNightAccommodation = $nights > 0 ? ($accommodationTotal / $nights) : $accommodationTotal;
+        $perNightAddons = 0;
+        foreach ($addons as $addon) {
+            $perNightAddons += $this->getAddonAmount($addon);
+        }
+        $base = $perNightAccommodation + $perNightAddons;
+
+        // Subtotal = accommodation across all nights + all addons
+        $subtotal = $accommodationTotal + $addonsTotal;
+
+        // Apply guest service fee (percentage-based, from constants table)
+        $guestServiceFeePercentage = $this->getGuestServiceFeePercentage();
+        $guestServiceFee = round($subtotal * ($guestServiceFeePercentage / 100), 2);
+
+        // VAT (12% PH) applies on subtotal + service fee (i.e. the full pre-tax amount)
+        // e.g. ₱1,000 accommodation + ₱150 service fee = ₱1,150 taxable → VAT = ₱138
+        $vatPercentage = $this->getVatPercentage();
+        $vat = round(($subtotal + $guestServiceFee) * ($vatPercentage / 100), 2);
+
+        // Total = subtotal + service fee + VAT
+        $total = $subtotal + $guestServiceFee + $vat;
 
         return [
-            'total' => $amount,
+            'total' => $total,
+            'subtotal' => $subtotal,
             'base' => $base,
+            'guest_service_fee' => $guestServiceFee,
+            'guest_service_fee_percentage' => $guestServiceFeePercentage,
+            'vat' => $vat,
+            'vat_percentage' => $vatPercentage,
         ];
+    }
+
+    /**
+     * Get the guest service fee percentage from constants table.
+     * Default: 15%
+     */
+    private function getGuestServiceFeePercentage(): float
+    {
+        try {
+            $constant = \App\Models\Constant::where('key', 'guest_service_fee_percentage')->first();
+            if ($constant) {
+                return (float) $constant->value;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Could not retrieve guest_service_fee_percentage: ' . $e->getMessage());
+        }
+
+        return 15; // Default 15%
+    }
+
+    /**
+     * Get the VAT percentage from constants table.
+     * Default: 12% (Philippines standard VAT rate)
+     */
+    private function getVatPercentage(): float
+    {
+        try {
+            $constant = \App\Models\Constant::where('key', 'vat_percentage')->first();
+            if ($constant) {
+                return (float) $constant->value;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Could not retrieve vat_percentage: ' . $e->getMessage());
+        }
+
+        return 12; // Default 12% PH VAT
     }
 
     private function getRoomAmount($room, string $startDate, string $endDate): float
     {
-        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->quantity; // Quantity is either from Booking<Model> or from the normalized <model>
+        return $room->roomCategory->getCurrentPrice($startDate, $endDate) * $room->quantity;
+    }
+
+    /**
+     * Calculate the total room cost across all nights using per-night pricing.
+     * Each night gets the correct price (special rate > weekend/weekday).
+     */
+    private function getRoomAmountForDateRange($room, string $startDate, string $endDate): float
+    {
+        return $room->roomCategory->calculateTotalForDateRange($startDate, $endDate) * $room->quantity;
     }
 
     private function getAddonAmount($addon): float

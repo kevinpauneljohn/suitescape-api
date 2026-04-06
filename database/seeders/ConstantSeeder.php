@@ -29,7 +29,17 @@ class ConstantSeeder extends Seeder
 
         Constant::create([
             'key' => 'suitescape_fee',
-            'value' => 100,
+            'value' => 3, // 3% host platform fee (percentage)
+        ]);
+
+        Constant::create([
+            'key' => 'guest_service_fee_percentage',
+            'value' => 15, // 15% guest service fee (percentage)
+        ]);
+
+        Constant::create([
+            'key' => 'vat_percentage',
+            'value' => 12, // 12% VAT (Philippines standard rate)
         ]);
     }
 }

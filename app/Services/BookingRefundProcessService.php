@@ -17,13 +17,38 @@ class BookingRefundProcessService
     }
 
     /**
+     * Fetch the net amount (in centavos) of a PayMongo payment.
+     * Returns null if the payment cannot be retrieved.
+     */
+    public function getPaymentAmount(string $paymentId): ?int
+    {
+        try {
+            $client = new Client();
+            $response = $client->get("{$this->paymongoUrl}/payments/{$paymentId}", [
+                'headers' => [
+                    'Authorization' => 'Basic ' . base64_encode($this->paymongoSecretKey),
+                    'Accept'        => 'application/json',
+                ],
+            ]);
+            $body = json_decode($response->getBody()->getContents(), true);
+            return $body['data']['attributes']['amount'] ?? null;
+        } catch (\Exception $e) {
+            \Log::warning('BookingRefundProcessService: could not fetch payment amount', [
+                'payment_id' => $paymentId,
+                'error'      => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Refund a payment via PayMongo.
      *
      * @param string $paymentId
      * @param int|null $amount Amount to refund in centavos (e.g., 1000 = ₱10.00). Null means full refund.
      * @return array
      */
-    public function refundPayment(string $paymentId, int $amount = null): array
+    public function refundPayment(string $paymentId, ?int $amount = null): array
     {
         $client = new Client();
         $attributes = ['payment_id' => $paymentId];

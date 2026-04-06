@@ -7,6 +7,8 @@ use App\Mail\BookingCancelledUser;
 use App\Mail\BookingCompletedHost;
 use App\Mail\BookingCompletedUser;
 use App\Mail\ResetPassword;
+use App\Mail\UpcomingBookingGuest;
+use App\Mail\UpcomingBookingHost;
 use App\Models\Booking;
 use Illuminate\Support\Facades\Mail;
 
@@ -52,5 +54,14 @@ class MailService
 
         // Send email to the user
         Mail::to($booking->user->email)->send(new BookingCancelledUser($booking, $suitescapeCancellationFee, $cancellationFee, $cancellationPolicy));
+    }
+
+    public function sendUpcomingBookingReminders(Booking $booking)
+    {
+        // Send reminder email to the host
+        Mail::to($booking->listing->user->email)->send(new UpcomingBookingHost($booking));
+
+        // Send reminder email to the guest
+        Mail::to($booking->user->email)->send(new UpcomingBookingGuest($booking));
     }
 }

@@ -3,7 +3,11 @@
 
 Dear {{ $booking->user->full_name }},
 
-Your booking for "{{ $booking->listing->name }}" has been cancelled.
+@if($booking->cancellation_reason)
+Your booking for **"{{ $booking->listing->name }}"** has been **cancelled by the host**.
+@else
+Your booking for **"{{ $booking->listing->name }}"** has been cancelled.
+@endif
 
 ## Booking Details:
 - Host: {{ $booking->listing->user->full_name }}
@@ -42,8 +46,8 @@ Your booking for "{{ $booking->listing->name }}" has been cancelled.
 @endif
 
 @if($booking->cancellation_reason)
-## Cancellation Reason:
-{{ $booking->cancellation_reason }}
+## Reason for Cancellation:
+> {{ $booking->cancellation_reason }}
 @endif
 
 @if($cancellationPolicy)

@@ -563,6 +563,7 @@ class BookingPaymentService
 
     private function createBookingSourcePayment(string $type, int $amount, string $sourceId, string $bookingId)
     {
+        $listingName = optional(\App\Models\Booking::with('listing')->find($bookingId)?->listing)->name ?? 'Unknown';
         $client = new Client();
         try {
             $response = $client->request('POST', "{$this->paymongoUrl}/payments", [
@@ -576,7 +577,7 @@ class BookingPaymentService
                         'attributes' => [
                             'amount' => $amount,
                             'currency' => 'PHP',
-                            'description' => "Payment for $bookingId",
+                            'description' => 'Booking Payment for Booking ID: ' . $bookingId . ' - ' . $listingName,
                             'source' => [
                                 'id' => $sourceId,
                                 'type' => 'source',
@@ -952,6 +953,9 @@ class BookingPaymentService
 
     private function createSourcePayment(string $type, int $amount, string $sourceId)
     {
+        $invoice  = $this->getInvoiceByReferenceNumber($sourceId);
+        $bookingId   = $invoice->booking_id ?? 'Unknown';
+        $listingName = optional($invoice->booking?->listing)->name ?? 'Unknown';
 
         return Paymongo::payment()->create([
             'amount' => $amount,
@@ -960,7 +964,7 @@ class BookingPaymentService
                 'type' => 'source',
             ],
             'currency' => 'PHP',
-            'description' => "Payment for $type",
+            'description' => 'Booking Payment for Booking ID: ' . $bookingId . ' - ' . $listingName,
         ]);
         // $payload = [
         //     'data' => [

@@ -9,7 +9,19 @@ Your booking for "{{ $booking->listing->name }}" has been confirmed!
 - Host: {{ $booking->listing->user->full_name }}
 - Check-in: {{ $booking->date_start->format('F d, Y') }} ({{ $booking->listing->check_in_time->format('g:i A') }})
 - Check-out: {{ $booking->date_end->format('F d, Y') }} ({{ $booking->listing->check_out_time->format('g:i A') }})
-- Total price: ₱{{ number_format($booking->amount, 2) }}
+
+## Price Breakdown:
+@php
+    // subtotal = pure accommodation + addons (before any fees)
+    $subtotal = $booking->amount - ($booking->guest_service_fee ?? 0) - ($booking->vat ?? 0);
+    // Bake service fee into accommodation — guests see one combined accommodation figure
+    $accommodationWithFee = $subtotal + ($booking->guest_service_fee ?? 0);
+@endphp
+- Accommodation: ₱{{ number_format($accommodationWithFee, 2) }}
+@if($booking->vat)
+- VAT (12%): ₱{{ number_format($booking->vat, 2) }}
+@endif
+- **Total charged: ₱{{ number_format($booking->amount, 2) }}**
 
 @if(!$booking->listing->is_entire_place)
 ## Booked Rooms:

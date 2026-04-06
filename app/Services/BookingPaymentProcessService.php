@@ -35,7 +35,7 @@ class BookingPaymentProcessService
         $this->paymongoUrl = config('paymongo.paymongo_api_url');
         $this->paymongoSecretKey = config('paymongo.paymongo_secret_key');
 
-        $this->emailService = $mailService;
+        $this->mailService = $mailService;
     }
 
     public function createEPayment(array $data, $bookingId)
@@ -48,7 +48,8 @@ class BookingPaymentProcessService
             ];
         }
 
-        $data['description'] = 'Booking Payment for Booking ID: ' . $bookingId;
+        $listingName = optional(Booking::with('listing')->find($bookingId)?->listing)->name ?? 'Unknown';
+        $data['description'] = 'Booking Payment for Booking ID: ' . $bookingId . ' - ' . $listingName;
         if ($data['payment_type'] === 'grabpay') {
             $data['payment_type'] = 'grab_pay';
         }
@@ -153,7 +154,8 @@ class BookingPaymentProcessService
             ];
         }
 
-        $data['description'] = 'Booking Payment for Booking ID: ' . $bookingId;
+        $listingName = optional(Booking::with('listing')->find($bookingId)?->listing)->name ?? 'Unknown';
+        $data['description'] = 'Booking Payment for Booking ID: ' . $bookingId . ' - ' . $listingName;
         $paymentIntent = $this->createBookingPaymentIntent($data['amount'], $data['description']);
         if ($paymentIntent['status'] === 'error') {
             return [
@@ -459,6 +461,8 @@ class BookingPaymentProcessService
             'coupon_id' => $couponId,
             'amount' => $amount['total'],
             'base_amount' => $amount['base'],
+            'guest_service_fee' => $amount['guest_service_fee'] ?? 0,
+            'vat' => $amount['vat'] ?? 0,
             'message' => $message,
             'date_start' => $startDate,
             'date_end' => $endDate,
@@ -534,7 +538,7 @@ class BookingPaymentProcessService
                     ]);
                 }
 
-                $this->emailService->sendBookingCompletedEmails($booking);
+                $this->mailService->sendBookingCompletedEmails($booking);
 
                 // Note: PaymentSuccessful is already broadcast in ePaymentChargeable()
                 // Only broadcast here if this method is called directly (not via webhook)
@@ -648,7 +652,7 @@ class BookingPaymentProcessService
                 }
 
                 // Send booking confirmation emails
-                $this->emailService->sendBookingCompletedEmails($booking);
+                $this->mailService->sendBookingCompletedEmails($booking);
 
                 broadcast(new PaymentSuccessful($invoice));
 
@@ -691,6 +695,7 @@ class BookingPaymentProcessService
 
     private function createBookingSourcePayment(string $type, int $amount, string $sourceId, string $bookingId)
     {
+        $listingName = optional(Booking::with('listing')->find($bookingId)?->listing)->name ?? 'Unknown';
         $client = new Client();
         try {
             $response = $client->request('POST', "{$this->paymongoUrl}/payments", [
@@ -704,7 +709,7 @@ class BookingPaymentProcessService
                         'attributes' => [
                             'amount' => $amount,
                             'currency' => 'PHP',
-                            'description' => "Payment for Booking ID: $bookingId",
+                            'description' => 'Booking Payment for Booking ID: ' . $bookingId . ' - ' . $listingName,
                             'source' => [
                                 'id' => $sourceId,
                                 'type' => 'source',
@@ -777,12 +782,23 @@ class BookingPaymentProcessService
 
     public function addBookingRooms($booking, Collection $rooms): void
     {
+        $startDate = $booking->date_start;
+        $endDate = $booking->date_end;
+
+        // Calculate nights for averaging
+        $nights = max(1, \Illuminate\Support\Carbon::parse($startDate)->diffInDays(\Illuminate\Support\Carbon::parse($endDate)));
+
         foreach ($rooms as $room) {
+            // Store the average per-night price across the date range.
+            // This accounts for mixed weekday/weekend rates and partial special rate overlaps.
+            $totalForRange = $room->roomCategory->calculateTotalForDateRange($startDate, $endDate);
+            $averagePerNight = round($totalForRange / $nights, 2);
+
             $booking->bookingRooms()->create([
                 'room_id' => $room->id,
                 'name' => $room->name,
                 'quantity' => $room->quantity,
-                'price' => $room->roomCategory->getCurrentPrice($booking->date_start, $booking->date_end),
+                'price' => $averagePerNight,
             ]);
         }
     }
