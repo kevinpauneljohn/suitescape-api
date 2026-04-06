@@ -43,6 +43,8 @@ class ListingResource extends JsonResource
             'entire_place_weekday_price' => $this->entire_place_weekday_price ? floatval($this->entire_place_weekday_price) : null,
             'entire_place_weekend_price' => $this->entire_place_weekend_price ? floatval($this->entire_place_weekend_price) : null,
             'lowest_room_price' => $this->lowest_room_price ? floatval($this->lowest_room_price) : null,
+            'cancellation_policy_type' => $this->cancellation_policy_type ?? 'flexible',
+            'cancellation_policy_details' => \App\Services\CancellationPolicyService::buildSnapshot($this->cancellation_policy_type ?? 'flexible'),
             'service_rating' => new ServiceRatingCollection($this->whenLoaded('serviceRatings')),
             'average_rating' => $this->whenNotNull($this->whenAggregated('reviews', 'rating', 'avg', fn ($value) => round($value, 1))),
             'likes_count' => $this->whenCounted('likes'),

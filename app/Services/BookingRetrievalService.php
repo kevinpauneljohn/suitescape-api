@@ -86,7 +86,10 @@ class BookingRetrievalService
         $booking->is_expired = $this->isBookingExpired($booking);
         $booking->cancellation_fee = $this->bookingCancellationService->calculateCancellationFee($booking);
         $booking->suitescape_cancellation_fee = $this->constantService->getConstant('cancellation_fee')->value;
-        $booking->cancellation_policy = $this->constantService->getConstant('cancellation_policy')->value;
+
+        // Use the per-booking snapshot when available; fall back to global constant for old bookings.
+        $booking->cancellation_policy = $booking->cancellation_policy_snapshot
+            ?? ['type' => 'legacy', 'label' => 'Platform Policy', 'description' => $this->constantService->getConstant('cancellation_policy')->value, 'rules' => []];
 
         return $booking;
     }

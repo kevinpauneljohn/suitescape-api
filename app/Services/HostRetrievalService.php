@@ -8,6 +8,8 @@ class HostRetrievalService
 {
     protected ?User $currentHost = null;
 
+    public function __construct(protected PriceCalculatorService $priceCalculatorService) {}
+
     public function getAllHosts()
     {
         return User::all();
@@ -32,13 +34,22 @@ class HostRetrievalService
 
     public function getHostListings(string $id)
     {
-        return $this->getHost($id)->listings()
+        $listings = $this->getHost($id)->listings()
             ->with([
                 'images',
                 'videos.sections',
             ])
             ->withAggregate('reviews', 'rating', 'avg')
             ->get();
+
+        // Compute today's rate-aware lowest room price for room-based listings
+        foreach ($listings as $listing) {
+            if (! $listing->is_entire_place) {
+                $listing->lowest_room_price = $this->priceCalculatorService->getMinRoomPriceForListing($listing->id);
+            }
+        }
+
+        return $listings;
     }
 
     public function getHostReviews(string $id)

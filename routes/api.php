@@ -134,6 +134,7 @@ Route::prefix('listings')->group(function () {
     });
 
     Route::get('/', [ListingController::class, 'getAllListings'])->name('listings.all');
+    Route::get('/cancellation-policies', [ListingController::class, 'getCancellationPolicies'])->name('listings.cancellation-policies');
     Route::get('/{id}', [ListingController::class, 'getListing'])->name('listings.get')->whereUuid('id');
     Route::get('/host', [ListingController::class, 'getListingsByHost'])->name('listings.user')->whereUuid('id');
     Route::post('/', [ListingController::class, 'createListing'])->name('listings.create');
@@ -151,6 +152,7 @@ Route::prefix('listings')->group(function () {
         Route::post('/like', [ListingController::class, 'likeListing'])->name('listings.like');
         Route::post('/save', [ListingController::class, 'saveListing'])->name('listings.save');
         Route::post('/view', [ListingController::class, 'viewListing'])->name('listings.view');
+        Route::post('/cancellation-policy', [ListingController::class, 'updateCancellationPolicy'])->name('listings.cancellation-policy.update');
 
         Route::post('/add-special-rate', [ListingController::class, 'addSpecialRate'])->name('listings.add-special-rate');
         Route::post('/update-special-rate', [ListingController::class, 'updateSpecialRate'])->name('listings.update-special-rate');

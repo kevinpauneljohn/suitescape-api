@@ -34,6 +34,7 @@ class Listing extends Model
         'custom_suitescape_fee',
         'is_partner',
         'partner_notes',
+        'cancellation_policy_type',
     ];
 
     protected $casts = [

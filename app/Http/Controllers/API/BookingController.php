@@ -230,6 +230,29 @@ class BookingController extends Controller
      */
     public function updateBookingStatus(UpdateBookingStatusRequest $request, string $id)
     {
+        $booking = \App\Models\Booking::findOrFail($id);
+
+        // If the requested status is 'cancelled', check whether the guest is allowed to cancel.
+        if ($request->validated('booking_status') === 'cancelled') {
+            $hostUserId  = $booking->listing->user_id ?? null;
+            $authUserId  = auth()->id();
+            $isHost      = $hostUserId && $authUserId === $hostUserId;
+
+            if (! $isHost) {
+                // Resolve the policy: prefer the frozen snapshot, fall back to listing's current type.
+                $snapshot = $booking->cancellation_policy_snapshot
+                    ?? \App\Services\CancellationPolicyService::buildSnapshot(
+                        $booking->listing->cancellation_policy_type ?? 'flexible'
+                    );
+
+                if (! \App\Services\CancellationPolicyService::guestCanCancel($snapshot)) {
+                    return response()->json([
+                        'message' => 'Cancellation is not permitted for this booking. Please contact the host.',
+                    ], 403);
+                }
+            }
+        }
+
         $booking = $this->bookingUpdateService->updateBookingStatus($id, $request->validated('booking_status'), $request->validated('message'));
 
         $this->mailService->sendBookingCancelledEmails($booking);

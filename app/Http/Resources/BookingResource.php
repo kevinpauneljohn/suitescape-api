@@ -55,9 +55,9 @@ class BookingResource extends JsonResource
             $this->mergeWhen($this->cancellation_reason, fn () => [
                 'cancellation_reason' => $this->cancellation_reason,
             ]),
-            $this->mergeWhen($this->cancellation_policy, fn () => [
-                'cancellation_policy' => $this->cancellation_policy,
-            ]),
+            // cancellation_policy: use snapshot (structured array) if available, else legacy string
+            'cancellation_policy' => $this->cancellation_policy_snapshot
+                ?? (isset($this->cancellation_policy) ? $this->cancellation_policy : null),
             $this->mergeWhen(!is_null($this->cancellation_fee), fn () => [
                 'cancellation_fee' => floatval($this->cancellation_fee),
             ]),

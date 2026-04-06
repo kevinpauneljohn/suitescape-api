@@ -456,6 +456,12 @@ class BookingPaymentProcessService
     {
         $user = auth()->user();
 
+        // Build a cancellation policy snapshot from the listing's current policy type.
+        // This freezes the policy on the booking so future host changes don't affect it.
+        $listing = \App\Models\Listing::find($listingId);
+        $policyType = $listing?->cancellation_policy_type ?? 'flexible';
+        $policySnapshot = \App\Services\CancellationPolicyService::buildSnapshot($policyType);
+
         return $user->bookings()->create([
             'listing_id' => $listingId,
             'coupon_id' => $couponId,
@@ -467,6 +473,7 @@ class BookingPaymentProcessService
             'date_start' => $startDate,
             'date_end' => $endDate,
             'status' => $status,
+            'cancellation_policy_snapshot' => $policySnapshot,
         ]);
     }
 

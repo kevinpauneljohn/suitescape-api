@@ -31,6 +31,7 @@ class Booking extends Model
         'payment_intent_id',
         'upcoming_reminder_sent_at',
         'review_deadline_passed',
+        'cancellation_policy_snapshot',
     ];
 
     protected $casts = [
@@ -39,6 +40,7 @@ class Booking extends Model
         'hold_expires_at' => 'datetime',
         'upcoming_reminder_sent_at' => 'datetime',
         'review_deadline_passed' => 'boolean',
+        'cancellation_policy_snapshot' => 'array',
     ];
 
     /**
