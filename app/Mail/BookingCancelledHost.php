@@ -38,7 +38,7 @@ class BookingCancelledHost extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Booking Cancelled Host',
+            subject: 'Booking Cancellation Notice – ' . $this->booking->listing->name,
         );
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Review;
+use App\Models\GuestReview;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -36,11 +37,17 @@ class BookingResource extends JsonResource
             'booking_addons' => BookingAddonResource::collection($this->whenLoaded('bookingAddons')),
             'amount' => floatval($this->amount),
             'base_amount' => floatval($this->base_amount),
+            'guest_service_fee' => floatval($this->guest_service_fee ?? 0),
+            'vat' => floatval($this->vat ?? 0),
             'message' => $this->message,
             'status' => $this->status,
-            'date_start' => $this->date_start,
-            'date_end' => $this->date_end,
+            'date_start' => $this->date_start?->toDateString(),
+            'date_end' => $this->date_end?->toDateString(),
             'has_reviewed' => $hasReviewed,
+            'review_deadline_passed' => boolval($this->review_deadline_passed),
+            'has_guest_review' => $this->relationLoaded('guestReview')
+                ? !is_null($this->guestReview)
+                : GuestReview::where('booking_id', $this->id)->exists(),
 
             $this->mergeWhen(gettype($this->is_expired) === 'boolean', fn () => [
                 'is_expired' => boolval($this->is_expired),
@@ -48,9 +55,9 @@ class BookingResource extends JsonResource
             $this->mergeWhen($this->cancellation_reason, fn () => [
                 'cancellation_reason' => $this->cancellation_reason,
             ]),
-            $this->mergeWhen($this->cancellation_policy, fn () => [
-                'cancellation_policy' => $this->cancellation_policy,
-            ]),
+            // cancellation_policy: use snapshot (structured array) if available, else legacy string
+            'cancellation_policy' => $this->cancellation_policy_snapshot
+                ?? (isset($this->cancellation_policy) ? $this->cancellation_policy : null),
             $this->mergeWhen(!is_null($this->cancellation_fee), fn () => [
                 'cancellation_fee' => floatval($this->cancellation_fee),
             ]),

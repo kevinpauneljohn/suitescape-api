@@ -37,9 +37,12 @@ class BookingCancelledUser extends Mailable
      */
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Booking Cancelled User',
-        );
+        $cancelledByHost = $this->booking->listing->user_id === auth()->id();
+        $subject = $cancelledByHost
+            ? 'Your Booking Was Cancelled by the Host – ' . $this->booking->listing->name
+            : 'Booking Cancellation – ' . $this->booking->listing->name;
+
+        return new Envelope(subject: $subject);
     }
 
     /**

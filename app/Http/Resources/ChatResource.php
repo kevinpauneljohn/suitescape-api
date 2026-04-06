@@ -21,6 +21,13 @@ class ChatResource extends JsonResource
             'messages' => MessageResource::collection($this->whenLoaded('messages')),
             'latest_message' => new MessageResource($this->whenLoaded('latestMessage')),
             'unread_messages_count' => $this->whenCounted('unreadMessages'),
+            'is_host_context' => $this->is_host_context ?? null,
+            'context_listing' => $this->when($this->context_listing, function () {
+                return [
+                    'id' => $this->context_listing->id,
+                    'name' => $this->context_listing->name,
+                ];
+            }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

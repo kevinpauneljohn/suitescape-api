@@ -66,4 +66,35 @@ class EarningsController extends Controller
             'data' => $this->earningsRetrievalService->getAvailableYears($hostId),
         ]);
     }
+
+    /**
+     * Get Listing Earnings Details
+     *
+     * Retrieves detailed earnings and booking information for a specific listing in a year.
+     *
+     * @param Request $request
+     * @param string $listingId
+     * @param int $year
+     * @return \Illuminate\Http\JsonResponse
+     * @throws Exception
+     */
+    public function getListingEarningsDetails(Request $request, string $listingId, int $year)
+    {
+        $hostId = $request->host_id ?? auth('sanctum')->id();
+
+        if (! $hostId) {
+            throw new Exception('No host provided.');
+        }
+
+        try {
+            $data = $this->earningsRetrievalService->getListingEarningsDetails($listingId, $year, $hostId);
+            return response()->json([
+                'data' => $data,
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 404);
+        }
+    }
 }

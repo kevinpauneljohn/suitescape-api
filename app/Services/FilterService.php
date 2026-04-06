@@ -38,51 +38,65 @@ class FilterService
 
     public function applyPriceFilter($query, $maxPrice = null, $minPrice = null)
     {
-        // Apply max price filter
-        $query->when($maxPrice && $maxPrice >= 0, function ($query) use ($maxPrice) {
-            $query->where(function ($query) use ($maxPrice) {
-                $query->whereHas('specialRates', function ($query) use ($maxPrice) {
+        $hasMin = $minPrice !== null && $minPrice > 0;
+        $hasMax = $maxPrice !== null && $maxPrice >= 0;
+
+        if (! $hasMin && ! $hasMax) {
+            return $query;
+        }
+
+        return $query->where(function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+            // Branch 1: listing has an active special rate — judge by that rate's price
+            $query->whereHas('specialRates', function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+                $query->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now());
+                if ($hasMin) {
+                    $query->where('price', '>=', $minPrice);
+                }
+                if ($hasMax) {
+                    $query->where('price', '<=', $maxPrice);
+                }
+            });
+
+            // Branch 2: no active special rate — judge by the listing's base price
+            $query->orWhere(function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+                // Either truly has no special rates, or all special rates are outside their date range
+                $query->whereDoesntHave('specialRates', function ($query) {
                     $query->where('start_date', '<=', now())
-                        ->where('end_date', '>=', now())
-                        ->where('price', '<=', $maxPrice);
+                        ->where('end_date', '>=', now());
                 });
-                $query->orDoesntHave('specialRates')->where(function ($query) use ($maxPrice) {
+
+                $query->where(function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+                    // Entire-place listings: compare the listing-level price column
                     $query->where('is_entire_place', true)
-                        ->where(Listing::getCurrentPriceColumn(), '<=', $maxPrice);
-                    $query->orWhere('is_entire_place', false)
-                        ->whereDoesntHave('roomCategories', function ($query) use ($maxPrice) {
-                            return $query->where(RoomCategory::getCurrentPriceColumn(), '>', $maxPrice);
+                        ->where(function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+                            if ($hasMin) {
+                                $query->where(Listing::getCurrentPriceColumn(), '>=', $minPrice);
+                            }
+                            if ($hasMax) {
+                                $query->where(Listing::getCurrentPriceColumn(), '<=', $maxPrice);
+                            }
                         });
-                    //                    ->whereHas('roomCategories', function ($query) use ($maxPrice) {
-                    //                        return $query->where('price', '<=', $maxPrice);
-                    //                    });
+
+                    // Room-based listings: all rooms must satisfy the range
+                    $query->orWhere('is_entire_place', false)
+                        ->where(function ($query) use ($minPrice, $maxPrice, $hasMin, $hasMax) {
+                            if ($hasMax) {
+                                // Exclude listings where any room exceeds the max price
+                                $query->whereDoesntHave('roomCategories', function ($query) use ($maxPrice) {
+                                    $query->where(RoomCategory::getCurrentPriceColumn(), '>', $maxPrice);
+                                });
+                            }
+                            if ($hasMin) {
+                                // Exclude listings where any room is below the min price
+                                $query->whereDoesntHave('roomCategories', function ($query) use ($minPrice) {
+                                    $query->where(RoomCategory::getCurrentPriceColumn(), '<', $minPrice);
+                                });
+                            }
+                        });
                 });
             });
         });
-
-        // Apply min price filter
-        $query->when($minPrice, function ($query) use ($minPrice) {
-            $query->where(function ($query) use ($minPrice) {
-                $query->whereHas('specialRates', function ($query) use ($minPrice) {
-                    $query->where('start_date', '<=', now())
-                        ->where('end_date', '>=', now())
-                        ->where('price', '>=', $minPrice);
-                });
-                $query->orDoesntHave('specialRates')->where(function ($query) use ($minPrice) {
-                    $query->where('is_entire_place', true)
-                        ->where(Listing::getCurrentPriceColumn(), '>=', $minPrice);
-                    $query->orWhere('is_entire_place', false)
-                        ->whereDoesntHave('roomCategories', function ($query) use ($minPrice) {
-                            return $query->where(RoomCategory::getCurrentPriceColumn(), '<', $minPrice);
-                        });
-                    //                    ->whereHas('roomCategories', function ($query) use ($minPrice) {
-                    //                        return $query->where('price', '>=', $minPrice);
-                    //                    });
-                });
-            });
-        });
-
-        return $query;
     }
 
     public function applyRatingFilter($query, $maxRating = null, $minRating = null)

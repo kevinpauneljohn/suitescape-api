@@ -136,12 +136,11 @@ class VideoRetrievalService
             'facilities' => function ($query, $facilities) {
                 $this->filterService->applyFacilityTypeFilter($query, $facilities);
             },
-            'max_price' => function ($query, $maxPrice) {
-                $this->filterService->applyPriceFilter($query, $maxPrice);
-            },
-            'min_price' => function ($query, $minPrice) {
-                $this->filterService->applyPriceFilter($query, null, $minPrice);
-            },
+            // min_price and max_price are handled together in applyMainFilters
+            // so that both bounds are applied in a single coherent query clause.
+            // Individual entries are intentionally omitted here.
+            'max_price' => null,
+            'min_price' => null,
             'max_rating' => function ($query, $maxRating) {
                 $this->filterService->applyRatingFilter($query, $maxRating);
             },
@@ -162,9 +161,16 @@ class VideoRetrievalService
         $filterMethods = $this->initializeFilterMethods();
 
         foreach ($filterMethods as $filterKey => $filterFunction) {
-            if (isset($filters[$filterKey])) {
+            if ($filterFunction !== null && isset($filters[$filterKey])) {
                 $filterFunction($query, $filters[$filterKey]);
             }
+        }
+
+        // Apply min/max price together so both bounds are enforced in one coherent clause
+        $minPrice = isset($filters['min_price']) ? (float) $filters['min_price'] : null;
+        $maxPrice = isset($filters['max_price']) ? (float) $filters['max_price'] : null;
+        if ($minPrice !== null || $maxPrice !== null) {
+            $this->filterService->applyPriceFilter($query, $maxPrice, $minPrice);
         }
     }
 

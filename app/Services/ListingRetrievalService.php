@@ -37,11 +37,20 @@ class ListingRetrievalService
         // TIP:
         // With is best used for multiple data
         // Load is best used for single data
-        return Listing::where('user_id', $hostId)
+        $listings = Listing::where('user_id', $hostId)
             ->with('images')
             ->withAggregate('reviews', 'rating', 'avg')
             ->orderByDesc('created_at')
             ->get();
+
+        // Compute today's rate-aware lowest room price for room-based listings
+        foreach ($listings as $listing) {
+            if (! $listing->is_entire_place) {
+                $listing->lowest_room_price = $this->priceCalculatorService->getMinRoomPriceForListing($listing->id);
+            }
+        }
+
+        return $listings;
     }
 
     public function searchListings(?string $searchQuery, ?int $limit = 10)
@@ -85,7 +94,7 @@ class ListingRetrievalService
         $listing->load([
             'host',
             'serviceRatings',
-            'reviews' => fn ($query) => $query->with('user')->take(10),
+            'reviews' => fn ($query) => $query->with(['user', 'booking.guestReview'])->take(10),
             'bookingPolicies',
             'listingNearbyPlaces.nearbyPlace',
             'specialRates',
@@ -181,7 +190,7 @@ class ListingRetrievalService
 
     public function getListingReviews(string $id)
     {
-        return $this->getListing($id)->reviews->load(['user', 'listing.images']);
+        return $this->getListing($id)->reviews->load(['user', 'listing.images', 'booking.guestReview']);
     }
 
     public function getUnavailableDatesFromRange(string $id, string $startDate, string $endDate)

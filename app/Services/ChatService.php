@@ -22,16 +22,60 @@ class ChatService
 
     private const MAX_RESPONSE_DAYS = 7;
 
-    public function getAllChats()
+    public function getAllChats(?string $mode = null)
     {
         $user = auth()->user();
 
-        return $user->chats()->with([
+        // Get user's listing IDs for context determination
+        $userListingIds = $user->listings()->pluck('id')->toArray();
+
+        $query = $user->chats()->with([
             'users' => function ($query) use ($user) {
                 $query->where('users.id', '!=', $user->id)->with('activeSessions');
             },
             'latestMessage',
-        ])->withCount('unreadMessages')->orderByLatestMessage()->get();
+            'listing', // Load the chat's listing
+        ])->withCount(['unreadMessages', 'messages']);
+
+        // Filter by mode if specified - only include chats WITH a listing
+        if ($mode === 'host') {
+            // User is the host - chat is about their listing
+            $query->whereIn('listing_id', $userListingIds);
+        } elseif ($mode === 'guest') {
+            // User is the guest - chat is about someone else's listing (NOT theirs)
+            // Only include chats that have a listing_id and it's not the user's listing
+            $query->whereNotNull('listing_id')
+                  ->whereNotIn('listing_id', $userListingIds);
+        }
+
+        // Only get chats that have messages
+        $query->has('messages');
+
+        $chats = $query->orderByLatestMessage()->get();
+
+        // Add context info to each chat
+        return $chats->map(function ($chat) use ($userListingIds) {
+            // Determine if user is host (listing owner) or guest based on chat's listing
+            $listingId = $chat->listing_id;
+            
+            if ($listingId) {
+                $chat->is_host_context = in_array($listingId, $userListingIds);
+                $chat->context_listing = $chat->listing;
+            } else {
+                // Legacy chat - try to determine from messages
+                $firstMessageWithListing = $chat->messages()
+                    ->whereNotNull('listing_id')
+                    ->with('listing')
+                    ->oldest()
+                    ->first();
+                
+                $listingId = $firstMessageWithListing?->listing_id;
+                $chat->is_host_context = $listingId ? in_array($listingId, $userListingIds) : null;
+                $chat->context_listing = $firstMessageWithListing?->listing;
+            }
+            
+            return $chat;
+        });
     }
 
     public function searchChats(?string $searchQuery, ?int $limit = 20)
@@ -56,34 +100,51 @@ class ChatService
             ->get();
     }
 
-    public function getChat(string $senderId, string $receiverId)
+    public function getChat(string $senderId, string $receiverId, ?string $listingId = null)
     {
-        //        if ($senderId === $receiverId) {
-        //            return Chat::whereHas('users', function ($query) use ($senderId) {
-        //                $query->where('users.id', $senderId);
-        //            })->havingRaw('COUNT(*) = 1')->first();
-        //        }
+        $baseQuery = Chat::whereHas('users', function ($query) use ($senderId) {
+            $query->where('users.id', $senderId);
+        })->whereHas('users', function ($query) use ($receiverId) {
+            $query->where('users.id', $receiverId);
+        });
 
+        // If listing ID is provided, first try to find chat for that specific listing
+        if ($listingId) {
+            $chat = (clone $baseQuery)->where('listing_id', $listingId)->first();
+            if ($chat) {
+                return $chat;
+            }
+        }
+
+        // Fallback: find any chat between these users (with or without listing)
+        return $baseQuery->first();
+    }
+
+    /**
+     * Get chat by listing ID - creates separate conversations per listing
+     */
+    public function getChatByListing(string $senderId, string $receiverId, string $listingId)
+    {
         return Chat::whereHas('users', function ($query) use ($senderId) {
             $query->where('users.id', $senderId);
         })->whereHas('users', function ($query) use ($receiverId) {
             $query->where('users.id', $receiverId);
-        })->first();
+        })->where('listing_id', $listingId)->first();
     }
 
-    public function getMessages(string $senderId, string $receiverId, $cursor = null)
+    public function getMessages(string $senderId, string $receiverId, $cursor = null, ?string $listingId = null)
     {
-        return Message::with('listing.images')
-            ->where(function ($query) use ($senderId, $receiverId) {
-                $query->where(function ($q) use ($senderId, $receiverId) {
-                    $q->where('sender_id', $senderId)
-                    ->where('receiver_id', $receiverId);
-                })->orWhere(function ($q) use ($senderId, $receiverId) {
-                    $q->where('sender_id', $receiverId)
-                    ->where('receiver_id', $senderId);
-                });
-            })
-            ->orderBy('created_at', 'desc')
+        // First get the chat to ensure we're getting messages from the right conversation
+        $chat = $this->getChat($senderId, $receiverId, $listingId);
+        
+        if (!$chat) {
+            return Message::query()->whereRaw('1 = 0')->cursorPaginate(10); // Return empty paginator
+        }
+
+        $query = Message::with('listing.images')
+            ->where('chat_id', $chat->id);
+
+        return $query->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
             ->cursorPaginate(10, ['*'], 'cursor', $cursor);
     }
@@ -98,26 +159,34 @@ class ChatService
             throw new Exception('You cannot send a message to yourself.', 400);
         }
 
-        // Get the chat
-        $chat = $this->getChat($senderId, $receiverId);
-
-        // If chat does not exist, create a new one
-        if (! $chat) {
-            $chat = $this->startChat($senderId, $receiverId);
+        // Get or create a chat for this specific listing context
+        $chat = null;
+        
+        if ($listingId) {
+            // Try to find existing chat for this listing
+            $chat = $this->getChatByListing($senderId, $receiverId, $listingId);
+            
+            if (!$chat) {
+                // Create new listing-specific chat
+                $chat = $this->startChat($senderId, $receiverId, $listingId);
+            }
+        } else {
+            // Legacy behavior - find or create chat without listing
+            $chat = $this->getChat($senderId, $receiverId);
+            
+            if (!$chat) {
+                $chat = $this->startChat($senderId, $receiverId);
+            }
         }
 
         // Filter the message content from links, email, numbers, etc.
         $filteredContent = $this->filterMessageContent($content);
 
-        // Get the last message with a listing
-        $lastMessage = $chat->messages()->whereNotNull('listing_id')->latest()->first();
-
         $message = Message::create([
             'chat_id' => $chat->id,
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
-            // Check if the listing id exists on the last message with listing
-            'listing_id' => optional($lastMessage)->listing_id === $listingId ? null : $listingId,
+            'listing_id' => $listingId, // Store listing_id on message for reference
             'content' => $filteredContent,
         ]);
 
@@ -142,9 +211,11 @@ class ChatService
         broadcast(new ChatRead($chat, $user))->toOthers();
     }
 
-    public function startChat(string $senderId, string $receiverId)
+    public function startChat(string $senderId, string $receiverId, ?string $listingId = null)
     {
-        $chat = Chat::create();
+        $chat = Chat::create([
+            'listing_id' => $listingId,
+        ]);
 
         // Add the users to the chat
         $chat->users()->attach([$senderId, $receiverId]);

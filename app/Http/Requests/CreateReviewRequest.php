@@ -22,6 +22,7 @@ class CreateReviewRequest extends FormRequest
     public function rules(): array
     {
         $rules['listing_id'] = ['required', 'uuid', 'exists:listings,id'];
+        $rules['booking_id'] = ['nullable', 'uuid', 'exists:bookings,id'];
         $rules['feedback'] = ['nullable', 'string', 'max:500'];
 
         $serviceRatings = [

@@ -485,4 +485,52 @@ class ListingController extends Controller
             'message' => 'Listing viewed.',
         ]);
     }
+
+    /**
+     * Update Cancellation Policy
+     *
+     * Allows the authenticated host to update the cancellation policy type for their listing.
+     * Only applies to new bookings; existing bookings keep their snapshot.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateCancellationPolicy(\Illuminate\Http\Request $request, string $id)
+    {
+        $listing = Listing::findOrFail($id);
+
+        // Ensure only the owner can update
+        if ($listing->user_id !== auth('sanctum')->id()) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $type = $request->input('cancellation_policy_type');
+        if (! \App\Services\CancellationPolicyService::isValidType($type)) {
+            return response()->json([
+                'message' => 'Invalid cancellation policy type.',
+                'valid_types' => array_keys(\App\Services\CancellationPolicyService::getPolicies()),
+            ], 422);
+        }
+
+        $listing->update(['cancellation_policy_type' => $type]);
+
+        return response()->json([
+            'message' => 'Cancellation policy updated.',
+            'cancellation_policy_type' => $listing->cancellation_policy_type,
+            'cancellation_policy_details' => \App\Services\CancellationPolicyService::buildSnapshot($type),
+        ]);
+    }
+
+    /**
+     * Get All Cancellation Policy Types
+     *
+     * Returns all available policy types with their labels, descriptions, and rules.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCancellationPolicies()
+    {
+        return response()->json([
+            'policies' => array_values(\App\Services\CancellationPolicyService::getPolicies()),
+        ]);
+    }
 }

@@ -59,6 +59,16 @@ class BookingRetrievalService
     {
         $booking = Booking::find($id);
 
+        // Refresh status for this specific booking before returning it.
+        // This ensures the status is up-to-date even if the scheduled job hasn't run yet
+        // (e.g. checkout time has passed but booking still shows as "ongoing").
+        if ($booking && in_array($booking->status, ['upcoming', 'ongoing'])) {
+            $booking->load('listing');
+            $this->bookingStatusService->updateBookingStatusesForUser($booking->user_id);
+            // Re-fetch with fresh status after update
+            $booking = Booking::find($id);
+        }
+
         $booking->load([
             'bookingAddons.addon',
             'bookingRooms.room.roomCategory' => function ($query) use ($booking) {
@@ -76,7 +86,10 @@ class BookingRetrievalService
         $booking->is_expired = $this->isBookingExpired($booking);
         $booking->cancellation_fee = $this->bookingCancellationService->calculateCancellationFee($booking);
         $booking->suitescape_cancellation_fee = $this->constantService->getConstant('cancellation_fee')->value;
-        $booking->cancellation_policy = $this->constantService->getConstant('cancellation_policy')->value;
+
+        // Use the per-booking snapshot when available; fall back to global constant for old bookings.
+        $booking->cancellation_policy = $booking->cancellation_policy_snapshot
+            ?? ['type' => 'legacy', 'label' => 'Platform Policy', 'description' => $this->constantService->getConstant('cancellation_policy')->value, 'rules' => []];
 
         return $booking;
     }
@@ -92,6 +105,7 @@ class BookingRetrievalService
             'listing.host',
             'listing.images',
             'user',
+            'guestReview',
         ]);
     }
 
